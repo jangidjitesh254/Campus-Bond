@@ -8,6 +8,8 @@ import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import lostRoutes from './routes/lostRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import marketRoutes from './routes/marketRoutes.js';
+import clubRoutes from './routes/clubRoutes.js';
 import { UPLOAD_DIR } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -40,6 +42,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/lostfound', lostRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/market', marketRoutes);
+app.use('/api/clubs', clubRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);

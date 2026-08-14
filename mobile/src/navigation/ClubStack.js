@@ -1,25 +1,18 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import ClubFeedScreen from '../screens/club/ClubFeedScreen';
+import CreateClubScreen from '../screens/club/CreateClubScreen';
+import ClubDetailScreen from '../screens/club/ClubDetailScreen';
 import { stackScreenOptions } from './HomeStack';
 
 const Stack = createNativeStackNavigator();
 
-const ClubScreen = () => (
-  <PlaceholderScreen
-    step="04"
-    label="CLUBS"
-    title="Clubs & societies"
-    subtitle="Discover clubs, join with one tap, and manage your society's members and events — all in one place."
-    bullets={['DISCOVER', 'JOIN', 'MANAGE']}
-    icon="people-circle-outline"
-  />
-);
-
 export default function ClubStack() {
   return (
     <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="Club" component={ClubScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ClubFeed" component={ClubFeedScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateClub" component={CreateClubScreen} options={{ title: 'New club' }} />
+      <Stack.Screen name="ClubDetail" component={ClubDetailScreen} options={{ title: 'Club' }} />
     </Stack.Navigator>
   );
 }
