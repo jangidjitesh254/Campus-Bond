@@ -10,6 +10,8 @@ import {
   deleteEvent,
   myEvents,
   myApplications,
+  addComment,
+  expressInterest,
 } from '../controllers/eventController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -35,6 +37,8 @@ router
 
 router.route('/:id').get(getEventById).delete(deleteEvent);
 router.post('/:id/apply', applyToEvent);
+router.post('/:id/interest', expressInterest);
+router.post('/:id/comments', addComment);
 router.patch('/:id/status', updateEventStatus);
 router.patch('/:id/applicants/:applicantId', reviewApplicant);
 

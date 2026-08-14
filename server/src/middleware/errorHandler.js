@@ -20,6 +20,16 @@ export function errorHandler(err, req, res, next) {
     return res.status(400).json({ message: messages.join(' ') });
   }
 
+  // Multer (file upload) errors
+  if (err.name === 'MulterError') {
+    const msg =
+      err.code === 'LIMIT_FILE_SIZE' ? 'Image is too large (max 8 MB).' : `Upload error: ${err.message}`;
+    return res.status(400).json({ message: msg });
+  }
+  if (err.message === 'Only image files are allowed.') {
+    return res.status(400).json({ message: err.message });
+  }
+
   const status = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
   res.status(status).json({
     message: err.message || 'Something went wrong.',

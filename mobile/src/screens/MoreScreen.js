@@ -30,6 +30,7 @@ export default function MoreScreen({ navigation }) {
   }
 
   const activity = [
+    { icon: 'chatbubbles-outline', label: 'Messages', onPress: () => navigation.navigate('ChatList') },
     { icon: 'albums-outline', label: 'My Posts & Applications', onPress: openMyPosts },
     { icon: 'ribbon-outline', label: 'Campus Score', onPress: () => openFeature(FEATURE.score) },
   ];

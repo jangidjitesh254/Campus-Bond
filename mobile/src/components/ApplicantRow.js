@@ -5,7 +5,7 @@ import { Chip } from './ui';
 import { colors, spacing, font, radius } from '../theme';
 
 /** One applicant inside the owner's review list, with approve/reject actions. */
-export default function ApplicantRow({ applicant, onApprove, onReject }) {
+export default function ApplicantRow({ applicant, onApprove, onReject, onMessage }) {
   const u = applicant.user || {};
   const pending = applicant.status === 'pending';
 
@@ -35,11 +35,17 @@ export default function ApplicantRow({ applicant, onApprove, onReject }) {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={{ marginTop: spacing.sm }}>
+          <View style={styles.reviewedRow}>
             <Chip
               label={applicant.status === 'approved' ? 'Approved' : 'Rejected'}
               tone={applicant.status === 'approved' ? 'success' : 'danger'}
             />
+            {applicant.status === 'approved' && onMessage ? (
+              <TouchableOpacity style={styles.msgBtn} onPress={onMessage}>
+                <Ionicons name="chatbubbles" size={14} color={colors.onPrimary} />
+                <Text style={styles.msgBtnText}>Message</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         )}
       </View>
@@ -81,4 +87,15 @@ const styles = StyleSheet.create({
   approveText: { color: colors.onPrimary, fontWeight: '700', marginLeft: 4, fontSize: 13 },
   reject: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: colors.danger },
   rejectText: { color: colors.danger, fontWeight: '700', marginLeft: 4, fontSize: 13 },
+  reviewedRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.md },
+  msgBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    gap: 4,
+  },
+  msgBtnText: { color: colors.onPrimary, fontWeight: '700', fontSize: 12 },
 });

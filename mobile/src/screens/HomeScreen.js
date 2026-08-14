@@ -1,355 +1,184 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Share, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { SectionTitle } from '../components/ui';
-import ScoreRing from '../components/ScoreRing';
-import CampusDoodle from '../components/CampusDoodle';
-import { useAuth } from '../context/AuthContext';
+import Icon from '../components/Icon';
+import Doodles from '../components/Doodles';
+import ThreadPost from '../components/ThreadPost';
+import CelebrationOverlay from '../components/CelebrationOverlay';
+import { Loading, EmptyState } from '../components/ui';
 import { EventsApi } from '../api/events';
-import { colors, spacing, font, radius, shadow, monoFamily, layout } from '../theme';
+import { colors, layout, shadow } from '../theme';
 
-/** Explore tiles. `to` opens a tab; `feature` opens a teaser via the Menu stack. */
-const TILES = [
-  { key: 'team', label: 'Find Team', icon: 'people', to: 'Post' },
-  { key: 'lost', label: 'Lost & Found', icon: 'search', to: 'Lost' },
-  { key: 'market', label: 'Marketplace', icon: 'pricetag', to: 'Sell' },
-  { key: 'club', label: 'Clubs', icon: 'people-circle', to: 'Club' },
-  { key: 'contest', label: 'Contests', icon: 'trophy', feature: { step: '05', label: 'CONTESTS', title: 'Contests & quizzes', headerTitle: 'Contests', subtitle: 'Branch-wise coding challenges, quizzes and talent contests every week.', bullets: ['COMPETE', 'RANK', 'WIN'], icon: 'trophy-outline' } },
-  { key: 'map', label: 'Campus Map', icon: 'map', feature: { step: '06', label: 'CAMPUS MAP', title: 'Campus map', headerTitle: 'Campus Map', subtitle: 'Find blocks, labs, canteens and venues with an interactive campus map.', bullets: ['LOCATE', 'NAVIGATE', 'ARRIVE'], icon: 'map-outline' } },
-  { key: 'qna', label: 'Q&A', icon: 'chatbubbles', feature: { step: '07', label: 'CAMPUS Q&A', title: 'Ask the campus', headerTitle: 'Q&A', subtitle: 'Ask anything and get answers from seniors and peers across every branch.', bullets: ['ASK', 'ANSWER', 'LEARN'], icon: 'chatbubbles-outline' } },
-  { key: 'papers', label: 'Past Papers', icon: 'document-text', feature: { step: '08', label: 'PAST PAPERS', title: 'Previous-year papers', headerTitle: 'Past Papers', subtitle: 'A shared library of previous-year question papers, by branch and semester.', bullets: ['BROWSE', 'DOWNLOAD', 'ACE'], icon: 'document-text-outline' } },
-  { key: 'sos', label: 'Emergency', icon: 'medkit', feature: { step: '10', label: 'EMERGENCY HELP', title: 'Campus SOS', headerTitle: 'Emergency Help', subtitle: 'Need blood or urgent help? Notify nearby students instantly for a fast response.', bullets: ['ALERT', 'NEARBY', 'RESPOND'], icon: 'medkit-outline' } },
+const GROUPS = {
+  Teams: ['hackathon', 'project'],
+  Events: ['cultural', 'competition'],
+  Notices: ['other'],
+};
+const SUBFILTERS = [
+  { key: 'All', icon: 'grid' },
+  { key: 'Teams', icon: 'users' },
+  { key: 'Events', icon: 'calendarCheck' },
+  { key: 'Notices', icon: 'megaphone' },
+  { key: 'Lost & Found', icon: 'bag' },
 ];
 
-const CATEGORY_LABEL = {
-  hackathon: 'Hackathon',
-  cultural: 'Cultural',
-  competition: 'Competition',
-  project: 'Project',
-  other: 'General',
-};
-
-function timeAgo(dateStr) {
-  const then = new Date(dateStr).getTime();
-  if (!then) return '';
-  const mins = Math.floor((Date.now() - then) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 export default function HomeScreen({ navigation }) {
-  const { user } = useAuth();
-  const [activity, setActivity] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState('foryou');
+  const [sub, setSub] = useState('All');
+  const [celebrating, setCelebrating] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      EventsApi.list({ limit: 5 })
-        .then((data) => active && setActivity(data.events || []))
-        .catch(() => {});
-      return () => {
-        active = false;
-      };
-    }, [])
-  );
+  const load = useCallback(async () => {
+    try {
+      const data = await EventsApi.list({ limit: 40 });
+      setEvents(data.events || []);
+    } catch {
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  function openTile(t) {
-    if (t.to) navigation.navigate(t.to);
-    else if (t.feature) navigation.navigate('More', { screen: 'Feature', params: t.feature });
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  async function onInterested(event) {
+    try {
+      const { conversation, alreadyInterested } = await EventsApi.interest(event._id);
+      if (alreadyInterested) {
+        navigation.navigate('Chat', { conversationId: conversation._id, title: event.createdBy?.name || 'Chat' });
+      } else {
+        setCelebrating(true);
+        load();
+      }
+    } catch (e) { Alert.alert('Oops', e.message); }
   }
 
-  const first = user?.name?.split(' ')[0] || 'there';
+  async function onShare(event) {
+    try { await Share.share({ message: `${event.title}\n\n${event.description}\n\n— shared from Campus Bond` }); } catch {}
+  }
+
+  function selectSub(s) {
+    if (s === 'Lost & Found') { navigation.getParent()?.navigate('Lost'); return; }
+    setSub(s);
+  }
+
+  const filtered = sub === 'All' || !GROUPS[sub] ? events : events.filter((e) => GROUPS[sub].includes(e.category));
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate('More')} hitSlop={8}>
-            <Ionicons name="menu" size={26} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.logo}>
-            CAMPUS <Text style={{ color: colors.primary }}>BOND</Text>
-          </Text>
-          <View style={styles.headerRight}>
-            <View>
-              <Ionicons name="notifications-outline" size={24} color={colors.text} />
-              <View style={styles.dotGreen} />
-            </View>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{first.charAt(0).toUpperCase()}</Text>
-              <View style={styles.avatarDot} />
-            </View>
-          </View>
+      <Doodles />
+      {/* Header — brand centered at top */}
+      <View style={styles.header}>
+        <View style={styles.side} />
+        <View style={styles.brandRow}>
+          <Icon name="shield" size={24} color={colors.primary} filled />
+          <Text style={styles.brand}>Campus Bond</Text>
         </View>
-
-        {/* Greeting + doodle */}
-        <View style={styles.greetRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greet}>Hi {first} 👋</Text>
-            <Text style={styles.greetSub}>Let's make your campus journey better</Text>
-          </View>
-          <CampusDoodle style={styles.doodle} />
-        </View>
-
-        {/* Campus Score card */}
-        <TouchableOpacity
-          style={styles.scoreCard}
-          activeOpacity={0.9}
-          onPress={() =>
-            navigation.navigate('More', {
-              screen: 'Feature',
-              params: { step: '06', label: 'CAMPUS SCORE', title: 'Your campus score', headerTitle: 'Campus Score', subtitle: 'Earn points for helping out, posting and staying active. Climb the leaderboard.', bullets: ['ENGAGE', 'EARN', 'CLIMB'], icon: 'ribbon-outline' },
-            })
-          }
-        >
-          <ScoreRing value={user?.campusScore ?? 0} target={100} />
-          <View style={styles.scoreMid}>
-            <Text style={styles.scoreLabel}>YOUR CAMPUS SCORE</Text>
-            <Text style={styles.scoreValue}>{user?.campusScore ?? 0}</Text>
-            <Text style={styles.scoreHint}>Stay active to climb the leaderboard</Text>
-          </View>
-          <View style={styles.scoreBlob}>
-            <Ionicons name="stats-chart" size={26} color={colors.primary} />
-            <Ionicons name="sparkles-outline" size={13} color={colors.primaryLight} style={styles.spark1} />
-            <Ionicons name="sparkles" size={11} color={colors.primaryLight} style={styles.spark2} />
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textFaint} style={styles.scoreChevron} />
+        <TouchableOpacity style={styles.side} onPress={() => navigation.navigate('ChatList')}>
+          <Icon name="chat" size={23} color={colors.text} strokeWidth={1.7} />
+          <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>2</Text></View>
         </TouchableOpacity>
+      </View>
 
-        {/* Explore */}
-        <SectionTitle action="See all" onAction={() => navigation.navigate('More')} style={styles.sectionSpace}>
-          Explore
-        </SectionTitle>
-        <View style={styles.grid}>
-          {TILES.map((t) => (
-            <TouchableOpacity key={t.key} style={styles.tileWrap} activeOpacity={0.85} onPress={() => openTile(t)}>
-              <View style={styles.tile}>
-                <View style={styles.tileIcon}>
-                  <Ionicons name={t.icon} size={24} color={colors.primary} />
-                </View>
-                <Text style={styles.tileLabel} numberOfLines={1}>
-                  {t.label}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Post a team request banner */}
-        <TouchableOpacity
-          style={styles.banner}
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('Post', { screen: 'CreateEvent' })}
-        >
-          <View style={styles.bannerPlus}>
-            <View style={styles.plusCircle}>
-              <Ionicons name="add" size={26} color={colors.primary} />
-            </View>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bannerTitle}>Post a team request</Text>
-            <Text style={styles.bannerSub}>Looking for hackathon teammates? Post it now.</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
+      {/* Search + filter */}
+      <View style={styles.searchRow}>
+        <TouchableOpacity style={styles.search} activeOpacity={0.8} onPress={() => navigation.getParent()?.navigate('Lost')}>
+          <Icon name="search" size={18} color={colors.textMuted} strokeWidth={1.9} />
+          <Text style={styles.searchText}>Search people, posts, notices...</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.filterBtn}>
+          <Icon name="filter" size={20} color={colors.onPrimary} strokeWidth={1.7} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Activity Feed */}
-        <SectionTitle
-          action="View all"
-          onAction={() => navigation.navigate('Post')}
-          style={styles.sectionSpace}
-        >
-          Activity Feed
-        </SectionTitle>
-        <View style={styles.feed}>
-          {activity.length === 0 ? (
-            <Text style={[font.bodyMuted, { padding: spacing.lg }]}>
-              No activity yet — be the first to post something.
-            </Text>
-          ) : (
-            activity.map((e, i) => (
-              <TouchableOpacity
-                key={e._id}
-                style={[styles.actRow, i < activity.length - 1 && styles.actBorder]}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('Post', { screen: 'EventDetail', params: { id: e._id } })}
-              >
-                <View style={styles.actAvatar}>
-                  <Text style={styles.actAvatarText}>
-                    {(e.createdBy?.name || '?').charAt(0).toUpperCase()}
-                  </Text>
+      {/* For you / Campus */}
+      <View style={styles.segRow}>
+        <TouchableOpacity style={[styles.seg, tab === 'foryou' && styles.segActive]} onPress={() => setTab('foryou')}>
+          <Text style={[styles.segText, tab === 'foryou' && styles.segTextActive]}>For you</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.seg, tab === 'campus' && styles.segActive]} onPress={() => setTab('campus')}>
+          <Text style={[styles.segText, tab === 'campus' && styles.segTextActive]}>Campus</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sub-filters */}
+      <View style={styles.subRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 14 }}>
+          {SUBFILTERS.map((s) => {
+            const active = sub === s.key;
+            const fg = active ? colors.onPrimary : colors.primary;
+            return (
+              <TouchableOpacity key={s.key} onPress={() => selectSub(s.key)} activeOpacity={0.8}>
+                <View style={[styles.subPill, active ? styles.subActive : styles.subInactive]}>
+                  <Icon name={s.icon} size={16} color={fg} strokeWidth={1.8} />
+                  <Text style={[styles.subText, { color: fg }]}>{s.key}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actName}>
-                    {e.createdBy?.name || 'Student'}{' '}
-                    <Text style={styles.actAction}>posted a team request</Text>
-                  </Text>
-                  <Text style={styles.actSub} numberOfLines={1}>
-                    {e.title}
-                  </Text>
-                  <View style={styles.actMeta}>
-                    <Text style={styles.actTime}>{timeAgo(e.createdAt)}</Text>
-                    <Text style={styles.actDot}>·</Text>
-                    <Text style={styles.actTag}>{CATEGORY_LABEL[e.category] || 'General'}</Text>
-                  </View>
-                </View>
-                <Ionicons name="bookmark-outline" size={18} color={colors.textFaint} />
               </TouchableOpacity>
-            ))
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(i) => i._id}
+          contentContainerStyle={{ paddingTop: 6, paddingBottom: layout.tabBarSpace + 20 }}
+          renderItem={({ item }) => (
+            <ThreadPost
+              post={item}
+              onOpen={() => navigation.navigate('Thread', { id: item._id })}
+              onComment={() => navigation.navigate('Thread', { id: item._id, focusComment: true })}
+              onInterested={() => onInterested(item)}
+              onShare={() => onShare(item)}
+            />
           )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
+          ListEmptyComponent={<EmptyState title="Nothing here yet" subtitle="Tap Post to share the first thing." />}
+        />
+      )}
+
+      {/* Post pill FAB */}
+      <TouchableOpacity style={styles.fab} activeOpacity={0.9} onPress={() => navigation.navigate('CreateEvent')}>
+        <View style={styles.fabCircle}>
+          <Icon name="plus" size={18} color={colors.primary} strokeWidth={2.4} />
         </View>
-      </ScrollView>
+        <Text style={styles.fabText}>Post</Text>
+      </TouchableOpacity>
+
+      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.lg, paddingBottom: layout.tabBarSpace },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  logo: { fontSize: 20, fontWeight: '900', color: colors.text, letterSpacing: 0.5 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  dotGreen: {
-    position: 'absolute',
-    top: -1,
-    right: -1,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    borderWidth: 1.5,
-    borderColor: colors.bg,
-  },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.dark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  avatarDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.bg,
-  },
-  greetRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.lg, minHeight: 74 },
-  greet: { fontSize: 24, fontWeight: '800', color: colors.text, letterSpacing: -0.4 },
-  greetSub: { ...font.bodyMuted, marginTop: 2 },
-  doodle: { position: 'absolute', right: -8, top: -18 },
-  scoreCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    marginTop: spacing.lg,
-    ...shadow.card,
-  },
-  scoreMid: { flex: 1, marginLeft: spacing.md },
-  scoreLabel: { fontFamily: monoFamily, fontSize: 11, letterSpacing: 1, color: colors.textMuted },
-  scoreValue: { fontSize: 30, fontWeight: '900', color: colors.text, marginVertical: 1 },
-  scoreHint: { fontSize: 12.5, color: colors.textMuted, lineHeight: 17 },
-  scoreBlob: {
-    width: 62,
-    height: 62,
-    borderRadius: 20,
-    backgroundColor: colors.dark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spark1: { position: 'absolute', top: 8, right: 8 },
-  spark2: { position: 'absolute', bottom: 9, left: 9 },
-  scoreChevron: { marginLeft: spacing.xs },
-  sectionSpace: { marginTop: spacing.xl },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tileWrap: { width: '31.5%', marginBottom: spacing.md },
-  tile: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.soft,
-  },
-  tileIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  tileLabel: { fontSize: 12, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dark,
-    borderRadius: radius.lg,
-    padding: spacing.sm,
-    marginTop: spacing.lg,
-    overflow: 'hidden',
-  },
-  bannerPlus: {
-    width: 74,
-    height: 74,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  plusCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  bannerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 3, lineHeight: 18 },
-  feed: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.soft,
-  },
-  actRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg },
-  actBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  actAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  actAvatarText: { color: colors.onPrimary, fontWeight: '800', fontSize: 17 },
-  actName: { fontSize: 14.5, fontWeight: '800', color: colors.text },
-  actAction: { fontWeight: '600', color: colors.text },
-  actSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  actMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  actTime: { fontSize: 12, color: colors.textFaint },
-  actDot: { fontSize: 12, color: colors.textFaint, marginHorizontal: 6 },
-  actTag: { fontSize: 12, color: colors.primaryDark, fontWeight: '700' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 2, paddingBottom: 12 },
+  side: { width: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  brandRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  brand: { fontSize: 20, fontWeight: '800', color: colors.primary },
+  bellBadge: { position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: colors.bg },
+  bellBadgeText: { fontSize: 9, fontWeight: '800', color: colors.onPrimary },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 12 },
+  search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 11 },
+  searchText: { fontSize: 14.5, color: colors.textMuted },
+  filterBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  segRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 12 },
+  seg: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  segActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  segText: { fontSize: 14, fontWeight: '700', color: colors.textMuted },
+  segTextActive: { color: colors.onPrimary },
+  subRow: { paddingBottom: 8 },
+  subPill: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 999, paddingHorizontal: 15, paddingVertical: 9 },
+  subActive: { backgroundColor: colors.primary },
+  subInactive: { backgroundColor: colors.surfaceAlt },
+  subText: { fontSize: 13.5, fontWeight: '600' },
+  fab: { position: 'absolute', right: 16, bottom: layout.tabBarSpace + 4, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.primary, borderRadius: 999, paddingLeft: 8, paddingRight: 22, paddingVertical: 8, ...shadow.card },
+  fabCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  fabText: { fontSize: 16, fontWeight: '700', color: colors.onPrimary },
 });

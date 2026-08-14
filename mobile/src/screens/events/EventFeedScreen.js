@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import EventCard from '../../components/EventCard';
+import CelebrationOverlay from '../../components/CelebrationOverlay';
 import { Loading, EmptyState, Chip } from '../../components/ui';
 import { EventsApi, CATEGORIES } from '../../api/events';
 import { colors, spacing, font, radius, shadow, layout } from '../../theme';
@@ -14,6 +15,7 @@ export default function EventFeedScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState(null);
   const [error, setError] = useState('');
+  const [celebrating, setCelebrating] = useState(false);
 
   const load = useCallback(
     async (opts = {}) => {
@@ -42,6 +44,37 @@ export default function EventFeedScreen({ navigation }) {
   function onRefresh() {
     setRefreshing(true);
     load();
+  }
+
+  async function onInterested(event) {
+    try {
+      const { conversation, alreadyInterested } = await EventsApi.interest(event._id);
+      if (alreadyInterested) {
+        // Already interested → jump straight into the chat.
+        navigation.navigate('More', {
+          screen: 'Chat',
+          params: { conversationId: conversation._id, title: event.createdBy?.name || 'Chat' },
+        });
+      } else {
+        setCelebrating(true); // celebrate, then refresh so the card updates
+        load();
+      }
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    }
+  }
+
+  function onComment(event) {
+    // Open the post with the comment box focused.
+    navigation.navigate('EventDetail', { id: event._id, focusComment: true });
+  }
+
+  async function onShare(event) {
+    try {
+      await Share.share({ message: `${event.title}\n\n${event.description}\n\n— shared from Campus Bond` });
+    } catch {
+      /* dismissed */
+    }
   }
 
   return (
@@ -80,6 +113,9 @@ export default function EventFeedScreen({ navigation }) {
             <EventCard
               event={item}
               onPress={() => navigation.navigate('EventDetail', { id: item._id })}
+              onInterested={() => onInterested(item)}
+              onComment={() => onComment(item)}
+              onShare={() => onShare(item)}
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -100,6 +136,8 @@ export default function EventFeedScreen({ navigation }) {
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CreateEvent')}>
         <Ionicons name="add" size={30} color={colors.onPrimary} />
       </TouchableOpacity>
+
+      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
     </SafeAreaView>
   );
 }

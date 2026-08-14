@@ -22,7 +22,14 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Campus Bond needs access to your photos so you can add a picture to a lost & found or marketplace post.",
+          "cameraPermission": "Campus Bond needs camera access so you can take a photo for a lost & found or marketplace post."
+        }
+      ]
     ]
   }
 }

@@ -1,5 +1,7 @@
 import { validationResult } from 'express-validator';
 import Event from '../models/Event.js';
+import Conversation from '../models/Conversation.js';
+import Message from '../models/Message.js';
 
 function firstValidationError(req) {
   const errors = validationResult(req);
@@ -80,10 +82,29 @@ export async function getEvents(req, res) {
 export async function getEventById(req, res) {
   const event = await Event.findById(req.params.id)
     .populate('createdBy', 'name branch semester avatar')
-    .populate('applicants.user', 'name branch semester avatar');
+    .populate('applicants.user', 'name branch semester avatar')
+    .populate('comments.user', 'name branch avatar');
 
   if (!event) return res.status(404).json({ message: 'Event not found.' });
   res.status(200).json({ event });
+}
+
+/**
+ * Add a comment to a post.
+ * POST /api/events/:id/comments   body: { text }
+ */
+export async function addComment(req, res) {
+  const text = (req.body.text || '').trim();
+  if (!text) return res.status(400).json({ message: 'Comment cannot be empty.' });
+
+  const event = await Event.findById(req.params.id);
+  if (!event) return res.status(404).json({ message: 'Event not found.' });
+
+  event.comments.push({ user: req.user._id, text });
+  await event.save();
+  await event.populate('comments.user', 'name branch avatar');
+
+  res.status(201).json({ comments: event.comments });
 }
 
 /**
@@ -110,6 +131,48 @@ export async function applyToEvent(req, res) {
   await event.save();
 
   res.status(201).json({ message: 'Your request was sent. The poster will review it.', event });
+}
+
+/**
+ * One-tap "I'm interested": records interest and immediately opens a chat with
+ * the poster, auto-sending an intro message. Idempotent — tapping again just
+ * returns the existing conversation without resending.
+ * POST /api/events/:id/interest
+ */
+export async function expressInterest(req, res) {
+  const event = await Event.findById(req.params.id);
+  if (!event) return res.status(404).json({ message: 'Post not found.' });
+  if (String(event.createdBy) === String(req.user._id)) {
+    return res.status(400).json({ message: "You can't show interest in your own post." });
+  }
+
+  const already = event.applicants.some((a) => String(a.user) === String(req.user._id));
+  if (!already) {
+    event.applicants.push({ user: req.user._id, status: 'pending', message: "I'm interested" });
+    await event.save();
+  }
+
+  // Get or create the 1:1 conversation between the interested user and the poster.
+  let convo = await Conversation.findOne({
+    participants: { $all: [req.user._id, event.createdBy], $size: 2 },
+    event: event._id,
+  });
+  if (!convo) {
+    convo = await Conversation.create({ participants: [req.user._id, event.createdBy], event: event._id });
+  }
+
+  if (!already) {
+    const text = `👋 ${req.user.name} is interested in "${event.title}" and would love to discuss with you.`;
+    await Message.create({ conversation: convo._id, sender: req.user._id, text });
+    convo.lastMessage = text;
+    convo.lastMessageAt = new Date();
+    await convo.save();
+  }
+
+  await convo.populate('participants', 'name branch semester');
+  await convo.populate('event', 'title');
+
+  res.status(200).json({ conversation: convo, alreadyInterested: already });
 }
 
 /**

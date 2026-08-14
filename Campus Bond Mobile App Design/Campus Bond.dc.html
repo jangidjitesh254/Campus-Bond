@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#0B0B0B;font-family:-apple-system,system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}a{color:#53BDEB;text-decoration:none}a:hover{color:#21C063}::-webkit-scrollbar{width:0;height:0}</style></helmet>
+
+<div style="padding:56px 48px 72px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font:700 13px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.24em;text-transform:uppercase;color:#21C063">campus bond</div>
+    <div style="font:600 30px/1.15 -apple-system,system-ui,sans-serif;color:#E9EDEF">WhatsApp dark theme</div>
+    <div style="font:400 15px/1.6 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:660px;text-wrap:pretty">Near-black #0B0B0B canvas, #1D1F1F surfaces, bright green #21C063 as the single accent, #8696A0 secondary text, #53BDEB for links and tags. Feed posts now carry Interested, Comment and Share actions; the active tab sits in a green pill like WhatsApp's bottom bar.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:44px;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B;position:relative">
+          <div style="padding:54px 18px 8px;display:flex;align-items:center;justify-content:space-between;flex:none">
+            <span style="font:700 22px/1.1 -apple-system,system-ui,sans-serif;letter-spacing:-0.01em;color:#E9EDEF">Campus Bond</span>
+            <div style="display:flex;align-items:center;gap:20px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"></rect><circle cx="12" cy="13" r="3.4"></circle><path d="M9 6.5 10 4.5h4l1 2"></path></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#E9EDEF"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
+            </div>
+          </div>
+          <div style="padding:6px 14px 10px;flex:none">
+            <div style="background:#1D1F1F;border-radius:999px;padding:11px 16px;display:flex;align-items:center;gap:12px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <span style="font:400 15px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Search posts, people, clubs</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding:2px 14px 12px;flex:none;overflow:hidden">
+            <span style="flex:none;border-radius:999px;background:#103629;color:#21C063;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">All</span>
+            <span style="flex:none;border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Teams 3</span>
+            <span style="flex:none;border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Clubs</span>
+            <span style="flex:none;border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Lost 4</span>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <sc-for list="{{ feed }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:14px 16px 10px;border-bottom:1px solid #1F2C34">
+                <div style="flex:none;position:relative;width:42px;height:42px">
+                  <div style="width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ p.initials }}</div>
+                  <div style="position:absolute;right:-2px;bottom:-2px;width:15px;height:15px;border-radius:999px;background:#21C063;border:2px solid #0B0B0B;display:flex;align-items:center;justify-content:center">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 5 5L19 7"></path></svg>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ p.handle }}</span>
+                    <span style="font:400 13px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">{{ p.time }}</span>
+                    <div style="flex:1"></div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#8696A0"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+                  </div>
+                  <div style="font:400 15px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ p.body }}</div>
+                  <sc-if value="{{ p.tag }}" hint-placeholder-val="{{ true }}">
+                    <div style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#53BDEB">{{ p.tag }}</div>
+                  </sc-if>
+                  <sc-if value="{{ p.interestedCount }}" hint-placeholder-val="{{ true }}">
+                    <div style="font:400 13px/1.4 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:2px">{{ p.interestedCount }}</div>
+                  </sc-if>
+                  <div style="display:flex;align-items:center;gap:8px;padding:9px 0 2px">
+                    <div onClick="{{ p.onInterest }}" style="display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:999px;background:{{ p.intBg }};border:1px solid {{ p.intBd }};padding:7px 13px">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{ p.intFg }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12V4.8a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M11.8 10.6V4.4a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M14.6 10.8V6.4a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1a5 5 0 0 1-4.4-2.6L4 13.4a1.4 1.4 0 0 1 2.3-1.6L9 15"></path></svg>
+                      <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:{{ p.intFg }}">{{ p.intLabel }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #2A2F32;padding:7px 13px">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a7.9 7.9 0 0 1-11.4 7.1L4.5 20l1.4-4.4A7.9 7.9 0 1 1 20.5 11.6Z"></path></svg>
+                      <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ p.comments }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #2A2F32;padding:7px 13px">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V7a2 2 0 0 1 2-2h9l-2.6-2.4"></path><path d="M18 15v2a2 2 0 0 1-2 2H7l2.6 2.4"></path></svg>
+                      <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ p.shares }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="height:88px"></div>
+          </div>
+          <div style="position:absolute;right:18px;bottom:96px;width:56px;height:56px;border-radius:18px;background:#21C063;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.5)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"></path></svg>
+          </div>
+          <div style="flex:none;background:#0B0B0B;border-top:1px solid #1F2C34;padding:8px 10px 26px;display:flex;align-items:flex-start;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 4px">
+              <div style="background:#103629;border-radius:999px;padding:5px 18px;display:flex;align-items:center;justify-content:center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#21C063"><path d="M4 11 12 4.5 20 11v8.5h-6v-5h-4v5H4V11Z"></path></svg>
+              </div>
+              <span style="font:600 11.5px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Home</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Explore</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0;position:relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6Z"></path></svg>
+              <div style="position:absolute;top:0;right:2px;min-width:16px;height:16px;border-radius:999px;background:#21C063;display:flex;align-items:center;justify-content:center;font:700 10px/1 -apple-system,system-ui,sans-serif;color:#0B0B0B">4</div>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Chats</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2c-1.6-1-7.5-4.9-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 3c0 4.7-5.9 8.6-7.5 9.6Z"></path></svg>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Activity</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <div style="width:22px;height:22px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 9px/1 -apple-system,system-ui,sans-serif;color:#8696A0">YS</div>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">You</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Home feed — filter pills, Interested / Comment / Share on every post, green square FAB. Tap Interested to toggle.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:56px 16px 12px;display:flex;align-items:center;gap:14px;flex:none;border-bottom:1px solid #1F2C34">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 17px/1.1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Post</span>
+              <span style="font:400 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">248 views · 9 interested</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#8696A0"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <div style="display:flex;gap:12px;padding:14px 16px 12px;border-bottom:1px solid #1F2C34">
+              <div style="flex:none;width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">AR</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">asharao</span>
+                  <span style="font:400 13px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">· CSE · 15h</span>
+                </div>
+                <div style="font:400 16px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">Need 2 devs for Smart India Hackathon — React Native + backend.</div>
+                <div style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#53BDEB">#hackathon</div>
+                <div style="display:flex;align-items:center;gap:8px;padding-top:10px">
+                  <div style="display:flex;align-items:center;gap:6px;border-radius:999px;background:#21C063;padding:8px 14px">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12V4.8a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M11.8 10.6V4.4a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M14.6 10.8V6.4a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1a5 5 0 0 1-4.4-2.6L4 13.4a1.4 1.4 0 0 1 2.3-1.6L9 15"></path></svg>
+                    <span style="font:700 13px/1 -apple-system,system-ui,sans-serif;color:#0B0B0B">Interested</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #2A2F32;padding:8px 14px">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a7.9 7.9 0 0 1-11.4 7.1L4.5 20l1.4-4.4A7.9 7.9 0 1 1 20.5 11.6Z"></path></svg>
+                    <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">6</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #2A2F32;padding:8px 14px">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V7a2 2 0 0 1 2-2h9l-2.6-2.4"></path><path d="M18 15v2a2 2 0 0 1-2 2H7l2.6 2.4"></path></svg>
+                    <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #1F2C34">
+              <span style="font:600 14px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Comments</span>
+              <span style="font:400 13px/1 -apple-system,system-ui,sans-serif;color:#21C063">Most recent</span>
+            </div>
+            <sc-for list="{{ replies }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid #1F2C34;margin-left:{{ r.indent }}">
+                <div style="flex:none;width:36px;height:36px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ r.initials }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                  <div style="background:#1D1F1F;border-radius:4px 14px 14px 14px;padding:9px 13px;display:flex;flex-direction:column;gap:3px">
+                    <span style="font:600 13.5px/1.2 -apple-system,system-ui,sans-serif;color:#21C063">{{ r.handle }}</span>
+                    <span style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ r.body }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;padding:4px 4px 0">
+                    <span style="font:400 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ r.time }}</span>
+                    <span style="font:600 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Reply</span>
+                    <span style="font:400 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ r.likes }} likes</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="height:16px"></div>
+          </div>
+          <div style="flex:none;padding:8px 12px 26px;display:flex;align-items:center;gap:8px;background:#0B0B0B">
+            <div style="flex:1;background:#1D1F1F;border-radius:999px;padding:11px 14px;display:flex;align-items:center;gap:10px">
+              <span style="flex:1;font:400 15px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Comment as yashsingh</span>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m14 7 3.5 3.5-8 8-4.5 1 1-4.5 8-8Z"></path></svg>
+            </div>
+            <div style="width:44px;height:44px;border-radius:999px;background:#21C063;display:flex;align-items:center;justify-content:center;flex:none">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#0B0B0B"><path d="M3 20.5 21.5 12 3 3.5l3.4 7.3H14v2.4H6.4L3 20.5Z"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Post detail — comments as chat bubbles, green send button</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:56px 16px 10px;display:flex;align-items:center;gap:12px;flex:none">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <span style="font:600 17px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Lost &amp; Found</span>
+          </div>
+          <div style="padding:6px 14px 10px;flex:none">
+            <div style="background:#1D1F1F;border-radius:999px;padding:11px 16px;display:flex;align-items:center;gap:12px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <span style="font:400 15px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">earphones</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding:2px 14px 12px;flex:none">
+            <span style="border-radius:999px;background:#103629;color:#21C063;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">All</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Lost 4</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Found 2</span>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <sc-for list="{{ lostfound }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #1F2C34">
+                <div style="flex:none;width:40px;height:40px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ i.initials }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ i.handle }}</span>
+                    <span style="font:400 13px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">{{ i.time }}</span>
+                    <div style="flex:1"></div>
+                    <span style="border-radius:999px;background:{{ i.kindBg }};color:{{ i.kindFg }};padding:4px 10px;font:700 10px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.1em">{{ i.kind }}</span>
+                  </div>
+                  <div style="font:400 15px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ i.body }}</div>
+                  <div style="height:130px;border-radius:12px;background:#1D1F1F;display:flex;align-items:center;justify-content:center;margin-top:4px">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3B4A54" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"></rect><circle cx="8.5" cy="10" r="1.6"></circle><path d="m3 17 5.5-4.5L14 17"></path><path d="m13 15 3-2.5 5 4.5"></path></svg>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;padding-top:2px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+                    <span style="font:400 13.5px/1.4 -apple-system,system-ui,sans-serif;color:#8696A0">{{ i.where }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;padding-top:8px">
+                    <div style="display:flex;align-items:center;gap:6px;border-radius:999px;background:#103629;padding:8px 14px">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#21C063" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6Z"></path></svg>
+                      <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#21C063">Message</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #2A2F32;padding:8px 14px">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V7a2 2 0 0 1 2-2h9l-2.6-2.4"></path><path d="M18 15v2a2 2 0 0 1-2 2H7l2.6 2.4"></path></svg>
+                      <span style="font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Share</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="height:24px"></div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Lost &amp; Found — LOST in amber, FOUND in green pills</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B141A">
+          <div style="padding:54px 14px 10px;display:flex;align-items:center;gap:10px;background:#161717;flex:none">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <div style="width:38px;height:38px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">NV</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 16px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">nikhilverma</span>
+              <span style="font:400 12px/1 -apple-system,system-ui,sans-serif;color:#21C063">online</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5a2 2 0 0 1 2-2h1.5l2 4-2 1.5a10 10 0 0 0 5 5L14 13l4 2v1.5a2 2 0 0 1-2 2A13.5 13.5 0 0 1 4 6.5Z"></path></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#E9EDEF" style="margin-left:4px"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+          </div>
+          <div style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:16px 12px">
+            <div style="align-self:center;background:#1D282F;border-radius:8px;padding:5px 12px;font:400 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0;margin-bottom:6px">TODAY</div>
+            <sc-for list="{{ chat }}" as="m" hint-placeholder-count="5">
+              <div style="display:flex;justify-content:{{ m.justify }}">
+                <div style="max-width:76%;padding:8px 11px 6px;border-radius:{{ m.radius }};background:{{ m.bg }};display:flex;align-items:flex-end;gap:8px">
+                  <span style="font:400 15px/1.4 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ m.text }}</span>
+                  <span style="flex:none;font:400 11px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-bottom:2px">{{ m.time }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:none;padding:8px 10px 26px;display:flex;align-items:center;gap:8px;background:#0B141A">
+            <div style="flex:1;background:#1D1F1F;border-radius:999px;padding:11px 14px;display:flex;align-items:center;gap:12px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 14.5a4 4 0 0 0 6 0"></path><circle cx="9.2" cy="10" r="0.9" fill="#8696A0"></circle><circle cx="14.8" cy="10" r="0.9" fill="#8696A0"></circle></svg>
+              <span style="flex:1;font:400 15px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Message</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7.5 8.5 14a3 3 0 0 0 4.2 4.2l6.3-6.3a5 5 0 0 0-7-7L5.5 11.4"></path></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"></rect><circle cx="12" cy="13" r="3.4"></circle></svg>
+            </div>
+            <div style="width:46px;height:46px;border-radius:999px;background:#21C063;display:flex;align-items:center;justify-content:center;flex:none">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a2.6 2.6 0 0 1 2.6 2.6v5a2.6 2.6 0 0 1-5.2 0v-5A2.6 2.6 0 0 1 12 3.5Z"></path><path d="M6 11a6 6 0 0 0 12 0"></path><path d="M12 17v3.5"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Chat — #005C4B outgoing bubbles, #1F2C34 incoming, mic button</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:54px 16px 12px;display:flex;align-items:center;justify-content:space-between;flex:none;border-bottom:1px solid #1F2C34">
+            <span style="font:400 16px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Cancel</span>
+            <span style="font:600 17px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">New post</span>
+            <span style="font:600 16px/1 -apple-system,system-ui,sans-serif;color:#21C063">Draft</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;padding:18px 16px 0;gap:16px">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">YS</div>
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">yashsingh</span>
+                <div style="display:flex;align-items:center;gap:5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#21C063" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.8 2.8L16 9.5"></path></svg>
+                  <span style="font:400 12.5px/1 -apple-system,system-ui,sans-serif;color:#21C063">Verified · CSE 2027</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#1D1F1F;border-radius:16px;padding:14px 16px;min-height:120px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:flex-start;gap:2px">
+                <div style="width:1.5px;height:20px;background:#21C063"></div>
+                <span style="font:400 16px/1.45 -apple-system,system-ui,sans-serif;color:#8696A0">What's happening on campus?</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#8696A0">POST TYPE</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <span style="border-radius:999px;background:#103629;color:#21C063;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Team request</span>
+                <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Notice</span>
+                <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Lost</span>
+                <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Sell</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:22px;padding-top:4px">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"></rect><circle cx="8.5" cy="10" r="1.6"></circle><path d="m3 17 5.5-4.5L14 17"></path></svg>
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"></rect><circle cx="12" cy="13" r="3.4"></circle><path d="M9 6.5 10 4.5h4l1 2"></path></svg>
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 7 20M17 4l-2 16M4.5 9h15M3.5 15h15"></path></svg>
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 16px 26px;display:flex;align-items:center;gap:12px;border-top:1px solid #1F2C34">
+            <div style="flex:1;display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3.5 12h17M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"></path></svg>
+              <span style="font:400 13.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0">Anyone on campus</span>
+            </div>
+            <div style="background:#21C063;color:#0B0B0B;padding:12px 26px;border-radius:999px;font:700 15px/1 -apple-system,system-ui,sans-serif">Post</div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Compose — post type pills, green Post button</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:56px 16px 12px;display:flex;align-items:center;gap:14px;flex:none;border-bottom:1px solid #1F2C34">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <span style="flex:1;font:600 17px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Team request</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#8696A0"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <div style="display:flex;gap:12px;padding:16px 16px 14px;border-bottom:1px solid #1F2C34">
+              <div style="flex:none;width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">AR</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">asharao</span>
+                  <span style="font:400 13px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">· CSE · 15h</span>
+                </div>
+                <div style="font:400 16px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">Need 2 devs for Smart India Hackathon — React Native + backend.</div>
+                <div style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#53BDEB">#hackathon</div>
+              </div>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px;border-bottom:1px solid #1F2C34">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#21C063">OPEN ROLES</div>
+              <sc-for list="{{ roles }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <span style="font:600 15px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ r.title }}</span>
+                    <span style="font:400 13.5px/1.3 -apple-system,system-ui,sans-serif;color:#8696A0">{{ r.detail }}</span>
+                  </div>
+                  <span style="font:600 12.5px/1 -apple-system,system-ui,sans-serif;color:{{ r.slotColor }}">{{ r.slots }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:11px;border-bottom:1px solid #1F2C34">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#21C063">DETAILS</div>
+              <sc-for list="{{ details }}" as="d" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;gap:16px">
+                  <span style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#8696A0">{{ d.k }}</span>
+                  <span style="font:400 14.5px/1.4 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-align:right">{{ d.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:16px;display:flex;align-items:center;gap:10px">
+              <div style="display:flex">
+                <div style="width:28px;height:28px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;display:flex;align-items:center;justify-content:center;font:600 9px/1 -apple-system,system-ui,sans-serif;color:#8696A0">NV</div>
+                <div style="width:28px;height:28px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;margin-left:-9px;display:flex;align-items:center;justify-content:center;font:600 9px/1 -apple-system,system-ui,sans-serif;color:#8696A0">PJ</div>
+                <div style="width:28px;height:28px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;margin-left:-9px;display:flex;align-items:center;justify-content:center;font:600 9px/1 -apple-system,system-ui,sans-serif;color:#8696A0">KS</div>
+              </div>
+              <span style="font:400 13.5px/1.4 -apple-system,system-ui,sans-serif;color:#8696A0">9 students are interested</span>
+            </div>
+          </div>
+          <div style="flex:none;padding:12px 16px 26px;display:flex;align-items:center;gap:10px;border-top:1px solid #1F2C34">
+            <div onClick="{{ toggleInterest }}" style="flex:1;background:{{ interestBg }};border:1px solid {{ interestBd }};border-radius:999px;padding:14px 0;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{ interestFg }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12V4.8a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M11.8 10.6V4.4a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M14.6 10.8V6.4a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1a5 5 0 0 1-4.4-2.6L4 13.4a1.4 1.4 0 0 1 2.3-1.6L9 15"></path></svg>
+              <span style="font:700 15px/1 -apple-system,system-ui,sans-serif;color:{{ interestFg }}">{{ interestLabel }}</span>
+            </div>
+            <div style="width:50px;height:50px;border-radius:999px;background:#1D1F1F;display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#21C063" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6Z"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Requirement detail — Interested is the primary green action (tap to toggle)</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B;justify-content:flex-end">
+          <div style="flex:1;background:#0B0B0B"></div>
+          <div style="flex:none;background:#1D1F1F;border-radius:20px 20px 0 0;display:flex;flex-direction:column">
+            <div style="padding:12px 0 4px;display:flex;justify-content:center">
+              <div style="width:38px;height:4px;border-radius:999px;background:#2A3942"></div>
+            </div>
+            <div style="padding:8px 18px 16px;display:flex;flex-direction:column;gap:6px;align-items:center">
+              <div style="width:54px;height:54px;border-radius:999px;background:#103629;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#21C063" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12V4.8a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M11.8 10.6V4.4a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M14.6 10.8V6.4a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1a5 5 0 0 1-4.4-2.6L4 13.4a1.4 1.4 0 0 1 2.3-1.6L9 15"></path></svg>
+              </div>
+              <span style="font:600 18px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">Send your interest</span>
+              <span style="font:400 13.5px/1.45 -apple-system,system-ui,sans-serif;color:#8696A0;text-align:center;max-width:280px;text-wrap:pretty">asharao will see your year, branch and skills before accepting.</span>
+            </div>
+            <div style="padding:0 18px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#8696A0">PICK A ROLE</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <span style="border-radius:999px;background:#103629;color:#21C063;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">React Native</span>
+                <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Backend</span>
+                <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 16px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Either</span>
+              </div>
+            </div>
+            <div style="padding:0 18px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#8696A0">ADD A NOTE</div>
+              <div style="border-radius:16px;background:#0B0B0B;padding:14px 16px;min-height:62px;font:400 15px/1.45 -apple-system,system-ui,sans-serif;color:#8696A0">Built two RN apps, can share GitHub…</div>
+            </div>
+            <div style="padding:0 18px 26px;display:flex;flex-direction:column;gap:8px">
+              <div style="background:#21C063;color:#0B0B0B;border-radius:999px;padding:15px 0;text-align:center;font:700 15px/1 -apple-system,system-ui,sans-serif">Send interest</div>
+              <div style="text-align:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding:8px 0">Not now</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Interest sheet — role pick, optional note</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:56px 16px 12px;display:flex;align-items:center;gap:14px;flex:none">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 17px/1.1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Interested</span>
+              <span style="font:400 12px/1 -apple-system,system-ui,sans-serif;color:#8696A0">9 students · 2 slots left</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#8696A0"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+          </div>
+          <div style="display:flex;gap:8px;padding:4px 14px 12px;flex:none">
+            <span style="border-radius:999px;background:#103629;color:#21C063;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">All 9</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Shortlist 3</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Accepted 1</span>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <sc-for list="{{ interested }}" as="a" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #1F2C34">
+                <div style="flex:none;width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ a.initials }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:600 15.5px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ a.handle }}</span>
+                    <span style="font:400 13px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">{{ a.meta }}</span>
+                    <div style="flex:1"></div>
+                    <span style="font:700 10px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.1em;color:#21C063">{{ a.role }}</span>
+                  </div>
+                  <div style="font:400 14.5px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ a.note }}</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:2px">
+                    <sc-for list="{{ a.skills }}" as="s" hint-placeholder-count="2">
+                      <span style="border-radius:999px;background:#1D1F1F;color:#8696A0;padding:5px 11px;font:400 12px/1 -apple-system,system-ui,sans-serif">{{ s }}</span>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;gap:8px;padding-top:8px">
+                    <div style="border-radius:999px;background:{{ a.acceptBg }};border:1px solid {{ a.acceptBd }};color:{{ a.acceptFg }};padding:9px 20px;font:700 13.5px/1 -apple-system,system-ui,sans-serif">{{ a.acceptLabel }}</div>
+                    <div style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:9px 20px;font:600 13.5px/1 -apple-system,system-ui,sans-serif">Message</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="height:24px"></div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Owner view — who is interested, accept or message</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:54px 18px 10px;display:flex;align-items:center;justify-content:space-between;flex:none">
+            <span style="font:700 22px/1.1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Activity</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#E9EDEF"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
+          </div>
+          <div style="display:flex;gap:8px;padding:6px 14px 12px;flex:none">
+            <span style="border-radius:999px;background:#103629;color:#21C063;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">All</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Requests 2</span>
+            <span style="border-radius:999px;border:1px solid #2A2F32;color:#8696A0;padding:7px 15px;font:500 14px/1 -apple-system,system-ui,sans-serif">Comments</span>
+          </div>
+          <div style="flex:1;overflow:auto">
+            <sc-for list="{{ activity }}" as="n" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #1F2C34;align-items:center">
+                <div style="flex:none;position:relative;width:42px;height:42px">
+                  <div style="width:42px;height:42px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 14px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ n.initials }}</div>
+                  <div style="position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:999px;background:#21C063;border:2px solid #0B0B0B;display:flex;align-items:center;justify-content:center">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12V4.8a1.4 1.4 0 0 1 2.8 0V11"></path><path d="M14.6 10.8V6.4a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1a5 5 0 0 1-4.4-2.6L4 13.4a1.4 1.4 0 0 1 2.3-1.6L9 15"></path></svg>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:600 15px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ n.handle }}</span>
+                    <span style="font:400 12.5px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">{{ n.time }}</span>
+                  </div>
+                  <div style="font:400 14px/1.45 -apple-system,system-ui,sans-serif;color:#8696A0;text-wrap:pretty">{{ n.text }}</div>
+                </div>
+                <sc-if value="{{ n.cta }}" hint-placeholder-val="{{ true }}">
+                  <div style="flex:none;border-radius:999px;background:#21C063;color:#0B0B0B;padding:8px 16px;font:700 13px/1 -apple-system,system-ui,sans-serif">{{ n.cta }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <div style="height:24px"></div>
+          </div>
+          <div style="flex:none;background:#0B0B0B;border-top:1px solid #1F2C34;padding:8px 10px 26px;display:flex;align-items:flex-start;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4.5 20 11v8.5h-6v-5h-4v5H4V11Z"></path></svg>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Home</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Explore</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8696A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6Z"></path></svg>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">Chats</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 4px">
+              <div style="background:#103629;border-radius:999px;padding:5px 18px;display:flex;align-items:center;justify-content:center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#21C063"><path d="M12 20.2c-1.6-1-7.5-4.9-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 3c0 4.7-5.9 8.6-7.5 9.6Z"></path></svg>
+              </div>
+              <span style="font:600 11.5px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">Activity</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px 0">
+              <div style="width:22px;height:22px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 9px/1 -apple-system,system-ui,sans-serif;color:#8696A0">YS</div>
+              <span style="font:400 11.5px/1 -apple-system,system-ui,sans-serif;color:#8696A0;padding-top:5px">You</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Activity — interest requests and accepted confirmations</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" dark="{{ true }}" hint-size="390px,844px">
+        <div style="height:100%;display:flex;flex-direction:column;background:#0B0B0B">
+          <div style="padding:56px 16px 12px;display:flex;align-items:center;gap:14px;flex:none;border-bottom:1px solid #1F2C34">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E9EDEF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m11 6-6 6 6 6"></path></svg>
+            <span style="flex:1;font:600 17px/1 -apple-system,system-ui,sans-serif;color:#E9EDEF">SIH Team</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#8696A0"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+          </div>
+          <div style="flex:1;overflow:auto;display:flex;flex-direction:column">
+            <div style="padding:26px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:8px;border-bottom:1px solid #1F2C34">
+              <div style="display:flex">
+                <div style="width:46px;height:46px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;display:flex;align-items:center;justify-content:center;font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">AR</div>
+                <div style="width:46px;height:46px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;margin-left:-12px;display:flex;align-items:center;justify-content:center;font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">NV</div>
+                <div style="width:46px;height:46px;border-radius:999px;background:#2A3942;border:2px solid #0B0B0B;margin-left:-12px;display:flex;align-items:center;justify-content:center;font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">PJ</div>
+              </div>
+              <span style="font:600 17px/1.3 -apple-system,system-ui,sans-serif;color:#E9EDEF;padding-top:6px">Team is complete</span>
+              <span style="font:400 13.5px/1.45 -apple-system,system-ui,sans-serif;color:#8696A0;text-align:center;max-width:270px;text-wrap:pretty">Both roles filled. A group chat was created for the three of you.</span>
+              <div style="display:flex;gap:8px;padding-top:12px">
+                <div style="border-radius:999px;background:#21C063;color:#0B0B0B;padding:12px 22px;font:700 13.5px/1 -apple-system,system-ui,sans-serif;white-space:nowrap">Open group chat</div>
+                <div style="border-radius:999px;border:1px solid #2A2F32;color:#E9EDEF;padding:12px 22px;font:600 13.5px/1 -apple-system,system-ui,sans-serif;white-space:nowrap">Close post</div>
+              </div>
+            </div>
+            <div style="padding:16px 16px 8px;font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#21C063">MEMBERS</div>
+            <sc-for list="{{ members }}" as="m" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #1F2C34">
+                <div style="flex:none;width:40px;height:40px;border-radius:999px;background:#2A3942;display:flex;align-items:center;justify-content:center;font:600 13px/1 -apple-system,system-ui,sans-serif;color:#8696A0">{{ m.initials }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                  <span style="font:600 15px/1.2 -apple-system,system-ui,sans-serif;color:#E9EDEF">{{ m.handle }}</span>
+                  <span style="font:400 13.5px/1.2 -apple-system,system-ui,sans-serif;color:#8696A0">{{ m.role }}</span>
+                </div>
+                <span style="font:700 10px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.1em;color:{{ m.tagColor }}">{{ m.tag }}</span>
+              </div>
+            </sc-for>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:600 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:0.16em;color:#21C063">NEXT</div>
+              <sc-for list="{{ nextSteps }}" as="s" hint-placeholder-count="2">
+                <div style="display:flex;gap:12px;align-items:flex-start">
+                  <div style="width:17px;height:17px;border-radius:999px;border:1.5px solid #2A2F32;flex:none;margin-top:2px"></div>
+                  <div style="flex:1;font:400 14.5px/1.45 -apple-system,system-ui,sans-serif;color:#E9EDEF;text-wrap:pretty">{{ s }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div style="font:400 13px/1.5 -apple-system,system-ui,sans-serif;color:#8696A0;max-width:390px">Accepted — team roster and group chat entry</div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#21C063&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#21C063&quot;,&quot;#00A884&quot;,&quot;#25D366&quot;,&quot;#53BDEB&quot;],&quot;section&quot;:&quot;Theme&quot;},&quot;accentSoft&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#103629&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#103629&quot;,&quot;#0B2E24&quot;,&quot;#1D2B27&quot;],&quot;section&quot;:&quot;Theme&quot;},&quot;showInterestCounts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Feed&quot;},&quot;threadConnectors&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comments&quot;}}">
+class Component extends DCLogic {
+  state = { interestedPosts: {}, interested: false };
+  renderVals() {
+    const accent = this.props.accent ?? '#21C063';
+    const accentSoft = this.props.accentSoft ?? '#103629';
+    const raw = [
+      { initials: 'AR', handle: 'asharao', time: '· CSE · 15h', body: 'Need 2 devs for Smart India Hackathon — React Native + backend.', tag: '#hackathon', base: 9, comments: 6, shares: 3 },
+      { initials: 'MK', handle: 'meerak', time: '· MBA · 2h', body: 'Selling a barely used graphing calculator. DM if anyone in second year needs one before midterms.', tag: '', base: 4, comments: 4, shares: 1 },
+      { initials: 'TD', handle: 'tanmayd', time: '· Civil · 5h', body: 'Library extended hours start tonight. Reading room 3 is open till 2am all week.', tag: '#campus', base: 26, comments: 19, shares: 24 },
+      { initials: 'SB', handle: 'sanabaig', time: '· Design · 8h', body: 'Photo walk this Saturday, 6am at the east gate. Bring anything with a lens.', tag: '#clubs', base: 12, comments: 11, shares: 2 },
+      { initials: 'RV', handle: 'rohitv', time: '· CSE · 1d', body: 'Two seats left in the Pune carpool on Friday evening.', tag: '', base: 3, comments: 7, shares: 0 }
+    ];
+    const showCounts = this.props.showInterestCounts ?? true;
+    const feed = raw.map((p, i) => {
+      const on = !!this.state.interestedPosts[i];
+      const n = on ? p.base + 1 : p.base;
+      return Object.assign({}, p, {
+        interestedCount: showCounts ? (n + ' interested · ' + p.comments + ' comments') : '',
+        intLabel: on ? 'Interested' : 'Interested',
+        intBg: on ? accent : 'transparent',
+        intBd: on ? accent : '#2A2F32',
+        intFg: on ? '#0B0B0B' : '#8696A0',
+        onInterest: () => this.setState(s => ({ interestedPosts: Object.assign({}, s.interestedPosts, { [i]: !s.interestedPosts[i] }) }))
+      });
+    });
+    const connectors = this.props.threadConnectors ?? true;
+    const replies = [
+      { initials: 'NV', handle: 'nikhilverma', time: '14h', body: 'I can do the backend. Node + Postgres, shipped two hackathon projects last sem.', likes: 8, indent: '0px' },
+      { initials: 'PJ', handle: 'priyajain', time: '13h', body: 'React Native here. Do you already have a problem statement picked?', likes: 5, indent: connectors ? '20px' : '0px' },
+      { initials: 'AR', handle: 'asharao', time: '12h', body: 'Shortlisted two under smart mobility. Sending both tonight.', likes: 3, indent: connectors ? '40px' : '0px' },
+      { initials: 'KS', handle: 'kabirshah', time: '9h', body: 'Following — will join if a slot opens up.', likes: 1, indent: '0px' }
+    ];
+    const lostfound = [
+      { initials: 'AV', handle: 'ananyav', time: '20m', kind: 'LOST', kindBg: '#3A2A10', kindFg: '#F5B02E', body: 'Black wired earphones, left in the H2 lecture hall after the 3pm class.', where: 'Block H · second floor' },
+      { initials: 'DM', handle: 'devmehta', time: '1h', kind: 'FOUND', kindBg: accentSoft, kindFg: accent, body: 'Steel water bottle with a blue sticker, sitting on the canteen counter.', where: 'Main canteen' },
+      { initials: 'RS', handle: 'riyas', time: '4h', kind: 'LOST', kindBg: '#3A2A10', kindFg: '#F5B02E', body: 'ID card — name starts with S, ECE third year. Please message if seen.', where: 'Near the sports complex' }
+    ];
+    const chat = [
+      { text: 'Hey — saw your hackathon post. Backend slot still open?', mine: false, time: '12:18' },
+      { text: 'Yes, one left. What stack do you work in?', mine: true, time: '12:20' },
+      { text: 'Node, Postgres, some Redis. I can share a repo.', mine: false, time: '12:22' },
+      { text: 'Perfect. Team call tonight at 9, I will send the link.', mine: true, time: '12:31' },
+      { text: 'Works for me.', mine: false, time: '12:33' }
+    ].map(m => ({
+      text: m.text,
+      time: m.time,
+      justify: m.mine ? 'flex-end' : 'flex-start',
+      bg: m.mine ? '#005C4B' : '#1F2C34',
+      radius: m.mine ? '12px 4px 12px 12px' : '4px 12px 12px 12px'
+    }));
+    const roles = [
+      { title: 'React Native dev', detail: 'Screens + offline sync', slots: '1 slot', slotColor: accent },
+      { title: 'Backend dev', detail: 'Node or Django, REST', slots: '1 slot', slotColor: accent },
+      { title: 'UI designer', detail: 'Filled by asharao', slots: 'Filled', slotColor: '#8696A0' }
+    ];
+    const details = [
+      { k: 'Event', v: 'Smart India Hackathon' },
+      { k: 'Theme', v: 'Smart mobility' },
+      { k: 'Team size', v: '4 of 6 filled' },
+      { k: 'Applications close', v: '22 Aug, 6pm' },
+      { k: 'Mode', v: 'On campus · Block H lab' }
+    ];
+    const interested = [
+      { initials: 'NV', handle: 'nikhilverma', meta: '· ECE · 14h', role: 'BACKEND', note: 'Node + Postgres, shipped two hackathon projects last sem.', skills: ['Node', 'Postgres', 'Redis'], accepted: true },
+      { initials: 'PJ', handle: 'priyajain', meta: '· CSE · 13h', role: 'REACT NATIVE', note: 'Built two RN apps, can share GitHub.', skills: ['React Native', 'Expo'], accepted: false },
+      { initials: 'KS', handle: 'kabirshah', meta: '· ECE · 9h', role: 'EITHER', note: 'First hackathon, happy to take whatever is left over.', skills: ['Python', 'Figma'], accepted: false },
+      { initials: 'AV', handle: 'ananyav', meta: '· IT · 6h', role: 'BACKEND', note: 'Django, and I can set up deployment on day one.', skills: ['Django', 'Docker'], accepted: false }
+    ].map(a => Object.assign({}, a, {
+      acceptLabel: a.accepted ? 'Accepted' : 'Accept',
+      acceptBg: a.accepted ? 'transparent' : accent,
+      acceptBd: a.accepted ? accent : accent,
+      acceptFg: a.accepted ? accent : '#0B0B0B'
+    }));
+    const activity = [
+      { initials: 'PJ', handle: 'priyajain', time: '13h', text: 'is interested in React Native on your hackathon post', cta: 'Review' },
+      { initials: 'AV', handle: 'ananyav', time: '6h', text: 'is interested in Backend — Django, deployment on day one', cta: 'Review' },
+      { initials: 'AR', handle: 'asharao', time: '5h', text: 'accepted you for the Backend role. Group chat is open.', cta: '' },
+      { initials: 'KS', handle: 'kabirshah', time: '2h', text: 'commented: Following — will join if a slot opens up.', cta: '' }
+    ];
+    const members = [
+      { initials: 'AR', handle: 'asharao', role: 'UI designer · CSE', tag: 'OWNER', tagColor: '#8696A0' },
+      { initials: 'NV', handle: 'nikhilverma', role: 'Backend · ECE', tag: 'ACCEPTED', tagColor: accent },
+      { initials: 'PJ', handle: 'priyajain', role: 'React Native · CSE', tag: 'ACCEPTED', tagColor: accent }
+    ];
+    const nextSteps = ['Lock the problem statement before Friday', 'Book Block H lab for the weekend build'];
+    const mine = this.state.interested;
+    return {
+      w: 390, h: 844, feed, replies, lostfound, chat,
+      roles, details, interested, activity, members, nextSteps,
+      interestLabel: mine ? 'Interest sent' : "I'm interested",
+      interestBg: mine ? 'transparent' : accent,
+      interestBd: mine ? accent : accent,
+      interestFg: mine ? accent : '#0B0B0B',
+      toggleInterest: () => this.setState(s => ({ interested: !s.interested }))
+    };
+  }
+}
+</script>
+</body>
+</html>

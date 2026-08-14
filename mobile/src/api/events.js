@@ -5,6 +5,9 @@ export const EventsApi = {
   get: (id) => api.get(`/events/${id}`).then((r) => r.data.event),
   create: (payload) => api.post('/events', payload).then((r) => r.data.event),
   apply: (id, message) => api.post(`/events/${id}/apply`, { message }).then((r) => r.data),
+  // One-tap interest: records interest + auto-messages the poster. Returns
+  // { conversation, alreadyInterested }.
+  interest: (id) => api.post(`/events/${id}/interest`).then((r) => r.data),
   review: (id, applicantId, status) =>
     api.patch(`/events/${id}/applicants/${applicantId}`, { status }).then((r) => r.data.event),
   setStatus: (id, status) =>
@@ -12,6 +15,7 @@ export const EventsApi = {
   remove: (id) => api.delete(`/events/${id}`).then((r) => r.data),
   myCreated: () => api.get('/events/me/created').then((r) => r.data.events),
   myApplications: () => api.get('/events/me/applications').then((r) => r.data.applications),
+  addComment: (id, text) => api.post(`/events/${id}/comments`, { text }).then((r) => r.data.comments),
 };
 
 export const CATEGORIES = [

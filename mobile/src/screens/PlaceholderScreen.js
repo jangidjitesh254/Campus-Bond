@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     right: -6,
     fontSize: 190,
     fontWeight: '900',
-    color: 'rgba(124,192,61,0.10)',
+    color: 'rgba(245,245,245,0.05)',
     letterSpacing: -6,
   },
   title: {

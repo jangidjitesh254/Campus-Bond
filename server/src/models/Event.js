@@ -18,6 +18,14 @@ const applicantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const commentSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    text: { type: String, required: true, trim: true },
+  },
+  { timestamps: true }
+);
+
 const eventSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -38,13 +46,16 @@ const eventSchema = new mongoose.Schema(
     status: { type: String, enum: ['open', 'closed'], default: 'open' },
 
     applicants: [applicantSchema],
+    comments: [commentSchema],
   },
   { timestamps: true }
 );
 
 // Handy virtual: how many applicants have been approved so far.
 eventSchema.virtual('approvedCount').get(function () {
-  return this.applicants.filter((a) => a.status === 'approved').length;
+  // `applicants` may be undefined when only a subset of fields is populated
+  // (e.g. a Conversation populating just the event title).
+  return (this.applicants || []).filter((a) => a.status === 'approved').length;
 });
 
 eventSchema.set('toJSON', { virtuals: true });

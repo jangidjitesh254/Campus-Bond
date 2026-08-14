@@ -1,61 +1,85 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Chip } from './ui';
 import { categoryTone } from '../api/events';
+import { useAuth } from '../context/AuthContext';
 import { colors, spacing, font, radius } from '../theme';
 
-/** A single event/team-request card in the feed. Mirrors Sunstone's event cards. */
-export default function EventCard({ event, onPress }) {
+/** A single event/team-request card in the feed, with inline post actions. */
+export default function EventCard({ event, onPress, onInterested, onComment, onShare }) {
+  const { user } = useAuth();
   const owner = event.createdBy || {};
-  const applicants = event.applicants?.length || 0;
+  const isOwner = String(owner._id || event.createdBy) === String(user?._id);
+  const interested = (event.applicants || []).some(
+    (a) => String(a.user?._id || a.user) === String(user?._id)
+  );
 
   return (
-    <Card style={styles.card} onPress={onPress}>
-      <View style={styles.topRow}>
-        <Chip label={event.category} tone={categoryTone[event.category] || 'default'} />
-        <Chip
-          label={event.status === 'open' ? 'Open' : 'Closed'}
-          tone={event.status === 'open' ? 'success' : 'muted'}
-        />
-      </View>
+    <Card style={styles.card}>
+      <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+        <View style={styles.topRow}>
+          <Chip label={event.category} tone={categoryTone[event.category] || 'default'} />
+          <Chip
+            label={event.status === 'open' ? 'Open' : 'Closed'}
+            tone={event.status === 'open' ? 'success' : 'muted'}
+          />
+        </View>
 
-      <Text style={styles.title} numberOfLines={2}>
-        {event.title}
-      </Text>
-
-      <View style={styles.metaRow}>
-        <Ionicons name="person-outline" size={14} color={colors.textMuted} />
-        <Text style={styles.meta}>
-          {owner.name || 'Student'}
-          {owner.branch ? ` · ${owner.branch}` : ''}
-          {owner.semester ? ` · Sem ${owner.semester}` : ''}
+        <Text style={styles.title} numberOfLines={2}>
+          {event.title}
         </Text>
-      </View>
 
-      {event.skillsNeeded?.length ? (
-        <View style={styles.skills}>
-          {event.skillsNeeded.slice(0, 4).map((s, i) => (
-            <View key={i} style={styles.skill}>
-              <Text style={styles.skillText}>{s}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      <View style={styles.footer}>
-        <View style={styles.footItem}>
-          <Ionicons name="people-outline" size={15} color={colors.primary} />
-          <Text style={styles.footText}>
-            {event.teamSize ? `${event.teamSize} needed` : 'Team'}
+        <View style={styles.metaRow}>
+          <Ionicons name="person-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.meta}>
+            {owner.name || 'Student'}
+            {owner.branch ? ` · ${owner.branch}` : ''}
+            {owner.semester ? ` · Sem ${owner.semester}` : ''}
           </Text>
         </View>
-        <View style={styles.footItem}>
-          <Ionicons name="mail-open-outline" size={15} color={colors.primary} />
-          <Text style={styles.footText}>
-            {applicants} {applicants === 1 ? 'response' : 'responses'}
+
+        {event.skillsNeeded?.length ? (
+          <View style={styles.skills}>
+            {event.skillsNeeded.slice(0, 4).map((s, i) => (
+              <View key={i} style={styles.skill}>
+                <Text style={styles.skillText}>{s}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </TouchableOpacity>
+
+      {/* Inline action bar — always visible on the post */}
+      <View style={styles.actions}>
+        {isOwner ? (
+          <View style={[styles.interest, styles.interestMuted]}>
+            <Ionicons name="megaphone-outline" size={16} color={colors.textMuted} />
+            <Text style={styles.interestMutedText}>Your post</Text>
+          </View>
+        ) : interested ? (
+          <TouchableOpacity style={[styles.interest, styles.interestDone]} onPress={onInterested}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+            <Text style={styles.interestDoneText}>Interested</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.interest} onPress={onInterested} activeOpacity={0.85}>
+            <Ionicons name="hand-left" size={15} color={colors.onPrimary} />
+            <Text style={styles.interestText}>I'm interested</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.iconBtn} onPress={onComment}>
+          <Ionicons name="chatbubble-outline" size={19} color={colors.text} />
+          <Text style={styles.iconBtnText}>
+            {event.comments?.length ? event.comments.length : ''} Comment
           </Text>
-        </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.iconBtn} onPress={onShare}>
+          <Ionicons name="share-social-outline" size={19} color={colors.text} />
+          <Text style={styles.iconBtnText}>Share</Text>
+        </TouchableOpacity>
       </View>
     </Card>
   );
@@ -67,22 +91,38 @@ const styles = StyleSheet.create({
   title: { ...font.h3, marginBottom: spacing.sm },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   meta: { ...font.small, marginLeft: 6 },
-  skills: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md },
+  skills: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
   skill: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
     marginRight: spacing.sm,
     marginBottom: spacing.sm,
   },
-  skillText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
-  footer: {
+  skillText: { fontSize: 12, color: colors.primaryDark, fontWeight: '600' },
+  actions: {
     flexDirection: 'row',
+    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: spacing.md,
+    marginTop: spacing.xs,
   },
-  footItem: { flexDirection: 'row', alignItems: 'center', marginRight: spacing.xl },
-  footText: { ...font.small, color: colors.primary, marginLeft: 5, fontWeight: '600' },
+  interest: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    height: 36,
+    gap: 5,
+  },
+  interestText: { color: colors.onPrimary, fontWeight: '800', fontSize: 13 },
+  interestDone: { backgroundColor: colors.primarySoft },
+  interestDoneText: { color: colors.primary, fontWeight: '800', fontSize: 13 },
+  interestMuted: { backgroundColor: colors.surfaceAlt },
+  interestMutedText: { color: colors.textMuted, fontWeight: '800', fontSize: 13 },
+  iconBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: spacing.md, height: 36, marginLeft: 'auto' },
+  iconBtnText: { fontSize: 12.5, fontWeight: '700', color: colors.text },
 });
