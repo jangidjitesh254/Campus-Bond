@@ -18,9 +18,9 @@ export default function ProfileScreen({ navigation }) {
   }
 
   const rows = [
-    { icon: 'edit', label: 'My posts', onPress: () => navigation.getParent()?.navigate('Home', { screen: 'MyPosts' }) },
+    { icon: 'edit', label: 'My posts', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'MyPosts' }) },
     { icon: 'search', label: 'My lost & found', onPress: () => navigation.getParent()?.navigate('Lost', { screen: 'MyLostPosts' }) },
-    { icon: 'chat', label: 'Messages', onPress: () => navigation.getParent()?.navigate('Home', { screen: 'ChatList' }) },
+    { icon: 'chat', label: 'Messages', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'ChatList' }) },
     { icon: 'heart', label: 'Campus score', onPress: () => navigation.navigate('Feature', { step: '06', label: 'CAMPUS SCORE', headerTitle: 'Campus Score', title: 'Your campus score', subtitle: 'Earn points for helping out and staying active.', bullets: ['ENGAGE', 'EARN', 'CLIMB'] }) },
     { icon: 'bell', label: 'Settings', onPress: () => navigation.navigate('Feature', { step: '00', label: 'SETTINGS', headerTitle: 'Settings', title: 'Settings', subtitle: 'Notifications, privacy and account settings are coming soon.', bullets: ['NOTIFY', 'PRIVACY', 'ACCOUNT'] }) },
   ];

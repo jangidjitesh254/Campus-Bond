@@ -10,7 +10,7 @@ import { Loading } from '../../components/ui';
 import { EventsApi } from '../../api/events';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
-import { colors, radius, font } from '../../theme';
+import { colors, radius, font, layout } from '../../theme';
 
 const CAT = { hackathon: 'Hackathon', cultural: 'Cultural', competition: 'Competition', project: 'Project', other: 'General' };
 const BADGE = { hackathon: 'TEAM', project: 'TEAM', cultural: 'EVENT', competition: 'EVENT', other: 'NOTICE' };
@@ -85,7 +85,7 @@ export default function EventDetailScreen({ route, navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={[]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
           {/* Post card */}
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   cReply: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
   cLike: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cLikeText: { fontSize: 13, color: colors.textMuted },
-  inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
+  inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 8, paddingBottom: layout.tabBarSpace, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
   inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4 },
   input: { flex: 1, fontSize: 15, color: colors.text, maxHeight: 100, paddingVertical: 9 },
   send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },

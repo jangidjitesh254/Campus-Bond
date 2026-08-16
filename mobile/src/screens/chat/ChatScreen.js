@@ -6,7 +6,7 @@ import Doodles from '../../components/Doodles';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { Loading } from '../../components/ui';
-import { colors } from '../../theme';
+import { colors, layout } from '../../theme';
 
 function clock(dateStr) {
   const d = new Date(dateStr);
@@ -47,7 +47,7 @@ export default function ChatScreen({ route, navigation }) {
   if (loading) return <Loading />;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={[]}>
       <Doodles />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         <FlatList
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   bubbleIn: { backgroundColor: colors.bubbleIn, borderRadius: 18, borderBottomLeftRadius: 5, borderWidth: 1, borderColor: colors.border },
   msg: { fontSize: 15, lineHeight: 20, flexShrink: 1 },
   time: { fontSize: 11, paddingBottom: 1 },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.chatBg },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 12, paddingTop: 8, paddingBottom: layout.tabBarSpace, backgroundColor: colors.chatBg },
   inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 999, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 4 },
   input: { flex: 1, fontSize: 15, color: colors.text, maxHeight: 100, paddingVertical: 9 },
   send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },

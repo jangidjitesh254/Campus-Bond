@@ -1,11 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
-import EventDetailScreen from '../screens/events/EventDetailScreen';
-import CreateEventScreen from '../screens/events/CreateEventScreen';
-import MyPostsScreen from '../screens/events/MyPostsScreen';
-import ChatListScreen from '../screens/chat/ChatListScreen';
-import ChatScreen from '../screens/chat/ChatScreen';
+import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator();
@@ -18,15 +14,15 @@ export const stackScreenOptions = {
   contentStyle: { backgroundColor: colors.bg },
 };
 
+function FeatureScreen({ route }) {
+  return <PlaceholderScreen {...(route.params || {})} />;
+}
+
 export default function HomeStack() {
   return (
     <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Thread" component={EventDetailScreen} options={{ title: 'Post' }} />
-      <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'New post' }} />
-      <Stack.Screen name="MyPosts" component={MyPostsScreen} options={{ title: 'My posts' }} />
-      <Stack.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Messages' }} />
-      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+      <Stack.Screen name="HomeDash" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Feature" component={FeatureScreen} options={({ route }) => ({ title: route.params?.headerTitle || 'Coming soon' })} />
     </Stack.Navigator>
   );
 }
