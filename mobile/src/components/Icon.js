@@ -1,6 +1,5 @@
 import React from 'react';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
-import { colors } from '../theme';
 
 /** Icon set matching the WhatsApp-dark design spec (same SVG path data). */
 const ICONS = {
@@ -40,6 +39,13 @@ const ICONS = {
       <Circle cx={12} cy={5} r={1.8} fill={c} stroke="none" />
       <Circle cx={12} cy={12} r={1.8} fill={c} stroke="none" />
       <Circle cx={12} cy={19} r={1.8} fill={c} stroke="none" />
+    </>
+  ),
+  dotsH: (c) => (
+    <>
+      <Circle cx={5} cy={12} r={1.8} fill={c} stroke="none" />
+      <Circle cx={12} cy={12} r={1.8} fill={c} stroke="none" />
+      <Circle cx={19} cy={12} r={1.8} fill={c} stroke="none" />
     </>
   ),
   camera: (c) => (
@@ -113,10 +119,10 @@ const ICONS = {
       <Path d="M10 18.5a2 2 0 0 0 4 0" stroke={c} />
     </>
   ),
-  shield: (c, f) => (
+  shield: (c, f, on) => (
     <>
       <Path d="M12 3l7 3v5c0 4.6-3.1 7.7-7 9-3.9-1.3-7-4.4-7-9V6l7-3Z" fill={f ? c : 'none'} stroke={f ? 'none' : c} />
-      <Path d="m8.8 12 2.2 2.2 4.2-4.4" stroke={f ? colors.onPrimary : c} />
+      <Path d="m8.8 12 2.2 2.2 4.2-4.4" stroke={f ? on : c} />
     </>
   ),
   filter: (c) => <Path d="M4 5.5h16l-6.2 8v5.2l-3.6 1.8v-7L4 5.5Z" stroke={c} fill="none" />,
@@ -175,13 +181,82 @@ const ICONS = {
       <Path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" stroke={c} />
     </>
   ),
+  map: (c) => (
+    <>
+      <Path d="M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4l-6 2.5L9 4Z" stroke={c} />
+      <Path d="M9 4v13.5M15 6.5V20" stroke={c} />
+    </>
+  ),
+  // ---- Post page design set ----
+  compose: (c) => (
+    <>
+      <Path d="M11 4.5H6.5a2.5 2.5 0 0 0-2.5 2.5v10.5a2.5 2.5 0 0 0 2.5 2.5H17a2.5 2.5 0 0 0 2.5-2.5V13" stroke={c} />
+      <Path d="m17.4 3.6 3 3L12 15l-4 1 1-4 8.4-8.4Z" stroke={c} />
+    </>
+  ),
+  sliders: (c) => (
+    <>
+      <Path d="M4 7h9M19.5 7H21M4 12h3.5M14 12h7M4 17h7.5M18 17h3" stroke={c} />
+      <Circle cx={16} cy={7} r={2.4} stroke={c} />
+      <Circle cx={10.5} cy={12} r={2.4} stroke={c} />
+      <Circle cx={14.5} cy={17} r={2.4} stroke={c} />
+    </>
+  ),
+  gridDots: (c) => (
+    <>
+      <Circle cx={8.6} cy={8.6} r={2.7} stroke={c} />
+      <Circle cx={15.4} cy={8.6} r={2.7} stroke={c} />
+      <Circle cx={8.6} cy={15.4} r={2.7} stroke={c} />
+      <Circle cx={15.4} cy={15.4} r={2.7} stroke={c} />
+    </>
+  ),
+  list: (c) => (
+    <>
+      <Circle cx={5} cy={7} r={1.5} fill={c} stroke="none" />
+      <Circle cx={5} cy={12} r={1.5} fill={c} stroke="none" />
+      <Circle cx={5} cy={17} r={1.5} fill={c} stroke="none" />
+      <Path d="M10 7h10M10 12h10M10 17h10" stroke={c} />
+    </>
+  ),
+  plane: (c, f, on) => (
+    <>
+      <Path d="M20.6 3.4 3.6 10.1l7.2 2.9 2.9 7.2 6.9-16.8Z" fill={f ? c : 'none'} stroke={f ? 'none' : c} />
+      <Path d="m10.8 13 9.8-9.6" stroke={f ? on : c} />
+    </>
+  ),
+  shareArrow: (c) => (
+    <>
+      <Path d="M4 19.5c.6-6.6 5.2-10.2 12.2-10.4" stroke={c} />
+      <Path d="m14.6 4.6 5.4 4.5-5.4 4.5" stroke={c} />
+    </>
+  ),
+  moon: (c, f) => (
+    <Path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill={f ? c : 'none'} stroke={c} />
+  ),
+  trophy: (c) => (
+    <>
+      <Path d="M7 4h10v6a5 5 0 0 1-10 0V4Z" stroke={c} />
+      <Path d="M7 6H4.4a3.6 3.6 0 0 0 3.6 3.6" stroke={c} />
+      <Path d="M17 6h2.6a3.6 3.6 0 0 1-3.6 3.6" stroke={c} />
+      <Path d="M12 15v3.4M8.4 20.5h7.2" stroke={c} />
+    </>
+  ),
+  bookmark: (c, f) => (
+    <Path d="M6.5 4.5h11v15l-5.5-4-5.5 4v-15Z" fill={f ? c : 'none'} stroke={c} />
+  ),
+  calendar: (c) => (
+    <>
+      <Rect x={3.5} y={5} width={17} height={16} rx={3.5} stroke={c} />
+      <Path d="M3.5 10h17M8 3v4M16 3v4" stroke={c} />
+    </>
+  ),
 };
 
-export default function Icon({ name, size = 24, color = colors.text, filled = false, strokeWidth = 1.7, style }) {
+export default function Icon({ name, size = 24, color = '#171B1D', filled = false, onColor = '#FFFFFF', strokeWidth = 1.7, style }) {
   const render = ICONS[name];
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
-      {render ? render(color, filled) : null}
+      {render ? render(color, filled, onColor) : null}
     </Svg>
   );
 }

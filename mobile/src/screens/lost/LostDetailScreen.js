@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -6,9 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Chip, Loading } from '../../components/ui';
 import { LostApi, imageUrl } from '../../api/lostfound';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font, radius, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, font, radius, layout } from '../../theme';
 
 export default function LostDetailScreen({ route, navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { id } = route.params;
   const { user } = useAuth();
   const [item, setItem] = useState(null);
@@ -34,7 +37,7 @@ export default function LostDetailScreen({ route, navigation }) {
   if (!item)
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={[font.bodyMuted, { padding: spacing.xl }]}>Item not found.</Text>
+        <Text style={[font.bodyMuted, { color: t.textMuted }, { padding: spacing.xl }]}>Item not found.</Text>
       </SafeAreaView>
     );
 
@@ -83,7 +86,7 @@ export default function LostDetailScreen({ route, navigation }) {
           <Image source={{ uri }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.image, styles.imageEmpty]}>
-            <Ionicons name="image-outline" size={44} color={colors.textFaint} />
+            <Ionicons name="image-outline" size={44} color={t.textFaint} />
           </View>
         )}
 
@@ -98,14 +101,13 @@ export default function LostDetailScreen({ route, navigation }) {
           {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
 
           <View style={styles.info}>
-            {item.location ? <InfoRow icon="location-outline" label="Location" value={item.location} /> : null}
-            <InfoRow icon="pricetag-outline" label="Category" value={item.category} />
-            <InfoRow
-              icon="person-outline"
+            {item.location ? <InfoRow styles={styles} t={t} icon="location-outline" label="Location" value={item.location} /> : null}
+            <InfoRow styles={styles} t={t} icon="pricetag-outline" label="Category" value={item.category} />
+            <InfoRow styles={styles} t={t}               icon="person-outline"
               label="Posted by"
               value={`${owner.name || 'Student'}${owner.branch ? ` · ${owner.branch}` : ''}`}
             />
-            {item.contact ? <InfoRow icon="call-outline" label="Contact" value={item.contact} /> : null}
+            {item.contact ? <InfoRow styles={styles} t={t} icon="call-outline" label="Contact" value={item.contact} /> : null}
           </View>
 
           {isOwner ? (
@@ -121,10 +123,10 @@ export default function LostDetailScreen({ route, navigation }) {
               title={`Contact ${owner.name?.split(' ')[0] || 'poster'}`}
               onPress={contact}
               style={{ marginTop: spacing.lg }}
-              icon={<Ionicons name="call" size={18} color={colors.onPrimary} />}
+              icon={<Ionicons name="call" size={18} color={t.onPrimary} />}
             />
           ) : (
-            <Text style={[font.bodyMuted, { marginTop: spacing.lg }]}>
+            <Text style={[font.bodyMuted, { color: t.textMuted }, { marginTop: spacing.lg }]}>
               No contact provided. Check back for updates.
             </Text>
           )}
@@ -134,10 +136,10 @@ export default function LostDetailScreen({ route, navigation }) {
   );
 }
 
-function InfoRow({ icon, label, value }) {
+function InfoRow({ icon, label, value, styles, t}) {
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color={colors.primaryDark} />
+      <Ionicons name={icon} size={18} color={t.primaryDark} />
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue} numberOfLines={1}>
         {value}
@@ -146,30 +148,32 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { paddingBottom: layout.tabBarSpace },
-  image: { width: '100%', height: 280, backgroundColor: colors.surfaceAlt },
-  imageEmpty: { alignItems: 'center', justifyContent: 'center' },
-  body: { padding: spacing.xl },
-  topRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  title: { ...font.h1, fontSize: 26 },
-  desc: { ...font.body, lineHeight: 22, marginTop: spacing.sm },
-  info: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  infoLabel: { ...font.small, marginLeft: spacing.md, width: 82 },
-  infoValue: { ...font.label, flex: 1, textAlign: 'right' },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { paddingBottom: layout.tabBarSpace },
+    image: { width: '100%', height: 280, backgroundColor: t.surfaceAlt },
+    imageEmpty: { alignItems: 'center', justifyContent: 'center' },
+    body: { padding: spacing.xl },
+    topRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    title: { ...font.h1, color: t.text, fontSize: 26 },
+    desc: { ...font.body, color: t.text, lineHeight: 22, marginTop: spacing.sm },
+    info: {
+      marginTop: spacing.lg,
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+      paddingHorizontal: spacing.lg,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: t.border,
+    },
+    infoLabel: { ...font.small, color: t.textMuted, marginLeft: spacing.md, width: 82 },
+    infoValue: { ...font.label, color: t.text, flex: 1, textAlign: 'right' },
+    });
+  }

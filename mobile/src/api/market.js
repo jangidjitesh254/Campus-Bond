@@ -25,6 +25,11 @@ export const MarketApi = {
   setStatus: (id, status) => api.patch(`/market/${id}/status`, { status }).then((r) => r.data.item),
   remove: (id) => api.delete(`/market/${id}`).then((r) => r.data),
   myListings: () => api.get('/market/me/listings').then((r) => r.data.items),
+  myOrders: () => api.get('/market/me/orders').then((r) => r.data.items),
+  interest: (id, message) => api.post(`/market/${id}/interest`, { message }).then((r) => r.data),
+  reviewInterest: (id, userId, status) => api.patch(`/market/${id}/interest/${userId}`, { status }).then((r) => r.data),
+  like: (id) => api.post(`/market/${id}/like`).then((r) => r.data),
+  openChat: (itemId, userId) => api.post('/chat/open-market', { itemId, userId }).then((r) => r.data.conversation),
 };
 
 export const MARKET_CATEGORIES = [

@@ -1,21 +1,24 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Share, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
 import Icon from '../../components/Icon';
-import { handleOf, timeAgo } from '../../components/ThreadPost';
+import { handleOf, timeAgo, fmtDate } from '../../components/ThreadPost';
 import CelebrationOverlay from '../../components/CelebrationOverlay';
 import { Loading } from '../../components/ui';
 import { EventsApi } from '../../api/events';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
-import { colors, radius, font, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { radius, font, layout } from '../../theme';
 
 const CAT = { hackathon: 'Hackathon', cultural: 'Cultural', competition: 'Competition', project: 'Project', other: 'General' };
 const BADGE = { hackathon: 'TEAM', project: 'TEAM', cultural: 'EVENT', competition: 'EVENT', other: 'NOTICE' };
 
 export default function EventDetailScreen({ route, navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { id } = route.params;
   const { user } = useAuth();
   const inputRef = useRef(null);
@@ -43,7 +46,7 @@ export default function EventDetailScreen({ route, navigation }) {
   }, [event]);
 
   if (loading) return <Loading />;
-  if (!event) return <SafeAreaView style={styles.safe}><Text style={[font.bodyMuted, { padding: 24 }]}>Not found.</Text></SafeAreaView>;
+  if (!event) return <SafeAreaView style={styles.safe}><Text style={[font.bodyMuted, { color: t.textMuted }, { padding: 24 }]}>Not found.</Text></SafeAreaView>;
 
   const owner = event.createdBy || {};
   const isOwner = String(owner._id || event.createdBy) === String(user?._id);
@@ -83,6 +86,9 @@ export default function EventDetailScreen({ route, navigation }) {
     { icon: 'location', label: 'Status', value: event.status === 'open' ? 'Open' : 'Closed' },
     { icon: 'user', label: 'Team Size', value: event.teamSize ? `${event.teamSize} needed` : '—' },
   ];
+  // The feed card no longer shows these, so surface them here when set.
+  if (event.deadline) tiles.push({ icon: 'calendar', label: 'Date', value: fmtDate(event.deadline) });
+  if (event.venue) tiles.push({ icon: 'location', label: 'Venue', value: event.venue });
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -108,12 +114,12 @@ export default function EventDetailScreen({ route, navigation }) {
 
             {/* Details grid */}
             <View style={styles.grid}>
-              {tiles.map((t) => (
-                <View key={t.label} style={styles.tile}>
-                  <Icon name={t.icon} size={18} color={colors.primary} strokeWidth={1.7} />
+              {tiles.map((tile) => (
+                <View key={tile.label} style={styles.tile}>
+                  <Icon name={tile.icon} size={18} color={t.primary} strokeWidth={1.7} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.tileLabel}>{t.label}</Text>
-                    <Text style={styles.tileValue} numberOfLines={1}>{t.value}</Text>
+                    <Text style={styles.tileLabel}>{tile.label}</Text>
+                    <Text style={styles.tileValue} numberOfLines={1}>{tile.value}</Text>
                   </View>
                 </View>
               ))}
@@ -121,19 +127,19 @@ export default function EventDetailScreen({ route, navigation }) {
 
             {/* Primary action */}
             {isOwner ? (
-              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: colors.textMuted }]}>Your post</Text></View>
+              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Your post</Text></View>
             ) : myApp && myApp.status !== 'rejected' ? (
               <TouchableOpacity style={styles.cta} onPress={() => openChatWith(owner._id, owner.name)}>
-                <Icon name="chat" size={18} color={colors.onPrimary} strokeWidth={1.8} />
+                <Icon name="chat" size={18} color={t.onPrimary} strokeWidth={1.8} />
                 <Text style={styles.ctaText}>Message</Text>
               </TouchableOpacity>
             ) : event.status === 'open' ? (
               <TouchableOpacity style={styles.cta} onPress={onInterest}>
-                <Icon name="star" size={18} color={colors.onPrimary} strokeWidth={1.8} />
+                <Icon name="star" size={18} color={t.onPrimary} strokeWidth={1.8} />
                 <Text style={styles.ctaText}>Interested</Text>
               </TouchableOpacity>
             ) : (
-              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: colors.textMuted }]}>Closed</Text></View>
+              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Closed</Text></View>
             )}
           </View>
 
@@ -152,10 +158,10 @@ export default function EventDetailScreen({ route, navigation }) {
                       {a.message ? <Text style={styles.cBody}>{a.message}</Text> : null}
                       <View style={styles.appBtns}>
                         <TouchableOpacity style={[styles.smallPill, accepted ? styles.smallOutline : styles.smallFilled]} onPress={() => EventsApi.review(id, a._id, accepted ? 'rejected' : 'approved').then(setEvent).catch((e) => Alert.alert('Error', e.message))}>
-                          <Text style={[styles.smallText, { color: accepted ? colors.textMuted : colors.onPrimary }]}>{accepted ? 'Accepted' : 'Accept'}</Text>
+                          <Text style={[styles.smallText, { color: accepted ? t.textMuted : t.onPrimary }]}>{accepted ? 'Accepted' : 'Accept'}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.smallPill, styles.smallOutline]} onPress={() => openChatWith(u._id, u.name)}>
-                          <Text style={[styles.smallText, { color: colors.text }]}>Message</Text>
+                          <Text style={[styles.smallText, { color: t.text }]}>Message</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -171,7 +177,7 @@ export default function EventDetailScreen({ route, navigation }) {
             <Text style={styles.cSort}>Most recent</Text>
           </View>
           {comments.length === 0 ? (
-            <Text style={[font.bodyMuted, { paddingHorizontal: 4, paddingTop: 8 }]}>No comments yet. Start the conversation.</Text>
+            <Text style={[font.bodyMuted, { color: t.textMuted }, { paddingHorizontal: 4, paddingTop: 8 }]}>No comments yet. Start the conversation.</Text>
           ) : (
             comments.map((c) => (
               <View key={c._id} style={styles.comment}>
@@ -185,7 +191,7 @@ export default function EventDetailScreen({ route, navigation }) {
                   <View style={styles.cMeta}>
                     <Text style={styles.cReply}>Reply</Text>
                     <View style={styles.cLike}>
-                      <Icon name="heart" size={14} color={colors.textMuted} strokeWidth={1.7} />
+                      <Icon name="heart" size={14} color={t.textMuted} strokeWidth={1.7} />
                       <Text style={styles.cLikeText}>0</Text>
                     </View>
                   </View>
@@ -202,15 +208,15 @@ export default function EventDetailScreen({ route, navigation }) {
               ref={inputRef}
               style={styles.input}
               placeholder="Add a comment..."
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={t.textMuted}
               value={commentText}
               onChangeText={setCommentText}
               multiline
             />
-            <Icon name="image" size={20} color={colors.textMuted} strokeWidth={1.6} />
+            <Icon name="image" size={20} color={t.textMuted} strokeWidth={1.6} />
           </View>
           <TouchableOpacity style={styles.send} onPress={onPostComment} disabled={!commentText.trim() || posting}>
-            <Icon name="send" size={19} color={colors.onPrimary} />
+            <Icon name="send" size={19} color={t.onPrimary} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -220,47 +226,49 @@ export default function EventDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 16 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  handle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12.5, color: colors.textMuted, marginTop: 1, fontWeight: '400' },
-  badge: { backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: colors.primary },
-  time: { fontSize: 12, color: colors.textMuted },
-  body: { fontSize: 16, lineHeight: 23, color: colors.text },
-  desc: { fontSize: 15, lineHeight: 22, color: colors.textMuted, marginTop: 8 },
-  tag: { fontSize: 14.5, color: colors.link, marginTop: 10, fontWeight: '500' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-  tile: { width: '47.5%', flexGrow: 1, flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.surfaceMuted, borderRadius: 12, padding: 12 },
-  tileLabel: { fontSize: 11.5, color: colors.textMuted },
-  tileValue: { fontSize: 13.5, fontWeight: '600', color: colors.text, marginTop: 1 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 15, marginTop: 16 },
-  ctaMuted: { backgroundColor: colors.surfaceMuted },
-  ctaText: { fontSize: 15, fontWeight: '700', color: colors.onPrimary },
-  section: { marginTop: 16, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  applicant: { flexDirection: 'row', gap: 12 },
-  appBtns: { flexDirection: 'row', gap: 8, paddingTop: 8 },
-  smallPill: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8 },
-  smallFilled: { backgroundColor: colors.primary },
-  smallOutline: { borderWidth: 1, borderColor: colors.border },
-  smallText: { fontSize: 13, fontWeight: '700' },
-  cHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 6, paddingHorizontal: 4 },
-  cTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  cSort: { fontSize: 13, color: colors.primary, fontWeight: '600' },
-  comment: { flexDirection: 'row', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
-  cLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cName: { fontSize: 14, fontWeight: '700', color: colors.text },
-  cTime: { fontSize: 12, color: colors.textMuted },
-  cBody: { fontSize: 14.5, lineHeight: 20, color: colors.text, marginTop: 3 },
-  cMeta: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
-  cReply: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
-  cLike: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  cLikeText: { fontSize: 13, color: colors.textMuted },
-  inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 8, paddingBottom: layout.tabBarSpace, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
-  inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4 },
-  input: { flex: 1, fontSize: 15, color: colors.text, maxHeight: 100, paddingVertical: 9 },
-  send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    card: { backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16 },
+    head: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+    handle: { fontSize: 15, fontWeight: '700', color: t.text },
+    sub: { fontSize: 12.5, color: t.textMuted, marginTop: 1, fontWeight: '400' },
+    badge: { backgroundColor: t.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+    badgeText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: t.primary },
+    time: { fontSize: 12, color: t.textMuted },
+    body: { fontSize: 16, lineHeight: 23, color: t.text },
+    desc: { fontSize: 15, lineHeight: 22, color: t.textMuted, marginTop: 8 },
+    tag: { fontSize: 14.5, color: t.link, marginTop: 10, fontWeight: '500' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
+    tile: { width: '47.5%', flexGrow: 1, flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: t.surfaceMuted, borderRadius: 12, padding: 12 },
+    tileLabel: { fontSize: 11.5, color: t.textMuted },
+    tileValue: { fontSize: 13.5, fontWeight: '600', color: t.text, marginTop: 1 },
+    cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: t.primary, borderRadius: 12, paddingVertical: 15, marginTop: 16 },
+    ctaMuted: { backgroundColor: t.surfaceMuted },
+    ctaText: { fontSize: 15, fontWeight: '700', color: t.onPrimary },
+    section: { marginTop: 16, backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16, gap: 12 },
+    sectionTitle: { fontSize: 15, fontWeight: '700', color: t.text },
+    applicant: { flexDirection: 'row', gap: 12 },
+    appBtns: { flexDirection: 'row', gap: 8, paddingTop: 8 },
+    smallPill: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8 },
+    smallFilled: { backgroundColor: t.primary },
+    smallOutline: { borderWidth: 1, borderColor: t.border },
+    smallText: { fontSize: 13, fontWeight: '700' },
+    cHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 6, paddingHorizontal: 4 },
+    cTitle: { fontSize: 15, fontWeight: '700', color: t.text },
+    cSort: { fontSize: 13, color: t.primary, fontWeight: '600' },
+    comment: { flexDirection: 'row', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.border },
+    cLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    cName: { fontSize: 14, fontWeight: '700', color: t.text },
+    cTime: { fontSize: 12, color: t.textMuted },
+    cBody: { fontSize: 14.5, lineHeight: 20, color: t.text, marginTop: 3 },
+    cMeta: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
+    cReply: { fontSize: 13, fontWeight: '600', color: t.textMuted },
+    cLike: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    cLikeText: { fontSize: 13, color: t.textMuted },
+    inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 8, paddingBottom: layout.tabBarSpace, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border },
+    inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.surfaceMuted, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4 },
+    input: { flex: 1, fontSize: 15, color: t.text, maxHeight: 100, paddingVertical: 9 },
+    send: { width: 46, height: 46, borderRadius: 23, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center' },
+    });
+  }

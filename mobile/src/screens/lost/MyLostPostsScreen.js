@@ -1,13 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import LostCard from '../../components/LostCard';
 import { Loading, EmptyState } from '../../components/ui';
 import { LostApi } from '../../api/lostfound';
-import { colors, spacing, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, layout } from '../../theme';
 
 export default function MyLostPostsScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +49,9 @@ export default function MyLostPostsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  list: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    list: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
+    });
+  }

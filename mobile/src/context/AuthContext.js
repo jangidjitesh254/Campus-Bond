@@ -66,6 +66,22 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  // Update profile (name / branch / semester / avatar image).
+  async function updateProfile({ name, branch, semester, avatar }) {
+    const form = new FormData();
+    if (name != null) form.append('name', name);
+    if (branch != null) form.append('branch', branch);
+    if (semester != null && semester !== '') form.append('semester', String(semester));
+    if (avatar?.uri) {
+      const n = avatar.fileName || avatar.uri.split('/').pop() || 'avatar.jpg';
+      const ext = (n.split('.').pop() || 'jpg').toLowerCase();
+      form.append('avatar', { uri: avatar.uri, name: n, type: avatar.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}` });
+    }
+    const { data } = await api.patch('/auth/profile', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+    setUser(data.user);
+    return data.user;
+  }
+
   const value = {
     user,
     booting,
@@ -76,6 +92,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     refreshUser,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

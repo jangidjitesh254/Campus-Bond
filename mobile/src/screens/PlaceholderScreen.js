@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MonoLabel, ProgressBar } from '../components/ui';
-import { colors, spacing, font, radius, monoFamily } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, font, radius, monoFamily } from '../theme';
 
 /**
  * Editorial "coming soon" hero, styled after the dark-green reference:
@@ -17,6 +18,8 @@ export default function PlaceholderScreen({
   bullets = [],
   icon,
 }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.wrap}>
@@ -24,7 +27,7 @@ export default function PlaceholderScreen({
           {/* Ghost number in the corner */}
           <Text style={styles.ghost}>{step}</Text>
 
-          <MonoLabel color={colors.primary}>{`STEP ${step} — ${label}`}</MonoLabel>
+          <MonoLabel color={t.primary}>{`STEP ${step} — ${label}`}</MonoLabel>
 
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
@@ -40,42 +43,44 @@ export default function PlaceholderScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  wrap: { flex: 1, padding: spacing.lg, justifyContent: 'center' },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
-    overflow: 'hidden',
-    minHeight: 320,
-    justifyContent: 'center',
-  },
-  ghost: {
-    position: 'absolute',
-    top: -30,
-    right: -6,
-    fontSize: 190,
-    fontWeight: '900',
-    color: 'rgba(245,245,245,0.05)',
-    letterSpacing: -6,
-  },
-  title: {
-    fontSize: 38,
-    fontWeight: '900',
-    color: colors.text,
-    letterSpacing: -1,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  subtitle: { fontSize: 16, lineHeight: 24, color: colors.textMuted },
-  bullets: {
-    fontFamily: monoFamily,
-    fontSize: 12,
-    letterSpacing: 1.5,
-    color: colors.textMuted,
-    marginTop: spacing.xl,
-  },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    wrap: { flex: 1, padding: spacing.lg, justifyContent: 'center' },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: t.border,
+      padding: spacing.xl,
+      overflow: 'hidden',
+      minHeight: 320,
+      justifyContent: 'center',
+    },
+    ghost: {
+      position: 'absolute',
+      top: -30,
+      right: -6,
+      fontSize: 190,
+      fontWeight: '900',
+      color: 'rgba(245,245,245,0.05)',
+      letterSpacing: -6,
+    },
+    title: {
+      fontSize: 38,
+      fontWeight: '900',
+      color: t.text,
+      letterSpacing: -1,
+      marginTop: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    subtitle: { fontSize: 16, lineHeight: 24, color: t.textMuted },
+    bullets: {
+      fontFamily: monoFamily,
+      fontSize: 12,
+      letterSpacing: 1.5,
+      color: t.textMuted,
+      marginTop: spacing.xl,
+    },
+    });
+  }

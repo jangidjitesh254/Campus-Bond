@@ -4,23 +4,16 @@ import MoreScreen from '../screens/MoreScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import ChatListScreen from '../screens/chat/ChatListScreen';
 import ChatScreen from '../screens/chat/ChatScreen';
-import { colors } from '../theme';
+import { useStackOptions } from './stackOptions';
 
 const Stack = createNativeStackNavigator();
-
-const screenOptions = {
-  headerStyle: { backgroundColor: colors.bg },
-  headerShadowVisible: false,
-  headerTintColor: colors.primary,
-  headerTitleStyle: { color: colors.text, fontWeight: '800' },
-  contentStyle: { backgroundColor: colors.bg },
-};
 
 function FeatureScreen({ route }) {
   return <PlaceholderScreen {...(route.params || {})} />;
 }
 
 export default function MoreStack() {
+  const screenOptions = useStackOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="MoreHome" component={MoreScreen} options={{ headerShown: false }} />

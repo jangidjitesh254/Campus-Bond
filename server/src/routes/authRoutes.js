@@ -6,8 +6,10 @@ import {
   resendOtp,
   login,
   getMe,
+  updateProfile,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
+import { uploadImage } from '../middleware/upload.js';
 
 const router = Router();
 
@@ -42,5 +44,6 @@ router.post(
 );
 
 router.get('/me', protect, getMe);
+router.patch('/profile', protect, uploadImage.single('avatar'), updateProfile);
 
 export default router;

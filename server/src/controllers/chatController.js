@@ -1,6 +1,7 @@
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import Event from '../models/Event.js';
+import MarketItem from '../models/MarketItem.js';
 
 /** Has `userId` shown interest in `event` (any applicant status)? */
 function hasShownInterest(event, userId) {
@@ -50,6 +51,34 @@ export async function openConversation(req, res) {
 }
 
 /**
+ * Open (or fetch) the conversation for an accepted marketplace interest.
+ * POST /api/chat/open-market   body: { itemId, userId }
+ */
+export async function openMarketConversation(req, res) {
+  const { itemId, userId } = req.body;
+  if (!itemId || !userId) return res.status(400).json({ message: 'itemId and userId are required.' });
+
+  const item = await MarketItem.findById(itemId);
+  if (!item) return res.status(404).json({ message: 'Listing not found.' });
+
+  const me = String(req.user._id);
+  const other = String(userId);
+  const sellerId = String(item.seller);
+  const isAccepted = (uid) => item.interested.some((i) => String(i.user) === String(uid) && i.status === 'accepted');
+
+  const allowed = (me === sellerId && isAccepted(other)) || (other === sellerId && isAccepted(me));
+  if (!allowed) {
+    return res.status(403).json({ message: 'You can chat once the seller accepts the interest.' });
+  }
+
+  let convo = await Conversation.findOne({ participants: { $all: [me, other], $size: 2 }, market: item._id });
+  if (!convo) convo = await Conversation.create({ participants: [me, other], market: item._id });
+  await convo.populate('participants', 'name branch semester');
+  await convo.populate('market', 'title price');
+  res.status(200).json({ conversation: convo });
+}
+
+/**
  * My conversations, most recent first.
  * GET /api/chat/conversations
  */
@@ -57,7 +86,8 @@ export async function getConversations(req, res) {
   const convos = await Conversation.find({ participants: req.user._id })
     .sort({ lastMessageAt: -1 })
     .populate('participants', 'name branch semester')
-    .populate('event', 'title');
+    .populate('event', 'title')
+    .populate('market', 'title price');
   res.status(200).json({ conversations: convos });
 }
 

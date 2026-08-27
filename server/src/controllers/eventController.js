@@ -17,7 +17,7 @@ export async function createEvent(req, res) {
   const validationError = firstValidationError(req);
   if (validationError) return res.status(400).json({ message: validationError });
 
-  const { title, description, category, skillsNeeded, teamSize, deadline } = req.body;
+  const { title, description, category, skillsNeeded, teamSize, deadline, venue } = req.body;
 
   const event = await Event.create({
     title,
@@ -30,7 +30,8 @@ export async function createEvent(req, res) {
           .map((s) => s.trim())
           .filter(Boolean),
     teamSize,
-    deadline,
+    deadline: deadline || undefined,
+    venue,
     createdBy: req.user._id,
   });
 

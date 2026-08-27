@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field } from '../../components/ui';
 import { EventsApi, CATEGORIES } from '../../api/events';
-import { colors, spacing, font, radius, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, font, radius, layout } from '../../theme';
 
 export default function CreateEventScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [form, setForm] = useState({
     title: '',
     description: '',
     category: 'hackathon',
     skillsNeeded: '',
     teamSize: '',
+    date: '',
+    venue: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +37,13 @@ export default function CreateEventScreen({ navigation }) {
       setError('Please add a title and description.');
       return;
     }
+    // Accepts "25 May 2025" or "2025-05-25"; ignored if it can't be read.
+    const parsed = form.date.trim() ? new Date(form.date.trim()) : null;
+    if (form.date.trim() && isNaN(parsed?.getTime())) {
+      setError('Date must look like "25 May 2025" or "2025-05-25".');
+      return;
+    }
+
     setLoading(true);
     try {
       await EventsApi.create({
@@ -40,6 +52,8 @@ export default function CreateEventScreen({ navigation }) {
         category: form.category,
         skillsNeeded: form.skillsNeeded,
         teamSize: form.teamSize ? Number(form.teamSize) : 1,
+        deadline: parsed ? parsed.toISOString() : undefined,
+        venue: form.venue.trim(),
       });
       navigation.goBack();
     } catch (e) {
@@ -56,7 +70,7 @@ export default function CreateEventScreen({ navigation }) {
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={[font.bodyMuted, { marginBottom: spacing.lg }]}>
+          <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.lg }]}>
             Tell students what you're building and who you need.
           </Text>
 
@@ -106,6 +120,9 @@ export default function CreateEventScreen({ navigation }) {
             onChangeText={set('teamSize')}
           />
 
+          <Field label="Date (optional)" placeholder="25 May 2025" value={form.date} onChangeText={set('date')} />
+          <Field label="Venue (optional)" placeholder="Auditorium, VGU" value={form.venue} onChangeText={set('venue')} />
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Button title="Post request" onPress={onSubmit} loading={loading} />
@@ -115,23 +132,25 @@ export default function CreateEventScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
-  label: { ...font.label, marginBottom: spacing.sm },
-  cats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
-  cat: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  catActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  catText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
-  catTextActive: { color: colors.onPrimary },
-  error: { color: colors.danger, marginBottom: spacing.md },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
+    label: { ...font.label, color: t.text, marginBottom: spacing.sm },
+    cats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
+    cat: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 9,
+      borderRadius: radius.pill,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.border,
+      marginRight: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    catActive: { backgroundColor: t.primary, borderColor: t.primary },
+    catText: { fontSize: 13, fontWeight: '600', color: t.textMuted },
+    catTextActive: { color: t.onPrimary },
+    error: { color: t.danger, marginBottom: spacing.md },
+    });
+  }

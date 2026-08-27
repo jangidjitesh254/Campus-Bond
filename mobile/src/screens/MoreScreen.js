@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
-import { colors, spacing, font, radius, layout } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, font, radius, layout } from '../theme';
 
 const FEATURE = {
   community: { step: '09', label: 'COMMUNITY', title: 'Campus community', headerTitle: 'Community', subtitle: 'Campus-wide posts, polls and announcements — everything happening, in one feed.', bullets: ['POST', 'POLL', 'FOLLOW'], icon: 'chatbubble-ellipses-outline' },
@@ -17,6 +18,8 @@ const FEATURE = {
 };
 
 export default function MoreScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { user, logout } = useAuth();
 
   const openFeature = (f) => navigation.navigate('Feature', f);
@@ -48,7 +51,7 @@ export default function MoreScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={font.h1}>More</Text>
+        <Text style={[font.h1, { color: t.text }, { color: t.text }]}>More</Text>
 
         {/* Profile card */}
         <TouchableOpacity style={styles.profile} activeOpacity={0.85} onPress={() => openFeature(FEATURE.profile)}>
@@ -56,25 +59,25 @@ export default function MoreScreen({ navigation }) {
             <Text style={styles.avatarText}>{(user?.name || '?').charAt(0).toUpperCase()}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={font.h3}>{user?.name}</Text>
-            <Text style={font.small}>{user?.email}</Text>
+            <Text style={[font.h3, { color: t.text }, { color: t.text }]}>{user?.name}</Text>
+            <Text style={[font.small, { color: t.textMuted }, { color: t.textMuted }]}>{user?.email}</Text>
             <View style={styles.tags}>
               {user?.branch ? <Text style={styles.tag}>{user.branch}</Text> : null}
               {user?.semester ? <Text style={styles.tag}>Sem {user.semester}</Text> : null}
               {user?.isVerified ? (
                 <View style={styles.verified}>
-                  <Ionicons name="checkmark-circle" size={13} color={colors.success} />
+                  <Ionicons name="checkmark-circle" size={13} color={t.success} />
                   <Text style={styles.verifiedText}>Verified</Text>
                 </View>
               ) : null}
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={20} color={t.textMuted} />
         </TouchableOpacity>
 
-        <Group title="Your activity" items={activity} />
-        <Group title="Campus" items={campus} />
-        <Group title="Account" items={account} />
+        <Group styles={styles} t={t} title="Your activity" items={activity} />
+        <Group styles={styles} t={t} title="Campus" items={campus} />
+        <Group styles={styles} t={t} title="Account" items={account} />
 
         <Button title="Log out" variant="secondary" onPress={onLogout} style={{ marginTop: spacing.xl }} />
         <Text style={styles.version}>Campus Bond · v0.1.0</Text>
@@ -83,7 +86,7 @@ export default function MoreScreen({ navigation }) {
   );
 }
 
-function Group({ title, items }) {
+function Group({ title, items, styles, t}) {
   return (
     <>
       <Text style={styles.groupTitle}>{title}</Text>
@@ -96,10 +99,10 @@ function Group({ title, items }) {
             activeOpacity={0.8}
           >
             <View style={styles.itemIcon}>
-              <Ionicons name={item.icon} size={19} color={colors.primary} />
+              <Ionicons name={item.icon} size={19} color={t.primary} />
             </View>
             <Text style={styles.itemLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+            <Ionicons name="chevron-forward" size={18} color={t.textFaint} />
           </TouchableOpacity>
         ))}
       </View>
@@ -107,60 +110,62 @@ function Group({ title, items }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.lg, paddingBottom: layout.tabBarSpace },
-  profile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.lg,
-  },
-  avatarText: { color: colors.onPrimary, fontWeight: '900', fontSize: 24 },
-  tags: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, flexWrap: 'wrap' },
-  tag: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 3,
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textMuted,
-    marginRight: spacing.sm,
-  },
-  verified: { flexDirection: 'row', alignItems: 'center' },
-  verifiedText: { color: colors.success, fontSize: 12, fontWeight: '700', marginLeft: 3 },
-  groupTitle: { ...font.small, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.xl, marginBottom: spacing.sm, marginLeft: spacing.xs },
-  list: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  item: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
-  itemBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  itemIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  itemLabel: { ...font.label, flex: 1 },
-  version: { ...font.small, textAlign: 'center', marginTop: spacing.xl, color: colors.textFaint },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { padding: spacing.lg, paddingBottom: layout.tabBarSpace },
+    profile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: spacing.lg,
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+      padding: spacing.lg,
+    },
+    avatar: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: t.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.lg,
+    },
+    avatarText: { color: t.onPrimary, fontWeight: '900', fontSize: 24 },
+    tags: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, flexWrap: 'wrap' },
+    tag: {
+      backgroundColor: t.surfaceAlt,
+      borderRadius: 999,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 3,
+      fontSize: 12,
+      fontWeight: '600',
+      color: t.textMuted,
+      marginRight: spacing.sm,
+    },
+    verified: { flexDirection: 'row', alignItems: 'center' },
+    verifiedText: { color: t.success, fontSize: 12, fontWeight: '700', marginLeft: 3 },
+    groupTitle: { ...font.small, color: t.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.xl, marginBottom: spacing.sm, marginLeft: spacing.xs },
+    list: {
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    item: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
+    itemBorder: { borderBottomWidth: 1, borderBottomColor: t.border },
+    itemIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: radius.sm,
+      backgroundColor: t.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    itemLabel: { ...font.label, color: t.text, flex: 1 },
+    version: { ...font.small, color: t.textMuted, textAlign: 'center', marginTop: spacing.xl, color: t.textFaint },
+    });
+  }

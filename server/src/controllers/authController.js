@@ -186,3 +186,23 @@ export async function login(req, res) {
 export async function getMe(req, res) {
   res.status(200).json({ user: req.user });
 }
+
+/**
+ * Update the current user's profile (name, branch, semester, avatar).
+ * PATCH /api/auth/profile  (multipart/form-data; optional `avatar` file)
+ */
+export async function updateProfile(req, res) {
+  const { name, branch, semester } = req.body;
+  const user = req.user;
+
+  if (name !== undefined && name.trim()) user.name = name.trim();
+  if (branch !== undefined) user.branch = branch.trim();
+  if (semester !== undefined && semester !== '') {
+    const s = Number(semester);
+    if (!Number.isNaN(s)) user.semester = s;
+  }
+  if (req.file) user.avatar = `/uploads/${req.file.filename}`;
+
+  await user.save();
+  res.status(200).json({ user });
+}

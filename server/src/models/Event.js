@@ -40,7 +40,8 @@ const eventSchema = new mongoose.Schema(
     // What the poster is looking for.
     skillsNeeded: [{ type: String, trim: true }], // e.g. ["React", "UI/UX"]
     teamSize: { type: Number, min: 1, default: 1 }, // number of teammates needed
-    deadline: { type: Date },
+    deadline: { type: Date }, // shown as "Date:" on event cards
+    venue: { type: String, trim: true, default: '' }, // shown as "Venue:" on event cards
 
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     status: { type: String, enum: ['open', 'closed'], default: 'open' },

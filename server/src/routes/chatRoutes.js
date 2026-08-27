@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   openConversation,
+  openMarketConversation,
   getConversations,
   getMessages,
   sendMessage,
@@ -11,6 +12,7 @@ const router = Router();
 router.use(protect);
 
 router.post('/open', openConversation);
+router.post('/open-market', openMarketConversation);
 router.get('/conversations', getConversations);
 router.get('/conversations/:id/messages', getMessages);
 router.post('/conversations/:id/messages', sendMessage);

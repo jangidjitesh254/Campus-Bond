@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * Circular ring for the campus score. Shows either the score number or, when
@@ -14,11 +14,13 @@ export default function ScoreRing({
   size = 104,
   stroke = 9,
   centerText,
-  trackColor = colors.surfaceHi,
-  progressColor = colors.primary,
-  valueColor = colors.text,
-  badgeColor = colors.primary,
+  trackColor = t.surfaceHi,
+  progressColor = t.primary,
+  valueColor = t.text,
+  badgeColor = t.primary,
 }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(1, target > 0 ? value / target : 0));
@@ -58,21 +60,23 @@ export default function ScoreRing({
   );
 }
 
-const styles = StyleSheet.create({
-  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  text: { fontWeight: '900' },
-  value: { fontSize: 32 },
-  initial: { fontSize: 40 },
-  badge: {
-    position: 'absolute',
-    bottom: 4,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+    text: { fontWeight: '900' },
+    value: { fontSize: 32 },
+    initial: { fontSize: 40 },
+    badge: {
+      position: 'absolute',
+      bottom: 4,
+      right: 6,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: t.surface,
+    },
+    });
+  }

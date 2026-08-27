@@ -4,13 +4,14 @@ import LostFeedScreen from '../screens/lost/LostFeedScreen';
 import CreateLostScreen from '../screens/lost/CreateLostScreen';
 import LostDetailScreen from '../screens/lost/LostDetailScreen';
 import MyLostPostsScreen from '../screens/lost/MyLostPostsScreen';
-import { stackScreenOptions } from './HomeStack';
+import { useStackOptions } from './stackOptions';
 
 const Stack = createNativeStackNavigator();
 
 export default function LostStack() {
+  const screenOptions = useStackOptions();
   return (
-    <Stack.Navigator screenOptions={stackScreenOptions}>
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="LostFeed" component={LostFeedScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CreateLost" component={CreateLostScreen} options={{ title: 'Report an item' }} />
       <Stack.Screen name="LostDetail" component={LostDetailScreen} options={{ title: 'Item' }} />

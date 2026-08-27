@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
-import { colors, spacing, radius, shadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, shadow } from '../theme';
 
 const { width } = Dimensions.get('window');
-const CONFETTI_COLORS = ['#3E9B2E', '#2F80ED', '#EF5350', '#7E5BEF', '#E39A1C', colors.primary];
+// Literals only — this runs at module load, before any theme exists.
+const CONFETTI_COLORS = ['#3F7A5E', '#33708F', '#A9603A', '#6B5B7B', '#8A5A6B', '#4A5A73'];
 
 /**
  * A one-second celebration burst shown after a delightful action
@@ -11,6 +13,8 @@ const CONFETTI_COLORS = ['#3E9B2E', '#2F80ED', '#EF5350', '#7E5BEF', '#E39A1C', 
  * and it calls `onDone` when the animation finishes.
  */
 export default function CelebrationOverlay({ visible, onDone, message = 'Interest sent! 🎉', subtitle = 'We messaged the poster for you' }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   // Fixed set of confetti pieces, re-animated each time.
@@ -89,20 +93,22 @@ export default function CelebrationOverlay({ visible, onDone, message = 'Interes
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  piece: { position: 'absolute', top: 0 },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.card,
-  },
-  emoji: { fontSize: 52, marginBottom: spacing.sm },
-  title: { fontSize: 18, fontWeight: '900', color: colors.text },
-  sub: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+    piece: { position: 'absolute', top: 0 },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: radius.xl,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.xxl,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.card,
+    },
+    emoji: { fontSize: 52, marginBottom: spacing.sm },
+    title: { fontSize: 18, fontWeight: '900', color: t.text },
+    sub: { fontSize: 13, color: t.textMuted, marginTop: 4 },
+    });
+  }

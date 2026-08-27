@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,9 +7,12 @@ import { handleOf, timeAgo } from '../../components/ThreadPost';
 import { Loading, EmptyState } from '../../components/ui';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
-import { colors, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { layout } from '../../theme';
 
 export default function ChatListScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { user } = useAuth();
   const [convos, setConvos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,14 +64,16 @@ export default function ChatListScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  header: { alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
-  title: { fontSize: 16, fontWeight: '700', color: colors.text },
-  row: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
-  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  name: { fontSize: 15, fontWeight: '600', color: colors.text },
-  time: { fontSize: 13, color: colors.textFaint },
-  last: { fontSize: 14, color: colors.textMuted, marginTop: 3 },
-  ctx: { fontSize: 12, color: colors.textFaint, marginTop: 3 },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    header: { alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.border },
+    title: { fontSize: 16, fontWeight: '700', color: t.text },
+    row: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: t.border },
+    rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    name: { fontSize: 15, fontWeight: '600', color: t.text },
+    time: { fontSize: 13, color: t.textFaint },
+    last: { fontSize: 14, color: t.textMuted, marginTop: 3 },
+    ctx: { fontSize: 12, color: t.textFaint, marginTop: 3 },
+    });
+  }

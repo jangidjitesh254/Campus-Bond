@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Field } from '../../components/ui';
 import { LostApi, LOST_CATEGORIES } from '../../api/lostfound';
-import { colors, spacing, font, radius, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, font, radius, layout } from '../../theme';
 
 export default function CreateLostScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [type, setType] = useState('lost');
   const [form, setForm] = useState({ title: '', description: '', category: 'other', location: '', contact: '' });
   const [image, setImage] = useState(null);
@@ -79,20 +82,20 @@ export default function CreateLostScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           {/* Lost / Found toggle */}
           <View style={styles.toggle}>
-            {['lost', 'found'].map((t) => (
+            {['lost', 'found'].map((kind) => (
               <TouchableOpacity
-                key={t}
-                style={[styles.toggleBtn, type === t && (t === 'lost' ? styles.toggleLost : styles.toggleFound)]}
-                onPress={() => setType(t)}
+                key={kind}
+                style={[styles.toggleBtn, type === kind && (kind === 'lost' ? styles.toggleLost : styles.toggleFound)]}
+                onPress={() => setType(kind)}
                 activeOpacity={0.85}
               >
                 <Ionicons
-                  name={t === 'lost' ? 'help-buoy-outline' : 'checkmark-circle-outline'}
+                  name={kind === 'lost' ? 'help-buoy-outline' : 'checkmark-circle-outline'}
                   size={18}
-                  color={type === t ? '#fff' : colors.textMuted}
+                  color={type === kind ? '#fff' : t.textMuted}
                 />
-                <Text style={[styles.toggleText, type === t && { color: '#fff' }]}>
-                  I {t} this
+                <Text style={[styles.toggleText, type === kind && { color: '#fff' }]}>
+                  I {kind} this
                 </Text>
               </TouchableOpacity>
             ))}
@@ -110,7 +113,7 @@ export default function CreateLostScreen({ navigation }) {
               </>
             ) : (
               <View style={styles.photoEmpty}>
-                <Ionicons name="camera-outline" size={30} color={colors.primaryDark} />
+                <Ionicons name="camera-outline" size={30} color={t.primaryDark} />
                 <Text style={styles.photoEmptyText}>Add a photo</Text>
                 <Text style={styles.photoHint}>Camera or gallery · optional</Text>
               </View>
@@ -161,63 +164,65 @@ export default function CreateLostScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
-  toggle: { flexDirection: 'row', backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 4, marginBottom: spacing.lg },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: radius.sm,
-    gap: 6,
-  },
-  toggleLost: { backgroundColor: colors.danger },
-  toggleFound: { backgroundColor: colors.success },
-  toggleText: { fontWeight: '800', color: colors.textMuted, fontSize: 14 },
-  photo: {
-    height: 180,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-  },
-  photoImg: { width: '100%', height: '100%' },
-  photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  photoEmptyText: { ...font.label, color: colors.primaryDark, marginTop: spacing.sm },
-  photoHint: { ...font.small, marginTop: 2 },
-  photoEdit: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(22,36,27,0.8)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    gap: 5,
-  },
-  photoEditText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  label: { ...font.label, marginBottom: spacing.sm },
-  cats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
-  cat: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  catActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  catText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
-  catTextActive: { color: colors.onPrimary },
-  error: { color: colors.danger, marginBottom: spacing.md },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
+    toggle: { flexDirection: 'row', backgroundColor: t.surfaceAlt, borderRadius: radius.md, padding: 4, marginBottom: spacing.lg },
+    toggleBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      borderRadius: radius.sm,
+      gap: 6,
+    },
+    toggleLost: { backgroundColor: t.danger },
+    toggleFound: { backgroundColor: t.success },
+    toggleText: { fontWeight: '800', color: t.textMuted, fontSize: 14 },
+    photo: {
+      height: 180,
+      borderRadius: radius.lg,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      borderStyle: 'dashed',
+      backgroundColor: t.surface,
+      overflow: 'hidden',
+      marginBottom: spacing.lg,
+    },
+    photoImg: { width: '100%', height: '100%' },
+    photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    photoEmptyText: { ...font.label, color: t.text, color: t.primaryDark, marginTop: spacing.sm },
+    photoHint: { ...font.small, color: t.textMuted, marginTop: 2 },
+    photoEdit: {
+      position: 'absolute',
+      bottom: 10,
+      right: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(22,36,27,0.8)',
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radius.pill,
+      gap: 5,
+    },
+    photoEditText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    label: { ...font.label, color: t.text, marginBottom: spacing.sm },
+    cats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
+    cat: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 9,
+      borderRadius: radius.pill,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.border,
+      marginRight: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    catActive: { backgroundColor: t.primary, borderColor: t.primary },
+    catText: { fontSize: 13, fontWeight: '600', color: t.textMuted },
+    catTextActive: { color: t.onPrimary },
+    error: { color: t.danger, marginBottom: spacing.md },
+    });
+  }

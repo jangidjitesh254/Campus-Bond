@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font, radius } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, font, radius } from '../../theme';
 
 const CELLS = 6;
 
 export default function OtpScreen({ route }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { email } = route.params;
   const { verifyOtp, resendOtp } = useAuth();
   const [digits, setDigits] = useState(Array(CELLS).fill(''));
@@ -81,10 +84,10 @@ export default function OtpScreen({ route }) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Text style={font.h1}>Verify email</Text>
-        <Text style={[font.bodyMuted, { marginBottom: spacing.xl }]}>
+        <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Verify email</Text>
+        <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
           Enter the 6-digit code we sent to{'\n'}
-          <Text style={{ fontWeight: '700', color: colors.text }}>{email}</Text>
+          <Text style={{ fontWeight: '700', color: t.text }}>{email}</Text>
         </Text>
 
         <View style={styles.cells}>
@@ -96,7 +99,7 @@ export default function OtpScreen({ route }) {
               keyboardType="number-pad"
               maxLength={CELLS} // allow paste
               value={d}
-              onChangeText={(t) => onChange(t, i)}
+              onChangeText={(text) => onChange(text, i)}
               onKeyPress={(e) => onKeyPress(e, i)}
               autoFocus={i === 0}
             />
@@ -109,8 +112,8 @@ export default function OtpScreen({ route }) {
         <Button title="Verify & continue" onPress={onVerify} loading={loading} style={{ marginTop: spacing.lg }} />
 
         <TouchableOpacity style={styles.resend} onPress={onResend} disabled={cooldown > 0}>
-          <Text style={[font.bodyMuted]}>Didn't get it? </Text>
-          <Text style={[styles.link, cooldown > 0 && { color: colors.textFaint }]}>
+          <Text style={[font.bodyMuted, { color: t.textMuted }]}>Didn't get it? </Text>
+          <Text style={[styles.link, cooldown > 0 && { color: t.textFaint }]}>
             {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
           </Text>
         </TouchableOpacity>
@@ -123,26 +126,28 @@ export default function OtpScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
-  cells: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.lg },
-  cell: {
-    width: 48,
-    height: 58,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  cellFilled: { borderColor: colors.primary, backgroundColor: colors.bg },
-  error: { color: colors.danger, marginBottom: spacing.sm },
-  info: { color: colors.success, marginBottom: spacing.sm },
-  resend: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
-  link: { color: colors.accent, fontWeight: '700' },
-  hint: { ...font.small, textAlign: 'center', marginTop: spacing.xxl, color: colors.textFaint },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
+    cells: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.lg },
+    cell: {
+      width: 48,
+      height: 58,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      backgroundColor: t.surface,
+      textAlign: 'center',
+      fontSize: 24,
+      fontWeight: '700',
+      color: t.text,
+    },
+    cellFilled: { borderColor: t.primary, backgroundColor: t.bg },
+    error: { color: t.danger, marginBottom: spacing.sm },
+    info: { color: t.success, marginBottom: spacing.sm },
+    resend: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+    link: { color: t.accent, fontWeight: '700' },
+    hint: { ...font.small, color: t.textMuted, textAlign: 'center', marginTop: spacing.xxl, color: t.textFaint },
+    });
+  }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, font } from '../../theme';
 
 export default function RegisterScreen({ navigation }) {
+  const { t, kinds, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { register } = useAuth();
   const [form, setForm] = useState({
     name: '',
@@ -63,8 +66,8 @@ export default function RegisterScreen({ navigation }) {
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={font.h1}>Create account</Text>
-          <Text style={[font.bodyMuted, { marginBottom: spacing.xl }]}>
+          <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Create account</Text>
+          <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
             Use your college email — we'll send a verification code.
           </Text>
 
@@ -109,7 +112,7 @@ export default function RegisterScreen({ navigation }) {
           <Button title="Send verification code" onPress={onRegister} loading={loading} />
 
           <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Login')}>
-            <Text style={font.bodyMuted}>Already have an account? </Text>
+            <Text style={[font.bodyMuted, { color: t.textMuted }, { color: t.textMuted }]}>Already have an account? </Text>
             <Text style={styles.link}>Log in</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -118,11 +121,13 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.xl, flexGrow: 1, justifyContent: 'center' },
-  row: { flexDirection: 'row' },
-  error: { color: colors.danger, marginBottom: spacing.md },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
-  link: { color: colors.accent, fontWeight: '700' },
-});
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    container: { padding: spacing.xl, flexGrow: 1, justifyContent: 'center' },
+    row: { flexDirection: 'row' },
+    error: { color: t.danger, marginBottom: spacing.md },
+    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+    link: { color: t.accent, fontWeight: '700' },
+    });
+  }

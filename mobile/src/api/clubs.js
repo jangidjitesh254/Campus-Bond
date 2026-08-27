@@ -19,7 +19,9 @@ export const ClubApi = {
   get: (id) => api.get(`/clubs/${id}`).then((r) => r.data.club),
   create: (data) =>
     api.post('/clubs', toForm(data), { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.club),
-  join: (id) => api.post(`/clubs/${id}/join`).then((r) => r.data),
+  request: (id, payload) => api.post(`/clubs/${id}/request`, payload).then((r) => r.data),
+  reviewRequest: (id, userId, status) =>
+    api.patch(`/clubs/${id}/requests/${userId}`, { status }).then((r) => r.data.club),
   leave: (id) => api.post(`/clubs/${id}/leave`).then((r) => r.data),
   remove: (id) => api.delete(`/clubs/${id}`).then((r) => r.data),
   mine: () => api.get('/clubs/me/joined').then((r) => r.data.clubs),

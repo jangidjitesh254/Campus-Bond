@@ -1,97 +1,210 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../../components/Icon';
 import ClubCard from '../../components/ClubCard';
-import { Loading, EmptyState } from '../../components/ui';
+import { EmptyState } from '../../components/ui';
 import { ClubApi, CLUB_CATEGORIES } from '../../api/clubs';
-import { colors, layout } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { layout, monoFamily } from '../../theme';
 
-const FILTERS = [{ key: null, label: 'All' }, ...CLUB_CATEGORIES];
+const ALL = { key: null, label: 'All' };
 
 export default function ClubFeedScreen({ navigation }) {
+  const { t, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState(null);
-  const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
-    try { setClubs(await ClubApi.list(category ? { category } : {})); }
-    catch {} finally { setLoading(false); setRefreshing(false); }
-  }, [category]);
+    try {
+      setClubs(await ClubApi.list({}));
+    } catch {
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  async function toggle(club) {
-    setBusyId(club._id);
-    try {
-      const res = club.isMember ? await ClubApi.leave(club._id) : await ClubApi.join(club._id);
-      setClubs((cs) => cs.map((c) => (c._id === club._id ? { ...c, isMember: res.isMember, memberCount: res.memberCount } : c)));
-    } catch (e) {
-      /* ignore */
-    } finally { setBusyId(null); }
+  const open = (club) => navigation.navigate('ClubDetail', { id: club._id });
+  const apply = (club) => navigation.navigate('JoinClub', { id: club._id, name: club.name, category: club.category });
+
+  const mine = clubs.filter((c) => c.isMember);
+  const explore = clubs.filter((c) => !c.isMember && (!category || c.category === category));
+  const pending = clubs.filter((c) => !c.isMember && c.myRequest === 'pending').length;
+  const reviewing = mine.reduce((n, c) => n + (c.pendingCount || 0), 0);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ActivityIndicator size="large" color={t.primary} style={{ marginTop: 60 }} />
+      </SafeAreaView>
+    );
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Clubs</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('CreateClub')}>
-          <Text style={styles.link}>Create</Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: layout.tabBarSpace + 30 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor={t.primary}
+            colors={[t.primary]}
+          />
+        }
+      >
+        {/* Title + a start-your-own action */}
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.title}>Clubs</Text>
+            <Text style={styles.subtitle}>Find your people. Build something.</Text>
+          </View>
+          <TouchableOpacity style={styles.startBtn} activeOpacity={0.85} onPress={() => navigation.navigate('CreateClub')}>
+            <Icon name="plus" size={14} color={t.onPrimary} strokeWidth={2.4} />
+            <Text style={styles.startText}>Start a club</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.filters}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 14 }}>
-          {FILTERS.map((f) => {
+        {/* Progress strip — how involved the student is right now */}
+        <View style={styles.stats}>
+          <Stat styles={styles} value={mine.length} label="JOINED" />
+          <View style={styles.statLine} />
+          <Stat styles={styles} value={pending} label="PENDING" />
+          <View style={styles.statLine} />
+          <Stat styles={styles} value={clubs.length} label="ON CAMPUS" />
+        </View>
+
+        {/* ---- My clubs ---- */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>My clubs</Text>
+          {reviewing > 0 ? (
+            <View style={styles.reviewChip}>
+              <Text style={styles.reviewText}>{reviewing} to review</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {mine.length === 0 ? (
+          <View style={styles.blank}>
+            <Text style={styles.blankTitle}>You have not joined a club yet</Text>
+            <Text style={styles.blankSub}>Pick one below and send the president a request.</Text>
+          </View>
+        ) : (
+          mine.map((c) => <ClubCard key={c._id} club={c} onPress={() => open(c)} />)
+        )}
+
+        {/* ---- Explore ---- */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>Explore our clubs</Text>
+          <Text style={styles.sectionCount}>{explore.length}</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {[ALL, ...CLUB_CATEGORIES].map((f) => {
             const active = category === f.key;
             return (
-              <TouchableOpacity key={f.label} onPress={() => setCategory(f.key)} activeOpacity={0.8}>
-                <View style={[styles.pill, active ? styles.active : styles.inactive]}>
-                  <Text style={[styles.pillText, { color: active ? colors.onPrimary : colors.primary }]}>{f.label}</Text>
+              <TouchableOpacity key={f.label} onPress={() => setCategory(f.key)} activeOpacity={0.85} hitSlop={{ top: 8, bottom: 8 }}>
+                <View style={[styles.chip, active && styles.chipOn]}>
+                  <Text style={[styles.chipText, active && styles.chipTextOn]}>{f.label}</Text>
                 </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
-      </View>
 
-      {loading ? (
-        <Loading />
-      ) : (
-        <FlatList
-          data={clubs}
-          keyExtractor={(c) => c._id}
-          contentContainerStyle={{ paddingTop: 6, paddingBottom: layout.tabBarSpace + 40 }}
-          renderItem={({ item }) => (
-            <ClubCard club={item} busy={busyId === item._id} onPress={() => navigation.navigate('ClubDetail', { id: item._id })} onToggle={() => toggle(item)} />
-          )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<EmptyState title="No clubs yet" subtitle="Tap the + to start the first one." />}
-        />
-      )}
-
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9} onPress={() => navigation.navigate('CreateClub')}>
-        <View style={styles.fabCircle}><Icon name="plus" size={18} color={colors.primary} strokeWidth={2.4} /></View>
-        <Text style={styles.fabText}>New club</Text>
-      </TouchableOpacity>
+        {explore.length === 0 ? (
+          <EmptyState title="Nothing here" subtitle="No clubs in this category yet — start one?" />
+        ) : (
+          explore.map((c) => (
+            <ClubCard key={c._id} club={c} onPress={() => open(c)} onAction={() => apply(c)} />
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  link: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  filters: { paddingBottom: 10 },
-  pill: { borderRadius: 999, paddingHorizontal: 15, paddingVertical: 8 },
-  active: { backgroundColor: colors.primary },
-  inactive: { backgroundColor: colors.surfaceAlt },
-  pillText: { fontSize: 13, fontWeight: '600' },
-  fab: { position: 'absolute', right: 16, bottom: layout.tabBarSpace + 4, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.primary, borderRadius: 999, paddingLeft: 8, paddingRight: 22, paddingVertical: 8 },
-  fabCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
-  fabText: { fontSize: 16, fontWeight: '700', color: colors.onPrimary },
-});
+function Stat({ value, label, styles }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function makeStyles(t, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.page },
+
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, paddingTop: 4, paddingBottom: 14 },
+    title: { fontSize: 24, fontWeight: '700', letterSpacing: -0.9, color: t.text },
+    subtitle: { fontSize: 12.5, color: t.textMuted, marginTop: 2 },
+    startBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: t.primary,
+      borderRadius: 999,
+      paddingHorizontal: 13,
+      paddingVertical: 9,
+    },
+    startText: { fontSize: 12.5, fontWeight: '600', color: t.onPrimary },
+
+    stats: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 18,
+      paddingVertical: 14,
+      borderRadius: 16,
+      backgroundColor: t.surfaceAlt,
+      borderWidth: 1,
+      borderColor: t.hairlineAlt,
+    },
+    stat: { flex: 1, alignItems: 'center', gap: 3 },
+    statValue: { fontSize: 19, fontWeight: '700', letterSpacing: -0.5, color: t.text },
+    statLabel: { fontFamily: monoFamily, fontSize: 8.5, fontWeight: '700', letterSpacing: 1.2, color: t.textMuted },
+    statLine: { width: 1, height: 26, backgroundColor: t.hairline },
+
+    sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingTop: 26, paddingBottom: 12 },
+    sectionTitle: { fontSize: 16.5, fontWeight: '700', letterSpacing: -0.4, color: t.text },
+    sectionCount: { fontFamily: monoFamily, fontSize: 10, fontWeight: '500', color: t.textDim },
+    reviewChip: { backgroundColor: t.accentSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+    reviewText: { fontSize: 11, fontWeight: '700', color: t.accent },
+
+    blank: {
+      marginHorizontal: 18,
+      paddingVertical: 22,
+      paddingHorizontal: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.borderSoft,
+      alignItems: 'center',
+    },
+    blankTitle: { fontSize: 13.5, fontWeight: '600', color: t.text },
+    blankSub: { fontSize: 12, color: t.textMuted, marginTop: 5, textAlign: 'center' },
+
+    chips: { gap: 8, paddingHorizontal: 18, paddingBottom: 14 },
+    chip: {
+      borderRadius: 999,
+      paddingHorizontal: 13,
+      paddingVertical: 8,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.borderSoft,
+    },
+    chipOn: { backgroundColor: t.primary, borderColor: t.primary },
+    chipText: { fontSize: 12.5, fontWeight: '600', letterSpacing: -0.2, color: t.textMuted },
+    chipTextOn: { color: t.onPrimary },
+  });
+}

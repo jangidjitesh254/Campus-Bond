@@ -6,36 +6,34 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import OtpScreen from '../screens/auth/OtpScreen';
 import AppTabs from './AppTabs';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { useStackOptions } from './stackOptions';
 import { Loading } from '../components/ui';
-import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator();
 
-// Light navigation theme matching the app background.
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: colors.primary,
-    background: colors.bg,
-    card: colors.bg,
-    text: colors.text,
-    border: colors.border,
-    notification: colors.primary,
-  },
-};
+/** Navigation theme follows the active palette. */
+function useNavTheme() {
+  const { t, isDark } = useTheme();
+  return {
+    ...DefaultTheme,
+    dark: isDark,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: t.primary,
+      background: t.page,
+      card: t.page,
+      text: t.text,
+      border: t.hairline,
+      notification: t.primary,
+    },
+  };
+}
 
 function AuthStack() {
+  const screenOptions = useStackOptions();
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.primary,
-        headerTitle: '',
-        contentStyle: { backgroundColor: colors.bg },
-      }}
-    >
+    <Stack.Navigator screenOptions={{ ...screenOptions, headerTitle: '' }}>
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Otp" component={OtpScreen} />
@@ -45,6 +43,7 @@ function AuthStack() {
 
 export default function RootNavigator() {
   const { isLoggedIn, booting } = useAuth();
+  const navTheme = useNavTheme();
 
   if (booting) return <Loading label="Loading Campus Bond…" />;
 

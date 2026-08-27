@@ -8,6 +8,7 @@ const conversationSchema = new mongoose.Schema(
   {
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],
     event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // the post it started from
+    market: { type: mongoose.Schema.Types.ObjectId, ref: 'MarketItem' }, // or the listing it started from
     lastMessage: { type: String, default: '' },
     lastMessageAt: { type: Date, default: Date.now },
   },
