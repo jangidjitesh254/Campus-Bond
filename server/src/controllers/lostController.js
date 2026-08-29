@@ -104,6 +104,53 @@ export async function updateLostStatus(req, res) {
 }
 
 /**
+ * Edit a lost/found post (owner only). Accepts multipart/form-data so the photo
+ * can be swapped; the old file is removed when a new one arrives.
+ * PATCH /api/lostfound/:id
+ */
+export async function updateLostItem(req, res) {
+  const item = await LostItem.findById(req.params.id);
+  if (!item) {
+    if (req.file) removeImageFile(req.file.filename);
+    return res.status(404).json({ message: 'Item not found.' });
+  }
+  if (String(item.createdBy) !== String(req.user._id)) {
+    if (req.file) removeImageFile(req.file.filename);
+    return res.status(403).json({ message: 'Only the poster can edit this item.' });
+  }
+
+  const { type, title, description, category, location, contact } = req.body;
+
+  if (type !== undefined) {
+    if (!['lost', 'found'].includes(type)) {
+      if (req.file) removeImageFile(req.file.filename);
+      return res.status(400).json({ message: "Type must be 'lost' or 'found'." });
+    }
+    item.type = type;
+  }
+  if (title !== undefined) {
+    if (!String(title).trim()) {
+      if (req.file) removeImageFile(req.file.filename);
+      return res.status(400).json({ message: 'A title is required.' });
+    }
+    item.title = String(title).trim();
+  }
+  if (description !== undefined) item.description = String(description).trim();
+  if (category !== undefined) item.category = category;
+  if (location !== undefined) item.location = String(location).trim();
+  if (contact !== undefined) item.contact = String(contact).trim();
+
+  if (req.file) {
+    removeImageFile(item.image); // drop the photo it replaces
+    item.image = `/uploads/${req.file.filename}`;
+  }
+
+  await item.save();
+  await item.populate('createdBy', 'name branch semester');
+  res.status(200).json({ item });
+}
+
+/**
  * Delete (owner only). Also removes the uploaded image.
  * DELETE /api/lostfound/:id
  */

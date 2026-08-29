@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../components/Icon';
 import ThreadPost from '../components/ThreadPost';
 import CelebrationOverlay from '../components/CelebrationOverlay';
+import ActionSheet from '../components/ActionSheet';
 import { EventsApi } from '../api/events';
 import { LostApi, imageUrl } from '../api/lostfound';
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +34,7 @@ export default function PostFeedScreen({ navigation, route }) {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
+  const [menuFor, setMenuFor] = useState(null); // post whose long-press menu is open
 
   const load = useCallback(async () => {
     try {
@@ -62,6 +64,76 @@ export default function PostFeedScreen({ navigation, route }) {
         load();
       }
     } catch (e) { Alert.alert('Oops', e.message); }
+  }
+
+  const isMine = (p) => String(p?.createdBy?._id || p?.createdBy) === String(user?._id);
+
+  /** Long-press opens the owner menu; other people's posts stay untouched. */
+  function openMenu(post) {
+    if (isMine(post)) setMenuFor(post);
+  }
+
+  function menuOptions(p) {
+    if (!p) return [];
+    if (p.__kind === 'lost') {
+      return [
+        { key: 'edit', label: 'Edit item', icon: 'edit', hint: 'Photo, details, location' },
+        { key: 'resolve', label: p.status === 'resolved' ? 'Reopen item' : 'Mark as resolved', icon: 'check' },
+        { key: 'delete', label: 'Delete item', icon: 'trash', tone: 'danger' },
+      ];
+    }
+    const responses = p.applicants?.length || 0;
+    return [
+      { key: 'edit', label: 'Edit post', icon: 'edit', hint: 'Title, details, deadline' },
+      {
+        key: 'responses',
+        label: 'Show responses',
+        icon: 'users',
+        hint: responses ? `${responses} interested` : 'No one yet',
+      },
+      { key: 'close', label: p.status === 'closed' ? 'Reopen post' : 'Close post', icon: 'check' },
+      { key: 'delete', label: 'Delete post', icon: 'trash', tone: 'danger' },
+    ];
+  }
+
+  async function onMenuSelect(key) {
+    const p = menuFor;
+    setMenuFor(null);
+    if (!p) return;
+    const lost = p.__kind === 'lost';
+
+    try {
+      if (key === 'edit') {
+        navigation.navigate(lost ? 'CreateLost' : 'CreateEvent', { id: p._id });
+      } else if (key === 'responses') {
+        navigation.navigate('Thread', { id: p._id });
+      } else if (key === 'close') {
+        await EventsApi.setStatus(p._id, p.status === 'closed' ? 'open' : 'closed');
+        load();
+      } else if (key === 'resolve') {
+        await LostApi.setStatus(p._id, p.status === 'resolved' ? 'open' : 'resolved');
+        load();
+      } else if (key === 'delete') {
+        Alert.alert(lost ? 'Delete item' : 'Delete post', 'This cannot be undone.', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                if (lost) await LostApi.remove(p._id);
+                else await EventsApi.remove(p._id);
+                load();
+              } catch (e) {
+                Alert.alert('Oops', e.message);
+              }
+            },
+          },
+        ]);
+      }
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    }
   }
 
   async function onShare(event) {
@@ -197,6 +269,7 @@ export default function PostFeedScreen({ navigation, route }) {
               <ThreadPost
                 post={item}
                 onOpen={open}
+                onLongPress={() => openMenu(item)}
                 onComment={() => (lostItem ? open() : navigation.navigate('Thread', { id: item._id, focusComment: true }))}
                 onInterested={() => (lostItem ? open() : onInterested(item))}
                 onShare={() => onShare(item)}
@@ -229,6 +302,15 @@ export default function PostFeedScreen({ navigation, route }) {
       )}
 
       <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
+
+      <ActionSheet
+        visible={!!menuFor}
+        title={menuFor?.title}
+        subtitle="Your post"
+        options={menuOptions(menuFor)}
+        onSelect={onMenuSelect}
+        onClose={() => setMenuFor(null)}
+      />
     </View>
   );
 }

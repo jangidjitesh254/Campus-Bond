@@ -41,6 +41,14 @@ const ICONS = {
       <Circle cx={12} cy={19} r={1.8} fill={c} stroke="none" />
     </>
   ),
+  trash: (c) => (
+    <>
+      <Path d="M4.5 7h15" stroke={c} />
+      <Path d="M9.5 7V5.6A1.6 1.6 0 0 1 11.1 4h1.8a1.6 1.6 0 0 1 1.6 1.6V7" stroke={c} />
+      <Path d="M6.6 7l.9 12a2 2 0 0 0 2 1.9h5a2 2 0 0 0 2-1.9l.9-12" stroke={c} />
+      <Path d="M10.4 11v6M13.6 11v6" stroke={c} />
+    </>
+  ),
   dotsH: (c) => (
     <>
       <Circle cx={5} cy={12} r={1.8} fill={c} stroke="none" />

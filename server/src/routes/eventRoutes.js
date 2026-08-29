@@ -7,6 +7,7 @@ import {
   applyToEvent,
   reviewApplicant,
   updateEventStatus,
+  updateEvent,
   deleteEvent,
   myEvents,
   myApplications,
@@ -35,7 +36,7 @@ router
     createEvent
   );
 
-router.route('/:id').get(getEventById).delete(deleteEvent);
+router.route('/:id').get(getEventById).patch(updateEvent).delete(deleteEvent);
 router.post('/:id/apply', applyToEvent);
 router.post('/:id/interest', expressInterest);
 router.post('/:id/comments', addComment);

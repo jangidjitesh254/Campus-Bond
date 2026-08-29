@@ -7,6 +7,27 @@ export function imageUrl(pathOrEmpty) {
   return `${BASE_URL}${pathOrEmpty}`;
 }
 
+/**
+ * Build the multipart body. Only defined keys are appended, so a partial edit
+ * never blanks out a field it did not mean to touch.
+ */
+function toForm({ type, title, description, category, location, contact, image }) {
+  const form = new FormData();
+  const put = (k, v) => { if (v !== undefined && v !== null) form.append(k, v); };
+  put('type', type);
+  put('title', title);
+  put('description', description);
+  put('category', category);
+  put('location', location);
+  put('contact', contact);
+  if (image?.uri) {
+    const name = image.fileName || image.uri.split('/').pop() || 'photo.jpg';
+    const ext = (name.split('.').pop() || 'jpg').toLowerCase();
+    form.append('image', { uri: image.uri, name, type: image.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}` });
+  }
+  return form;
+}
+
 export const LostApi = {
   list: (params = {}) => api.get('/lostfound', { params }).then((r) => r.data),
   get: (id) => api.get(`/lostfound/${id}`).then((r) => r.data.item),
@@ -15,27 +36,16 @@ export const LostApi = {
    * Create a post. `image` is an expo-image-picker asset ({ uri, mimeType, fileName })
    * or null. Sent as multipart/form-data.
    */
-  create: ({ type, title, description, category, location, contact, image }) => {
-    const form = new FormData();
-    form.append('type', type);
-    form.append('title', title);
-    if (description) form.append('description', description);
-    if (category) form.append('category', category);
-    if (location) form.append('location', location);
-    if (contact) form.append('contact', contact);
-    if (image?.uri) {
-      const name = image.fileName || image.uri.split('/').pop() || 'photo.jpg';
-      const ext = (name.split('.').pop() || 'jpg').toLowerCase();
-      form.append('image', {
-        uri: image.uri,
-        name,
-        type: image.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
-      });
-    }
-    return api
-      .post('/lostfound', form, { headers: { 'Content-Type': 'multipart/form-data' } })
-      .then((r) => r.data.item);
-  },
+  create: (data) =>
+    api
+      .post('/lostfound', toForm(data), { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data.item),
+
+  /** Partial edit. Omit `image` to keep the existing photo. */
+  update: (id, data) =>
+    api
+      .patch(`/lostfound/${id}`, toForm(data), { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data.item),
 
   setStatus: (id, status) =>
     api.patch(`/lostfound/${id}/status`, { status }).then((r) => r.data.item),

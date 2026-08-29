@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from './Icon';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { monoFamily } from '../theme';
@@ -24,6 +25,28 @@ export function fmtDate(value) {
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** "25 Aug · 6:00 pm" — the clock is dropped when the deadline is a bare date. */
+export function fmtDeadline(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  if (d.getHours() === 0 && d.getMinutes() === 0) return date;
+  return `${date} · ${d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+}
+
+/** How a deadline should read on the card: due date, time left, and urgency. */
+export function deadlineState(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  const ms = d.getTime() - Date.now();
+  if (ms <= 0) return { text: `Closed ${fmtDeadline(value)}`, past: true, soon: false };
+  const hours = Math.floor(ms / 3600000);
+  const days = Math.floor(hours / 24);
+  const left = days >= 1 ? `${days}d left` : hours >= 1 ? `${hours}h left` : 'closing soon';
+  return { text: `Due ${fmtDeadline(value)} · ${left}`, past: false, soon: hours < 48 };
 }
 
 /**
@@ -52,7 +75,7 @@ function replyLabel(n) {
 }
 
 /** Home feed post card — badge + age, title, author row, then an action bar. */
-export default function ThreadPost({ post, onOpen, onInterested, onComment, onShare }) {
+export default function ThreadPost({ post, onOpen, onLongPress, onInterested, onComment, onShare }) {
   const { user } = useAuth();
   const { t, kinds, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, kinds, isDark), [t, kinds, isDark]);
@@ -61,6 +84,7 @@ export default function ThreadPost({ post, onOpen, onInterested, onComment, onSh
   const isOwner = String(owner._id || post.createdBy) === String(user?._id);
   const interested = (post.applicants || []).some((a) => String(a.user?._id || a.user) === String(user?._id));
   const meta = postKind(post);
+  const due = deadlineState(post.deadline);
   const k = kinds[meta.kind];
   const initials = (owner.name || '?')
     .split(' ')
@@ -70,7 +94,13 @@ export default function ThreadPost({ post, onOpen, onInterested, onComment, onSh
     .toUpperCase();
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.96} onPress={onOpen}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.96}
+      onPress={onOpen}
+      onLongPress={onLongPress}
+      delayLongPress={280}
+    >
       <View style={styles.body}>
         <View style={styles.meta}>
           <View style={[styles.badge, { backgroundColor: k.bg }]}>
@@ -80,6 +110,20 @@ export default function ThreadPost({ post, onOpen, onInterested, onComment, onSh
         </View>
 
         <Text style={styles.title}>{post.title}</Text>
+
+        {due ? (
+          <View style={styles.due}>
+            <Icon
+              name="calendar"
+              size={13}
+              color={due.past ? t.textFaint : due.soon ? t.accent : t.textMuted}
+              strokeWidth={1.8}
+            />
+            <Text style={[styles.dueText, due.past && styles.duePast, due.soon && !due.past && styles.dueSoon]}>
+              {due.text}
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.author}>
           <View style={[styles.ava, { backgroundColor: k.bg }]}>
@@ -145,6 +189,10 @@ function makeStyles(t, kinds, isDark) {
     badgeText: { fontFamily: monoFamily, fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8 },
     age: { fontSize: 11.5, color: t.textFaint },
     title: { fontSize: 16.5, lineHeight: 22, fontWeight: '600', letterSpacing: -0.3, color: t.text, marginTop: 11, marginBottom: 10 },
+    due: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+    dueText: { fontSize: 11.5, fontWeight: '500', color: t.textMuted },
+    dueSoon: { color: t.accent, fontWeight: '600' },
+    duePast: { color: t.textFaint },
     author: { flexDirection: 'row', alignItems: 'center', gap: 9 },
     ava: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
     avaText: { fontFamily: monoFamily, fontSize: 11, fontWeight: '700' },

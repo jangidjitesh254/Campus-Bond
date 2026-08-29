@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,27 +9,105 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../components/ui';
+import { Button, Field, Loading } from '../../components/ui';
 import { EventsApi, CATEGORIES } from '../../api/events';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, radius, layout } from '../../theme';
 
-export default function CreateEventScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+/**
+ * Turn the date + time boxes into a deadline.
+ * Date accepts "25 May 2025" or "2025-05-25"; time accepts "18:00" or "6:00 pm".
+ * An empty date means no deadline at all.
+ */
+function parseDeadline(dateStr, timeStr) {
+  const date = (dateStr || '').trim();
+  const time = (timeStr || '').trim();
+  if (!date) return { ok: true, value: null };
+
+  const when = new Date(date);
+  if (isNaN(when.getTime())) return { ok: false, field: 'date' };
+
+  if (time) {
+    const m = time.match(/^(\d{1,2})[:.](\d{2})\s*(am|pm)?$/i);
+    if (!m) return { ok: false, field: 'time' };
+    let hours = Number(m[1]);
+    const mins = Number(m[2]);
+    const suffix = (m[3] || '').toLowerCase();
+    if (suffix === 'pm' && hours < 12) hours += 12;
+    if (suffix === 'am' && hours === 12) hours = 0;
+    if (hours > 23 || mins > 59) return { ok: false, field: 'time' };
+    when.setHours(hours, mins, 0, 0);
+  } else {
+    when.setHours(0, 0, 0, 0); // a bare date reads as "that day", no clock shown
+  }
+  return { ok: true, value: when };
+}
+
+/** Split a stored deadline back into the two text boxes. */
+function splitDeadline(value) {
+  if (!value) return { date: '', time: '' };
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return { date: '', time: '' };
+  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const bare = d.getHours() === 0 && d.getMinutes() === 0;
+  const time = bare ? '' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return { date, time };
+}
+
+export default function CreateEventScreen({ navigation, route }) {
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+
+  // `id` turns this into an edit screen; `category` preselects a kind when the
+  // compose menu sends us here.
+  const editId = route.params?.id;
+  const preset = route.params?.category;
+
   const [form, setForm] = useState({
     title: '',
     description: '',
-    category: 'hackathon',
+    category: preset || 'hackathon',
     skillsNeeded: '',
     teamSize: '',
     date: '',
+    time: '',
     venue: '',
   });
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(!!editId);
   const [error, setError] = useState('');
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
+
+  useEffect(() => {
+    navigation.setOptions({ title: editId ? 'Edit post' : 'New post' });
+  }, [navigation, editId]);
+
+  // Prefill when editing.
+  useEffect(() => {
+    if (!editId) return;
+    let active = true;
+    EventsApi.get(editId)
+      .then((e) => {
+        if (!active) return;
+        const { date, time } = splitDeadline(e.deadline);
+        setForm({
+          title: e.title || '',
+          description: e.description || '',
+          category: e.category || 'hackathon',
+          skillsNeeded: (e.skillsNeeded || []).join(', '),
+          teamSize: e.teamSize ? String(e.teamSize) : '',
+          date,
+          time,
+          venue: e.venue || '',
+        });
+      })
+      .catch((e) => active && setError(e.message))
+      .finally(() => active && setFetching(false));
+    return () => {
+      active = false;
+    };
+  }, [editId]);
 
   async function onSubmit() {
     setError('');
@@ -37,24 +115,31 @@ export default function CreateEventScreen({ navigation }) {
       setError('Please add a title and description.');
       return;
     }
-    // Accepts "25 May 2025" or "2025-05-25"; ignored if it can't be read.
-    const parsed = form.date.trim() ? new Date(form.date.trim()) : null;
-    if (form.date.trim() && isNaN(parsed?.getTime())) {
-      setError('Date must look like "25 May 2025" or "2025-05-25".');
+
+    const deadline = parseDeadline(form.date, form.time);
+    if (!deadline.ok) {
+      setError(
+        deadline.field === 'time'
+          ? 'Time must look like "18:00" or "6:00 pm".'
+          : 'Date must look like "25 May 2025" or "2025-05-25".'
+      );
       return;
     }
 
     setLoading(true);
     try {
-      await EventsApi.create({
+      const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
         category: form.category,
         skillsNeeded: form.skillsNeeded,
         teamSize: form.teamSize ? Number(form.teamSize) : 1,
-        deadline: parsed ? parsed.toISOString() : undefined,
+        // '' clears an existing deadline on edit; undefined leaves it unset on create.
+        deadline: deadline.value ? deadline.value.toISOString() : '',
         venue: form.venue.trim(),
-      });
+      };
+      if (editId) await EventsApi.update(editId, payload);
+      else await EventsApi.create(payload);
       navigation.goBack();
     } catch (e) {
       setError(e.message);
@@ -62,6 +147,8 @@ export default function CreateEventScreen({ navigation }) {
       setLoading(false);
     }
   }
+
+  if (fetching) return <Loading label="Loading post…" />;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -71,7 +158,9 @@ export default function CreateEventScreen({ navigation }) {
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.lg }]}>
-            Tell students what you're building and who you need.
+            {editId
+              ? 'Update the details — everyone sees the changes straight away.'
+              : "Tell students what you're building and who you need."}
           </Text>
 
           <Field
@@ -120,12 +209,29 @@ export default function CreateEventScreen({ navigation }) {
             onChangeText={set('teamSize')}
           />
 
-          <Field label="Date (optional)" placeholder="25 May 2025" value={form.date} onChangeText={set('date')} />
+          {/* Deadline — shown on the post so others know how long they have. */}
+          <Text style={styles.label}>Deadline (optional)</Text>
+          <View style={styles.row}>
+            <Field
+              placeholder="25 May 2025"
+              value={form.date}
+              onChangeText={set('date')}
+              style={{ flex: 1, marginRight: spacing.md }}
+            />
+            <Field
+              placeholder="18:00"
+              value={form.time}
+              onChangeText={set('time')}
+              style={{ width: 110 }}
+            />
+          </View>
+          <Text style={styles.hint}>Leave the date empty for no deadline. Time is optional.</Text>
+
           <Field label="Venue (optional)" placeholder="Auditorium, VGU" value={form.venue} onChangeText={set('venue')} />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Button title="Post request" onPress={onSubmit} loading={loading} />
+          <Button title={editId ? 'Save changes' : 'Post request'} onPress={onSubmit} loading={loading} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -137,6 +243,8 @@ function makeStyles(t, isDark) {
     safe: { flex: 1, backgroundColor: t.bg },
     container: { padding: spacing.xl, paddingBottom: layout.tabBarSpace },
     label: { ...font.label, color: t.text, marginBottom: spacing.sm },
+    row: { flexDirection: 'row' },
+    hint: { fontSize: 11.5, color: t.textMuted, marginTop: -8, marginBottom: spacing.lg },
     cats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
     cat: {
       paddingHorizontal: spacing.lg,
@@ -152,5 +260,5 @@ function makeStyles(t, isDark) {
     catText: { fontSize: 13, fontWeight: '600', color: t.textMuted },
     catTextActive: { color: t.onPrimary },
     error: { color: t.danger, marginBottom: spacing.md },
-    });
-  }
+  });
+}

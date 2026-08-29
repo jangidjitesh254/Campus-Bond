@@ -225,6 +225,56 @@ export async function updateEventStatus(req, res) {
 }
 
 /**
+ * Edit a post (owner only). Only the fields actually sent are touched, so the
+ * client can patch a single value without resending the whole post.
+ * PATCH /api/events/:id
+ */
+export async function updateEvent(req, res) {
+  const event = await Event.findById(req.params.id);
+  if (!event) return res.status(404).json({ message: 'Post not found.' });
+  if (String(event.createdBy) !== String(req.user._id)) {
+    return res.status(403).json({ message: 'Only the poster can edit this post.' });
+  }
+
+  const { title, description, category, skillsNeeded, teamSize, deadline, venue } = req.body;
+
+  if (title !== undefined) {
+    if (!String(title).trim()) return res.status(400).json({ message: 'Title cannot be empty.' });
+    event.title = String(title).trim();
+  }
+  if (description !== undefined) {
+    if (!String(description).trim()) return res.status(400).json({ message: 'Description cannot be empty.' });
+    event.description = String(description).trim();
+  }
+  if (category !== undefined) event.category = category;
+  if (venue !== undefined) event.venue = String(venue).trim();
+  if (teamSize !== undefined && teamSize !== '') event.teamSize = Number(teamSize) || 1;
+  if (skillsNeeded !== undefined) {
+    event.skillsNeeded = Array.isArray(skillsNeeded)
+      ? skillsNeeded
+      : String(skillsNeeded || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+  }
+  // An empty string clears the deadline; a bad date is rejected rather than
+  // silently stored as Invalid Date.
+  if (deadline !== undefined) {
+    if (!deadline) {
+      event.deadline = undefined;
+    } else {
+      const when = new Date(deadline);
+      if (Number.isNaN(when.getTime())) return res.status(400).json({ message: 'That deadline is not a valid date.' });
+      event.deadline = when;
+    }
+  }
+
+  await event.save();
+  await event.populate('createdBy', 'name branch semester avatar');
+  res.status(200).json({ event });
+}
+
+/**
  * Delete a post (owner only).
  * DELETE /api/events/:id
  */

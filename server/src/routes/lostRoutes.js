@@ -4,6 +4,7 @@ import {
   getLostItems,
   getLostItemById,
   updateLostStatus,
+  updateLostItem,
   deleteLostItem,
   myLostItems,
 } from '../controllers/lostController.js';
@@ -18,7 +19,11 @@ router.get('/me/posts', myLostItems);
 
 router.route('/').get(getLostItems).post(uploadImage.single('image'), createLostItem);
 
-router.route('/:id').get(getLostItemById).delete(deleteLostItem);
+router
+  .route('/:id')
+  .get(getLostItemById)
+  .patch(uploadImage.single('image'), updateLostItem)
+  .delete(deleteLostItem);
 router.patch('/:id/status', updateLostStatus);
 
 export default router;

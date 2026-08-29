@@ -4,6 +4,8 @@ export const EventsApi = {
   list: (params = {}) => api.get('/events', { params }).then((r) => r.data),
   get: (id) => api.get(`/events/${id}`).then((r) => r.data.event),
   create: (payload) => api.post('/events', payload).then((r) => r.data.event),
+  // Partial edit — only send the fields that changed.
+  update: (id, payload) => api.patch(`/events/${id}`, payload).then((r) => r.data.event),
   apply: (id, message) => api.post(`/events/${id}/apply`, { message }).then((r) => r.data),
   // One-tap interest: records interest + auto-messages the poster. Returns
   // { conversation, alreadyInterested }.

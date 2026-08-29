@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,51 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Field } from '../../components/ui';
-import { LostApi, LOST_CATEGORIES } from '../../api/lostfound';
+import { Button, Field, Loading } from '../../components/ui';
+import { LostApi, LOST_CATEGORIES, imageUrl } from '../../api/lostfound';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, radius, layout } from '../../theme';
 
-export default function CreateLostScreen({ navigation }) {
+export default function CreateLostScreen({ navigation, route }) {
   const { t, kinds, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [type, setType] = useState('lost');
   const [form, setForm] = useState({ title: '', description: '', category: 'other', location: '', contact: '' });
   const [image, setImage] = useState(null);
+  const [existingImage, setExistingImage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // `id` turns this into an edit screen.
+  const editId = route.params?.id;
+  const [fetching, setFetching] = useState(!!editId);
+
+  useEffect(() => {
+    navigation.setOptions({ title: editId ? 'Edit item' : 'Report an item' });
+  }, [navigation, editId]);
+
+  useEffect(() => {
+    if (!editId) return;
+    let active = true;
+    LostApi.get(editId)
+      .then((it) => {
+        if (!active) return;
+        setType(it.type || 'lost');
+        setForm({
+          title: it.title || '',
+          description: it.description || '',
+          category: it.category || 'other',
+          location: it.location || '',
+          contact: it.contact || '',
+        });
+        setExistingImage(it.image || '');
+      })
+      .catch((e) => active && setError(e.message))
+      .finally(() => active && setFetching(false));
+    return () => {
+      active = false;
+    };
+  }, [editId]);
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -67,7 +99,9 @@ export default function CreateLostScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      await LostApi.create({ type, ...form, title: form.title.trim(), image });
+      const payload = { type, ...form, title: form.title.trim(), image };
+      if (editId) await LostApi.update(editId, payload);
+      else await LostApi.create(payload);
       navigation.goBack();
     } catch (e) {
       setError(e.message);
@@ -75,6 +109,11 @@ export default function CreateLostScreen({ navigation }) {
       setLoading(false);
     }
   }
+
+  // A freshly picked photo wins; otherwise show whatever is already stored.
+  const previewUri = image?.uri || imageUrl(existingImage);
+
+  if (fetching) return <Loading label="Loading item…" />;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -103,9 +142,9 @@ export default function CreateLostScreen({ navigation }) {
 
           {/* Photo picker */}
           <TouchableOpacity style={styles.photo} onPress={choosePhoto} activeOpacity={0.85}>
-            {image ? (
+            {previewUri ? (
               <>
-                <Image source={{ uri: image.uri }} style={styles.photoImg} />
+                <Image source={{ uri: previewUri }} style={styles.photoImg} />
                 <View style={styles.photoEdit}>
                   <Ionicons name="camera" size={16} color="#fff" />
                   <Text style={styles.photoEditText}>Change photo</Text>
@@ -157,7 +196,7 @@ export default function CreateLostScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Button title="Post item" onPress={onSubmit} loading={loading} />
+          <Button title={editId ? 'Save changes' : 'Post item'} onPress={onSubmit} loading={loading} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
