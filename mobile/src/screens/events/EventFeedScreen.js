@@ -51,17 +51,9 @@ export default function EventFeedScreen({ navigation }) {
 
   async function onInterested(event) {
     try {
-      const { conversation, alreadyInterested } = await EventsApi.interest(event._id);
-      if (alreadyInterested) {
-        // Already interested → jump straight into the chat.
-        navigation.navigate('More', {
-          screen: 'Chat',
-          params: { conversationId: conversation._id, title: event.createdBy?.name || 'Chat' },
-        });
-      } else {
-        setCelebrating(true); // celebrate, then refresh so the card updates
-        load();
-      }
+      const res = await EventsApi.interest(event._id);
+      if (res.interested) setCelebrating(true); // withdrawing just refreshes
+      load();
     } catch (e) {
       Alert.alert('Oops', e.message);
     }
@@ -139,7 +131,12 @@ export default function EventFeedScreen({ navigation }) {
         <Ionicons name="add" size={30} color={t.onPrimary} />
       </TouchableOpacity>
 
-      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
+      <CelebrationOverlay
+        visible={celebrating}
+        onDone={() => setCelebrating(false)}
+        message="Request sent! 🎉"
+        subtitle="The poster will review it"
+      />
     </SafeAreaView>
   );
 }

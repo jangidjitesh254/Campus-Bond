@@ -43,9 +43,8 @@ export default function ProfileScreen({ navigation }) {
     { icon: 'moon', label: 'Dark theme', switchOn: isDark, onPress: toggle },
     { icon: 'grid', label: 'Campus dashboard', onPress: () => navigation.getParent()?.navigate('Home') },
     { icon: 'map', label: 'Campus map', onPress: () => navigation.getParent()?.navigate('Map') },
-    { icon: 'megaphone', label: 'My posts', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'MyPosts' }) },
-    { icon: 'tag', label: 'My listings', onPress: () => navigation.getParent()?.navigate('Sell', { screen: 'MyListings' }) },
-    { icon: 'search', label: 'My lost & found', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'MyLostPosts' }) },
+    // One place for everything they have posted, of any kind.
+    { icon: 'list', label: 'My activity', onPress: () => navigation.navigate('MyActivity') },
     { icon: 'users', label: 'My clubs', onPress: () => navigation.getParent()?.navigate('Club') },
     { icon: 'chat', label: 'Messages', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'ChatList' }) },
     { icon: 'bell', label: 'Settings', onPress: () => navigation.navigate('Feature', { step: '00', label: 'SETTINGS', headerTitle: 'Settings', title: 'Settings', subtitle: 'Notifications, privacy and account settings are coming soon.', bullets: ['NOTIFY', 'PRIVACY', 'ACCOUNT'] }) },

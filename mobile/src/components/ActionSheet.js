@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { Modal, View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
 import { useTheme } from '../context/ThemeContext';
@@ -15,14 +16,39 @@ export default function ActionSheet({ visible, title, subtitle, options = [], on
   const insets = useSafeAreaInsets();
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const anim = useRef(new Animated.Value(0)).current;
+
+  // The sheet springs up while the backdrop blurs in behind it.
+  useEffect(() => {
+    Animated.spring(anim, {
+      toValue: visible ? 1 : 0,
+      useNativeDriver: true,
+      friction: 9,
+      tension: 80,
+    }).start();
+  }, [visible, anim]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      {/* Tapping the dimmed area closes; the sheet swallows its own taps. */}
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) + 6 }]}
-          onPress={() => {}}
+      <View style={{ flex: 1 }}>
+        {/* Blurred, dimmed backdrop. The tint keeps contrast if blur is weak. */}
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: anim }]} pointerEvents="none">
+          <BlurView intensity={24} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, styles.tint]} />
+        </Animated.View>
+
+        {/* Tapping anywhere outside the sheet closes it. */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+
+        <Animated.View
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(insets.bottom, 12) + 6 },
+            {
+              opacity: anim,
+              transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [70, 0] }) }],
+            },
+          ]}
         >
           <View style={styles.grabber} />
 
@@ -61,20 +87,20 @@ export default function ActionSheet({ visible, title, subtitle, options = [], on
           <Pressable style={styles.cancel} onPress={onClose}>
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(23,27,29,0.35)',
-      justifyContent: 'flex-end',
-    },
+    tint: { backgroundColor: isDark ? 'rgba(0,0,0,0.42)' : 'rgba(23,27,29,0.22)' },
     sheet: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
       backgroundColor: t.page,
       borderTopLeftRadius: 26,
       borderTopRightRadius: 26,

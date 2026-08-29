@@ -47,6 +47,9 @@ export const LostApi = {
       .patch(`/lostfound/${id}`, toForm(data), { headers: { 'Content-Type': 'multipart/form-data' } })
       .then((r) => r.data.item),
 
+  /** Toggle interest. Tapping again withdraws it. */
+  interest: (id) => api.post(`/lostfound/${id}/interest`).then((r) => r.data),
+
   setStatus: (id, status) =>
     api.patch(`/lostfound/${id}/status`, { status }).then((r) => r.data.item),
   remove: (id) => api.delete(`/lostfound/${id}`).then((r) => r.data),

@@ -12,7 +12,7 @@ const CONFETTI_COLORS = ['#3F7A5E', '#33708F', '#A9603A', '#6B5B7B', '#8A5A6B', 
  * (e.g. sending an interest request). Purely decorative — pass `visible`
  * and it calls `onDone` when the animation finishes.
  */
-export default function CelebrationOverlay({ visible, onDone, message = 'Interest sent! 🎉', subtitle = 'We messaged the poster for you' }) {
+export default function CelebrationOverlay({ visible, onDone, message = 'Interest sent! 🎉', subtitle = 'The poster will review it' }) {
   const { t, kinds, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const scale = useRef(new Animated.Value(0)).current;

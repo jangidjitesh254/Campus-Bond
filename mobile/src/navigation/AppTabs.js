@@ -9,7 +9,9 @@ import ClubStack from './ClubStack';
 import MapStack from './MapStack';
 import SellStack from './SellStack';
 import ProfileStack from './ProfileStack';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import useKeyboardOpen from '../hooks/useKeyboardOpen';
 
 const Tab = createBottomTabNavigator();
 
@@ -43,6 +45,7 @@ function TabBar({ state, navigation }) {
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [composeOpen, setComposeOpen] = useState(false);
+  const keyboardOpen = useKeyboardOpen();
   const pop = useRef(new Animated.Value(0)).current;
 
   // The menu springs up out of the + rather than just appearing.
@@ -68,7 +71,15 @@ function TabBar({ state, navigation }) {
     if (!focused && !event.defaultPrevented) navigation.navigate(name);
   }
 
-  const activeName = state.routes[state.index].name;
+  const active = state.routes[state.index];
+  const activeName = active.name;
+
+  // Pushed screens — chat, a post, any form — own the whole screen. Leaving the
+  // bar floating over them buries their input bars behind it.
+  const onRootScreen = (active.state?.index ?? 0) === 0;
+
+  // Likewise while typing: the bar would cover the input the keyboard raised.
+  if (keyboardOpen || !onRootScreen) return null;
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
@@ -121,7 +132,14 @@ function TabBar({ state, navigation }) {
         statusBarTranslucent
         onRequestClose={() => setComposeOpen(false)}
       >
-        <Pressable style={styles.composeBackdrop} onPress={() => setComposeOpen(false)}>
+        <View style={{ flex: 1 }}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: pop }]} pointerEvents="none">
+            <BlurView intensity={26} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, styles.composeTint]} />
+          </Animated.View>
+
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setComposeOpen(false)} />
+
           <Animated.View
             style={[
               styles.composeStack,
@@ -151,7 +169,7 @@ function TabBar({ state, navigation }) {
               </Pressable>
             ))}
           </Animated.View>
-        </Pressable>
+        </View>
       </Modal>
     </View>
   );
@@ -217,7 +235,7 @@ function makeStyles(t, isDark) {
     label: { fontSize: 11.5, fontWeight: '500', letterSpacing: -0.1, color: t.textMuted },
     labelOn: { fontWeight: '600', color: t.text },
 
-    composeBackdrop: { flex: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(23,27,29,0.38)' },
+    composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.42)' : 'rgba(23,27,29,0.24)' },
     composeStack: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },
     composeItem: {
       width: 262,

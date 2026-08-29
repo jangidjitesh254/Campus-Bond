@@ -16,6 +16,7 @@ export default function LostDetailScreen({ route, navigation }) {
   const { user } = useAuth();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -73,6 +74,18 @@ export default function LostDetailScreen({ route, navigation }) {
     ]);
   }
 
+  async function toggleInterest() {
+    setBusy(true);
+    try {
+      const res = await LostApi.interest(id);
+      setItem((it) => ({ ...it, isInterested: res.isInterested, interestCount: res.interestCount }));
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function contact() {
     const c = item.contact?.trim();
     if (!c) return;
@@ -103,6 +116,13 @@ export default function LostDetailScreen({ route, navigation }) {
           <View style={styles.info}>
             {item.location ? <InfoRow styles={styles} t={t} icon="location-outline" label="Location" value={item.location} /> : null}
             <InfoRow styles={styles} t={t} icon="pricetag-outline" label="Category" value={item.category} />
+            <InfoRow
+              styles={styles}
+              t={t}
+              icon="hand-left-outline"
+              label="Interested"
+              value={`${item.interestCount || 0} ${item.interestCount === 1 ? 'person' : 'people'}`}
+            />
             <InfoRow styles={styles} t={t}               icon="person-outline"
               label="Posted by"
               value={`${owner.name || 'Student'}${owner.branch ? ` · ${owner.branch}` : ''}`}
@@ -118,17 +138,35 @@ export default function LostDetailScreen({ route, navigation }) {
               />
               <Button title="Delete post" variant="danger" onPress={onDelete} style={{ marginTop: spacing.md }} />
             </View>
-          ) : item.contact ? (
-            <Button
-              title={`Contact ${owner.name?.split(' ')[0] || 'poster'}`}
-              onPress={contact}
-              style={{ marginTop: spacing.lg }}
-              icon={<Ionicons name="call" size={18} color={t.onPrimary} />}
-            />
           ) : (
-            <Text style={[font.bodyMuted, { color: t.textMuted }, { marginTop: spacing.lg }]}>
-              No contact provided. Check back for updates.
-            </Text>
+            <View style={{ marginTop: spacing.lg }}>
+              <Button
+                title={item.isInterested ? 'Interested ✓ — tap to withdraw' : "I'm interested"}
+                variant={item.isInterested ? 'secondary' : 'primary'}
+                onPress={toggleInterest}
+                loading={busy}
+              />
+              {/* The number is only revealed once you have shown interest. */}
+              {item.isInterested ? (
+                item.contact ? (
+                  <Button
+                    title={`Call ${owner.name?.split(' ')[0] || 'poster'}`}
+                    variant="secondary"
+                    onPress={contact}
+                    style={{ marginTop: spacing.md }}
+                    icon={<Ionicons name="call" size={18} color={t.text} />}
+                  />
+                ) : (
+                  <Text style={[font.bodyMuted, { color: t.textMuted }, { marginTop: spacing.md }]}>
+                    The poster did not leave a number. They can see your interest.
+                  </Text>
+                )
+              ) : (
+                <Text style={[font.bodyMuted, { color: t.textMuted }, { marginTop: spacing.md }]}>
+                  Tap interested to see how to reach the poster.
+                </Text>
+              )}
+            </View>
           )}
         </View>
       </ScrollView>

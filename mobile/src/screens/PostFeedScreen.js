@@ -10,6 +10,7 @@ import { EventsApi } from '../api/events';
 import { LostApi, imageUrl } from '../api/lostfound';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getActivitySeenAt } from '../utils/activitySeen';
 import { layout, monoFamily } from '../theme';
 
 // The design has four chips. "Notice" covers everything announced to campus,
@@ -35,12 +36,30 @@ export default function PostFeedScreen({ navigation, route }) {
   const [searching, setSearching] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [menuFor, setMenuFor] = useState(null); // post whose long-press menu is open
+  const [pending, setPending] = useState(0); // requests waiting on my posts
 
   const load = useCallback(async () => {
     try {
-      const [ev, lf] = await Promise.all([EventsApi.list({ limit: 40 }), LostApi.list({})]);
+      const [ev, lf, mine] = await Promise.all([
+        EventsApi.list({ limit: 40 }),
+        LostApi.list({}),
+        EventsApi.myCreated().catch(() => []),
+      ]);
       setEvents((ev.events || []).map((e) => ({ ...e, __kind: 'event' })));
       setLost((lf.items || []).map((i) => ({ ...i, __kind: 'lost' })));
+      // Drives the bell badge: requests that arrived since the activity screen
+      // was last opened, so viewing it clears the dot.
+      const seenAt = await getActivitySeenAt();
+      setPending(
+        (mine || []).reduce(
+          (n, e) =>
+            n +
+            (e.applicants || []).filter(
+              (a) => a.status === 'pending' && new Date(a.createdAt).getTime() > seenAt
+            ).length,
+          0
+        )
+      );
     } catch {
     } finally {
       setLoading(false);
@@ -54,16 +73,27 @@ export default function PostFeedScreen({ navigation, route }) {
   // knows whether to open CreateEvent or CreateLost.
   useEffect(() => { navigation.setParams({ filter: sub }); }, [sub]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function onInterested(event) {
+  /**
+   * Interest is a toggle on both kinds of post: tapping again withdraws it.
+   * Nothing is messaged — the poster gets a request to review.
+   */
+  async function onInterested(post) {
     try {
-      const { conversation, alreadyInterested } = await EventsApi.interest(event._id);
-      if (alreadyInterested) {
-        navigation.navigate('Chat', { conversationId: conversation._id, title: event.createdBy?.name || 'Chat' });
-      } else {
-        setCelebrating(true);
-        load();
+      if (post.__kind === 'lost') {
+        const res = await LostApi.interest(post._id);
+        setLost((items) =>
+          items.map((i) =>
+            i._id === post._id ? { ...i, isInterested: res.isInterested, interestCount: res.interestCount } : i
+          )
+        );
+        return;
       }
-    } catch (e) { Alert.alert('Oops', e.message); }
+      const res = await EventsApi.interest(post._id);
+      if (res.interested) setCelebrating(true);
+      load();
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    }
   }
 
   const isMine = (p) => String(p?.createdBy?._id || p?.createdBy) === String(user?._id);
@@ -189,6 +219,19 @@ export default function PostFeedScreen({ navigation, route }) {
               <Icon name="search" size={16} color={searching ? t.onPrimary : t.primary} strokeWidth={1.7} />
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Activity')}
+            >
+              <Icon name="bell" size={16} color={t.primary} strokeWidth={1.7} />
+              {pending > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{pending > 9 ? '9+' : pending}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => navigation.navigate('ChatList')}>
               <Icon name="chat" size={16} color={t.primary} strokeWidth={1.7} />
             </TouchableOpacity>
@@ -271,7 +314,7 @@ export default function PostFeedScreen({ navigation, route }) {
                 onOpen={open}
                 onLongPress={() => openMenu(item)}
                 onComment={() => (lostItem ? open() : navigation.navigate('Thread', { id: item._id, focusComment: true }))}
-                onInterested={() => (lostItem ? open() : onInterested(item))}
+                onInterested={() => onInterested(item)}
                 onShare={() => onShare(item)}
               />
             );
@@ -301,7 +344,12 @@ export default function PostFeedScreen({ navigation, route }) {
         />
       )}
 
-      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
+      <CelebrationOverlay
+        visible={celebrating}
+        onDone={() => setCelebrating(false)}
+        message="Request sent! 🎉"
+        subtitle="The poster will review it"
+      />
 
       <ActionSheet
         visible={!!menuFor}
@@ -333,6 +381,21 @@ function makeStyles(t, isDark) {
       justifyContent: 'center',
     },
     iconBtnOn: { backgroundColor: t.primary, borderColor: t.primary },
+    badge: {
+      position: 'absolute',
+      top: -3,
+      right: -3,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      paddingHorizontal: 4,
+      backgroundColor: t.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: t.page,
+    },
+    badgeText: { fontSize: 8.5, fontWeight: '800', color: '#fff' },
     avatar: {
       width: 34,
       height: 34,

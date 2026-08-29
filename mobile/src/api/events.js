@@ -7,8 +7,8 @@ export const EventsApi = {
   // Partial edit — only send the fields that changed.
   update: (id, payload) => api.patch(`/events/${id}`, payload).then((r) => r.data.event),
   apply: (id, message) => api.post(`/events/${id}/apply`, { message }).then((r) => r.data),
-  // One-tap interest: records interest + auto-messages the poster. Returns
-  // { conversation, alreadyInterested }.
+  // Toggle interest. Sends the poster a request — no chat until they accept.
+  // Tapping again withdraws it. Returns { interested, myStatus, interestCount }.
   interest: (id) => api.post(`/events/${id}/interest`).then((r) => r.data),
   review: (id, applicantId, status) =>
     api.patch(`/events/${id}/applicants/${applicantId}`, { status }).then((r) => r.data.event),

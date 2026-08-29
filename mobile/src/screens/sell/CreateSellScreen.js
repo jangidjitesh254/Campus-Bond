@@ -48,7 +48,7 @@ export default function CreateSellScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
           <TouchableOpacity style={styles.photo} onPress={choosePhoto} activeOpacity={0.85}>
             {image ? <Image source={{ uri: image.uri }} style={styles.photoImg} /> : (
               <View style={styles.photoEmpty}>

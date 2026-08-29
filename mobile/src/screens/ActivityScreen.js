@@ -8,6 +8,7 @@ import { handleOf, timeAgo } from '../components/ThreadPost';
 import { Loading, EmptyState } from '../components/ui';
 import { EventsApi } from '../api/events';
 import { useTheme } from '../context/ThemeContext';
+import { markActivitySeen } from '../utils/activitySeen';
 import { layout } from '../theme';
 
 const FILTERS = ['All', 'Requests', 'Comments'];
@@ -59,7 +60,13 @@ export default function ActivityScreen({ navigation }) {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Opening this screen is what clears the bell badge.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+      markActivitySeen();
+    }, [load])
+  );
 
   const data = filter === 'Requests' ? items.filter((i) => i.kind === 'request') : items;
 

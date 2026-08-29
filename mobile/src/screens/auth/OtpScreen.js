@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
@@ -83,7 +83,8 @@ export default function OtpScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Verify email</Text>
         <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
           Enter the 6-digit code we sent to{'\n'}
@@ -121,7 +122,8 @@ export default function OtpScreen({ route }) {
         <Text style={styles.hint}>
           Tip: in development the code is printed in your backend server console.
         </Text>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -129,7 +131,7 @@ export default function OtpScreen({ route }) {
 function makeStyles(t, isDark) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
-    container: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
+    container: { flexGrow: 1, padding: spacing.xl, justifyContent: 'center' },
     cells: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.lg },
     cell: {
       width: 48,

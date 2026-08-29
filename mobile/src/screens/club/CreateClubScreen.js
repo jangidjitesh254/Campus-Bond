@@ -36,7 +36,7 @@ export default function CreateClubScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
           <TouchableOpacity style={styles.logoWrap} onPress={pickLogo} activeOpacity={0.85}>
             {image ? <Image source={{ uri: image.uri }} style={styles.logo} /> : (
               <View style={[styles.logo, styles.logoEmpty]}>

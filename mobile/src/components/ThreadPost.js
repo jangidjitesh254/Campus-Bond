@@ -82,10 +82,28 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
 
   const owner = post.createdBy || {};
   const isOwner = String(owner._id || post.createdBy) === String(user?._id);
-  const interested = (post.applicants || []).some((a) => String(a.user?._id || a.user) === String(user?._id));
+  // Lost & found tracks a flat interest list; posts track applicants.
+  const isLost = post.type === 'lost' || post.type === 'found';
+  const interested = isLost
+    ? !!post.isInterested
+    : (post.applicants || []).some((a) => String(a.user?._id || a.user) === String(user?._id));
+  const myStatus = isLost
+    ? null
+    : (post.applicants || []).find((a) => String(a.user?._id || a.user) === String(user?._id))?.status;
+  const replies = post.comments?.length || 0;
+  const responses = isLost ? post.interestCount || 0 : (post.applicants || []).length;
   const meta = postKind(post);
   const due = deadlineState(post.deadline);
   const k = kinds[meta.kind];
+  // "1 reply · 3 interested" — both halves grow as people engage.
+  const countLabel = isLost
+    ? responses
+      ? `${responses} interested`
+      : 'no responses yet'
+    : [replies ? replyLabel(replies) : null, responses ? `${responses} interested` : null]
+        .filter(Boolean)
+        .join(' · ') || 'no replies';
+
   const initials = (owner.name || '?')
     .split(' ')
     .map((w) => w.charAt(0))
@@ -150,13 +168,21 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
             activeOpacity={0.85}
           >
             <Text style={[styles.btnText, { color: interested ? t.text : k.on }]}>
-              {interested ? 'Interested ✓' : 'Interested'}
+              {!interested
+                ? 'Interested'
+                : myStatus === 'approved'
+                ? 'Accepted ✓'
+                : isLost
+                ? 'Interested ✓'
+                : 'Requested ✓'}
             </Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity onPress={onComment} hitSlop={10}>
-          <Text style={styles.count}>{replyLabel(post.comments?.length || 0)}</Text>
+        <TouchableOpacity onPress={onComment} hitSlop={10} style={{ flexShrink: 1 }}>
+          <Text style={styles.count} numberOfLines={1}>
+            {countLabel}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onShare} hitSlop={10} style={styles.shareBtn}>

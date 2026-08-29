@@ -14,13 +14,19 @@ export default function ScoreRing({
   size = 104,
   stroke = 9,
   centerText,
-  trackColor = t.surfaceHi,
-  progressColor = t.primary,
-  valueColor = t.text,
-  badgeColor = t.primary,
+  trackColor,
+  progressColor,
+  valueColor,
+  badgeColor,
 }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  // Defaults live here, not in the parameter list: parameter defaults cannot
+  // see `t`, so an omitted colour threw "t is not defined" at render.
+  const track = trackColor || t.surfaceHi;
+  const progress = progressColor || t.primary;
+  const centreTint = valueColor || t.text;
+  const badgeTint = badgeColor || t.primary;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(1, target > 0 ? value / target : 0));
@@ -30,14 +36,14 @@ export default function ScoreRing({
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size}>
         {/* Track (full ring) */}
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor} strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={track} strokeWidth={stroke} fill="none" />
         {/* Progress arc */}
         {pct > 0 ? (
           <Circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={progressColor}
+            stroke={progress}
             strokeWidth={stroke}
             fill="none"
             strokeLinecap="round"
@@ -48,12 +54,12 @@ export default function ScoreRing({
       </Svg>
 
       <View style={styles.center}>
-        <Text style={[styles.text, { color: valueColor }, centerText ? styles.initial : styles.value]}>
+        <Text style={[styles.text, { color: centreTint }, centerText ? styles.initial : styles.value]}>
           {centerText ?? value}
         </Text>
       </View>
 
-      <View style={[styles.badge, { backgroundColor: badgeColor }]}>
+      <View style={[styles.badge, { backgroundColor: badgeTint }]}>
         <Ionicons name="trophy" size={13} color="#fff" />
       </View>
     </View>

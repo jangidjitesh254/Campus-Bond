@@ -156,7 +156,7 @@ export default function CreateEventScreen({ navigation, route }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.lg }]}>
             {editId
               ? 'Update the details — everyone sees the changes straight away.'

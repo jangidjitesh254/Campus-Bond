@@ -65,7 +65,7 @@ export default function RegisterScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
           <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Create account</Text>
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
             Use your VGU email — we'll send a verification code.

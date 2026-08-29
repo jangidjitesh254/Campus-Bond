@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import MyActivityScreen from '../screens/MyActivityScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { useStackOptions } from './stackOptions';
 
@@ -17,6 +18,7 @@ export default function ProfileStack() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit profile' }} />
+      <Stack.Screen name="MyActivity" component={MyActivityScreen} options={{ title: 'My activity' }} />
       <Stack.Screen
         name="Feature"
         component={FeatureScreen}

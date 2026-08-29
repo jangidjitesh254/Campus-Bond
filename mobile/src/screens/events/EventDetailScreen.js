@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Share, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
 import Icon from '../../components/Icon';
@@ -11,7 +11,8 @@ import { EventsApi } from '../../api/events';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { radius, font, layout } from '../../theme';
+import useKeyboardOpen from '../../hooks/useKeyboardOpen';
+import { radius, font, monoFamily } from '../../theme';
 
 const CAT = { hackathon: 'Hackathon', cultural: 'Cultural', competition: 'Competition', project: 'Project', other: 'General' };
 const BADGE = { hackathon: 'TEAM', project: 'TEAM', cultural: 'EVENT', competition: 'EVENT', other: 'NOTICE' };
@@ -20,6 +21,8 @@ export default function EventDetailScreen({ route, navigation }) {
   const { t, kinds, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { id } = route.params;
+  const keyboardOpen = useKeyboardOpen();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -53,11 +56,12 @@ export default function EventDetailScreen({ route, navigation }) {
   const myApp = event.applicants?.find((a) => String(a.user?._id || a.user) === String(user?._id));
   const comments = event.comments || [];
 
+  /** Toggle the request. Chat only opens once the poster accepts. */
   async function onInterest() {
     try {
-      const { alreadyInterested } = await EventsApi.interest(id);
-      if (alreadyInterested) openChatWith(owner._id, owner.name);
-      else { setCelebrating(true); load(); }
+      const res = await EventsApi.interest(id);
+      if (res.interested) setCelebrating(true);
+      load();
     } catch (e) { Alert.alert('Oops', e.message); }
   }
 
@@ -92,25 +96,31 @@ export default function EventDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-        <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+        <ScrollView
+          ref={scrollRef}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+        >
           {/* Post card */}
           <View style={styles.card}>
+            <View style={styles.eyebrow}>
+              <View style={styles.badge}><Text style={styles.badgeText}>{BADGE[event.category] || 'POST'}</Text></View>
+              <Text style={styles.time}>{timeAgo(event.createdAt)}</Text>
+            </View>
+
+            <Text style={styles.title}>{event.title}</Text>
+            {event.description ? <Text style={styles.desc}>{event.description}</Text> : null}
+
             <View style={styles.head}>
-              <Avatar name={owner.name} size={42} />
+              <Avatar name={owner.name} size={38} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.handle}>{handleOf(owner.name)}</Text>
                 <Text style={styles.sub}>{owner.branch || 'Campus'}{owner.semester ? ` · Sem ${owner.semester}` : ''}</Text>
               </View>
-              <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <View style={styles.badge}><Text style={styles.badgeText}>{BADGE[event.category] || 'POST'}</Text></View>
-                <Text style={styles.time}>{timeAgo(event.createdAt)}</Text>
-              </View>
             </View>
-
-            <Text style={styles.body}>{event.title}</Text>
-            {event.description ? <Text style={styles.desc}>{event.description}</Text> : null}
-            <Text style={styles.tag}>#{event.category || 'campus'}</Text>
 
             {/* Details grid */}
             <View style={styles.grid}>
@@ -128,10 +138,17 @@ export default function EventDetailScreen({ route, navigation }) {
             {/* Primary action */}
             {isOwner ? (
               <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Your post</Text></View>
-            ) : myApp && myApp.status !== 'rejected' ? (
+            ) : myApp?.status === 'approved' ? (
               <TouchableOpacity style={styles.cta} onPress={() => openChatWith(owner._id, owner.name)}>
                 <Icon name="chat" size={18} color={t.onPrimary} strokeWidth={1.8} />
                 <Text style={styles.ctaText}>Message</Text>
+              </TouchableOpacity>
+            ) : myApp?.status === 'rejected' ? (
+              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Not selected</Text></View>
+            ) : myApp ? (
+              <TouchableOpacity style={[styles.cta, styles.ctaMuted]} onPress={onInterest}>
+                <Icon name="check" size={18} color={t.primary} strokeWidth={2} />
+                <Text style={[styles.ctaText, { color: t.primary }]}>Requested · tap to withdraw</Text>
               </TouchableOpacity>
             ) : event.status === 'open' ? (
               <TouchableOpacity style={styles.cta} onPress={onInterest}>
@@ -146,23 +163,62 @@ export default function EventDetailScreen({ route, navigation }) {
           {/* Owner: interested list */}
           {isOwner && event.applicants?.length ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Interested ({event.applicants.length})</Text>
+              <View style={styles.cHeadInline}>
+                <Text style={styles.sectionTitle}>Interested</Text>
+                <Text style={styles.cCount}>{event.applicants.length}</Text>
+              </View>
               {event.applicants.map((a) => {
                 const u = a.user || {};
                 const accepted = a.status === 'approved';
                 return (
                   <View key={a._id} style={styles.applicant}>
-                    <Avatar name={u.name} size={38} />
+                    <Avatar name={u.name} size={40} />
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.handle}>{handleOf(u.name)} <Text style={styles.sub}>{u.branch ? `· ${u.branch}` : ''}</Text></Text>
-                      {a.message ? <Text style={styles.cBody}>{a.message}</Text> : null}
+                      <View style={styles.appTop}>
+                        <Text style={styles.appName} numberOfLines={1}>{handleOf(u.name)}</Text>
+                        <View style={[styles.appChip, accepted && styles.appChipOk]}>
+                          <Text style={[styles.appChipText, accepted && styles.appChipTextOk]}>
+                            {accepted ? 'ACCEPTED' : 'PENDING'}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.appSub} numberOfLines={1}>
+                        {u.branch || 'Campus'}{u.semester ? ` · Sem ${u.semester}` : ''}
+                      </Text>
+                      {a.message ? <Text style={styles.appMsg}>{a.message}</Text> : null}
                       <View style={styles.appBtns}>
-                        <TouchableOpacity style={[styles.smallPill, accepted ? styles.smallOutline : styles.smallFilled]} onPress={() => EventsApi.review(id, a._id, accepted ? 'rejected' : 'approved').then(setEvent).catch((e) => Alert.alert('Error', e.message))}>
-                          <Text style={[styles.smallText, { color: accepted ? t.textMuted : t.onPrimary }]}>{accepted ? 'Accepted' : 'Accept'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.smallPill, styles.smallOutline]} onPress={() => openChatWith(u._id, u.name)}>
-                          <Text style={[styles.smallText, { color: t.text }]}>Message</Text>
-                        </TouchableOpacity>
+                        {accepted ? (
+                          // Once accepted there is nothing left to decide — just talk.
+                          <TouchableOpacity
+                            style={[styles.smallPill, styles.smallFilled]}
+                            onPress={() => openChatWith(u._id, u.name)}
+                          >
+                            <Text style={[styles.smallText, { color: t.onPrimary }]}>Message</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <>
+                            <TouchableOpacity
+                              style={[styles.smallPill, styles.smallFilled]}
+                              onPress={() =>
+                                EventsApi.review(id, a._id, 'approved')
+                                  .then(setEvent)
+                                  .catch((e) => Alert.alert('Error', e.message))
+                              }
+                            >
+                              <Text style={[styles.smallText, { color: t.onPrimary }]}>Accept</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.smallPill, styles.smallOutline]}
+                              onPress={() =>
+                                EventsApi.review(id, a._id, 'rejected')
+                                  .then(setEvent)
+                                  .catch((e) => Alert.alert('Error', e.message))
+                              }
+                            >
+                              <Text style={[styles.smallText, { color: t.textMuted }]}>Decline</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
                       </View>
                     </View>
                   </View>
@@ -173,12 +229,10 @@ export default function EventDetailScreen({ route, navigation }) {
 
           {/* Comments */}
           <View style={styles.cHead}>
-            <Text style={styles.cTitle}>Comments {comments.length}</Text>
-            <Text style={styles.cSort}>Most recent</Text>
+            <Text style={styles.cTitle}>Comments</Text>
+            {comments.length ? <Text style={styles.cCount}>{comments.length}</Text> : null}
           </View>
-          {comments.length === 0 ? (
-            <Text style={[font.bodyMuted, { color: t.textMuted }, { paddingHorizontal: 4, paddingTop: 8 }]}>No comments yet. Start the conversation.</Text>
-          ) : (
+          {comments.length === 0 ? null : (
             comments.map((c) => (
               <View key={c._id} style={styles.comment}>
                 <Avatar name={c.user?.name} size={34} />
@@ -188,13 +242,6 @@ export default function EventDetailScreen({ route, navigation }) {
                     <Text style={styles.cTime}>{timeAgo(c.createdAt)}</Text>
                   </View>
                   <Text style={styles.cBody}>{c.text}</Text>
-                  <View style={styles.cMeta}>
-                    <Text style={styles.cReply}>Reply</Text>
-                    <View style={styles.cLike}>
-                      <Icon name="heart" size={14} color={t.textMuted} strokeWidth={1.7} />
-                      <Text style={styles.cLikeText}>0</Text>
-                    </View>
-                  </View>
                 </View>
               </View>
             ))
@@ -202,7 +249,7 @@ export default function EventDetailScreen({ route, navigation }) {
         </ScrollView>
 
         {/* Comment input */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: keyboardOpen ? 10 : Math.max(insets.bottom, 10) }]}>
           <View style={styles.inputPill}>
             <TextInput
               ref={inputRef}
@@ -221,7 +268,12 @@ export default function EventDetailScreen({ route, navigation }) {
         </View>
       </KeyboardAvoidingView>
 
-      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} />
+      <CelebrationOverlay
+        visible={celebrating}
+        onDone={() => setCelebrating(false)}
+        message="Request sent! 🎉"
+        subtitle="The poster will review it"
+      />
     </SafeAreaView>
   );
 }
@@ -230,15 +282,16 @@ function makeStyles(t, isDark) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
     card: { backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16 },
-    head: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+    head: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
     handle: { fontSize: 15, fontWeight: '700', color: t.text },
     sub: { fontSize: 12.5, color: t.textMuted, marginTop: 1, fontWeight: '400' },
-    badge: { backgroundColor: t.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-    badgeText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: t.primary },
+    badge: { backgroundColor: t.primarySoft, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
+    badgeText: { fontFamily: monoFamily, fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, color: t.text },
     time: { fontSize: 12, color: t.textMuted },
-    body: { fontSize: 16, lineHeight: 23, color: t.text },
-    desc: { fontSize: 15, lineHeight: 22, color: t.textMuted, marginTop: 8 },
-    tag: { fontSize: 14.5, color: t.link, marginTop: 10, fontWeight: '500' },
+    eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
+    // The heading is the loudest thing on this screen.
+    title: { fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.7, color: t.text },
+    desc: { fontSize: 14.5, lineHeight: 21, color: t.textMuted, marginTop: 9 },
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
     tile: { width: '47.5%', flexGrow: 1, flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: t.surfaceMuted, borderRadius: 12, padding: 12 },
     tileLabel: { fontSize: 11.5, color: t.textMuted },
@@ -248,25 +301,38 @@ function makeStyles(t, isDark) {
     ctaText: { fontSize: 15, fontWeight: '700', color: t.onPrimary },
     section: { marginTop: 16, backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16, gap: 12 },
     sectionTitle: { fontSize: 15, fontWeight: '700', color: t.text },
-    applicant: { flexDirection: 'row', gap: 12 },
+    cHeadInline: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    applicant: {
+      flexDirection: 'row',
+      gap: 12,
+      padding: 12,
+      borderRadius: 14,
+      backgroundColor: t.surfaceAlt,
+      borderWidth: 1,
+      borderColor: t.hairlineAlt,
+    },
+    appTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    appName: { flexShrink: 1, fontSize: 14, fontWeight: '700', letterSpacing: -0.2, color: t.text },
+    appChip: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: t.field },
+    appChipOk: { backgroundColor: t.successSoft },
+    appChipText: { fontFamily: monoFamily, fontSize: 8, fontWeight: '700', letterSpacing: 0.8, color: t.textMuted },
+    appChipTextOk: { color: t.success },
+    appSub: { fontSize: 11.5, color: t.textMuted, marginTop: 3 },
+    appMsg: { fontSize: 13, lineHeight: 18, color: t.text, marginTop: 7 },
     appBtns: { flexDirection: 'row', gap: 8, paddingTop: 8 },
     smallPill: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8 },
     smallFilled: { backgroundColor: t.primary },
     smallOutline: { borderWidth: 1, borderColor: t.border },
     smallText: { fontSize: 13, fontWeight: '700' },
     cHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 6, paddingHorizontal: 4 },
-    cTitle: { fontSize: 15, fontWeight: '700', color: t.text },
-    cSort: { fontSize: 13, color: t.primary, fontWeight: '600' },
+    cTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3, color: t.text },
+    cCount: { fontFamily: monoFamily, fontSize: 10, fontWeight: '500', color: t.textDim },
     comment: { flexDirection: 'row', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.border },
     cLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cName: { fontSize: 14, fontWeight: '700', color: t.text },
     cTime: { fontSize: 12, color: t.textMuted },
     cBody: { fontSize: 14.5, lineHeight: 20, color: t.text, marginTop: 3 },
-    cMeta: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
-    cReply: { fontSize: 13, fontWeight: '600', color: t.textMuted },
-    cLike: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    cLikeText: { fontSize: 13, color: t.textMuted },
-    inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 8, paddingBottom: layout.tabBarSpace, backgroundColor: t.bg, borderTopWidth: 1, borderTopColor: t.border },
+    inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, backgroundColor: t.page, borderTopWidth: 1, borderTopColor: t.hairline },
     inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.surfaceMuted, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4 },
     input: { flex: 1, fontSize: 15, color: t.text, maxHeight: 100, paddingVertical: 9 },
     send: { width: 46, height: 46, borderRadius: 23, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center' },
