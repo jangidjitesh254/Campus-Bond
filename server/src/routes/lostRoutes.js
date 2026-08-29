@@ -5,6 +5,7 @@ import {
   getLostItemById,
   updateLostStatus,
   updateLostItem,
+  toggleLostInterest,
   deleteLostItem,
   myLostItems,
 } from '../controllers/lostController.js';
@@ -25,5 +26,6 @@ router
   .patch(uploadImage.single('image'), updateLostItem)
   .delete(deleteLostItem);
 router.patch('/:id/status', updateLostStatus);
+router.post('/:id/interest', toggleLostInterest);
 
 export default router;

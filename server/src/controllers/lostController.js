@@ -10,6 +10,18 @@ function removeImageFile(imagePath) {
   fs.promises.unlink(path.join(UPLOAD_DIR, filename)).catch(() => {});
 }
 
+/** Shape an item for the client with the current user's interest state. */
+function decorate(item, userId) {
+  const obj = item.toObject ? item.toObject() : item;
+  const list = obj.interested || [];
+  return {
+    ...obj,
+    interestCount: list.length,
+    isInterested: list.some((u) => String(u._id || u) === String(userId)),
+    interested: undefined,
+  };
+}
+
 /**
  * Create a lost/found post. Expects multipart/form-data with an optional `image`.
  * POST /api/lostfound
@@ -38,7 +50,7 @@ export async function createLostItem(req, res) {
   });
 
   await item.populate('createdBy', 'name branch semester');
-  res.status(201).json({ item });
+  res.status(201).json({ item: decorate(item, req.user._id) });
 }
 
 /**
@@ -71,7 +83,12 @@ export async function getLostItems(req, res) {
     LostItem.countDocuments(filter),
   ]);
 
-  res.status(200).json({ items, page, totalPages: Math.ceil(total / limit), total });
+  res.status(200).json({
+    items: items.map((i) => decorate(i, req.user._id)),
+    page,
+    totalPages: Math.ceil(total / limit),
+    total,
+  });
 }
 
 /**
@@ -81,7 +98,7 @@ export async function getLostItems(req, res) {
 export async function getLostItemById(req, res) {
   const item = await LostItem.findById(req.params.id).populate('createdBy', 'name branch semester');
   if (!item) return res.status(404).json({ message: 'Item not found.' });
-  res.status(200).json({ item });
+  res.status(200).json({ item: decorate(item, req.user._id) });
 }
 
 /**
@@ -151,6 +168,25 @@ export async function updateLostItem(req, res) {
 }
 
 /**
+ * Toggle interest in a lost/found item. Tapping again withdraws it.
+ * POST /api/lostfound/:id/interest
+ */
+export async function toggleLostInterest(req, res) {
+  const item = await LostItem.findById(req.params.id);
+  if (!item) return res.status(404).json({ message: 'Item not found.' });
+  if (String(item.createdBy) === String(req.user._id)) {
+    return res.status(400).json({ message: "You can't show interest in your own item." });
+  }
+
+  const idx = (item.interested || []).findIndex((u) => String(u) === String(req.user._id));
+  if (idx >= 0) item.interested.splice(idx, 1);
+  else item.interested.push(req.user._id);
+  await item.save();
+
+  res.status(200).json({ isInterested: idx < 0, interestCount: item.interested.length });
+}
+
+/**
  * Delete (owner only). Also removes the uploaded image.
  * DELETE /api/lostfound/:id
  */
@@ -171,5 +207,5 @@ export async function deleteLostItem(req, res) {
  */
 export async function myLostItems(req, res) {
   const items = await LostItem.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
-  res.status(200).json({ items });
+  res.status(200).json({ items: items.map((i) => decorate(i, req.user._id)) });
 }

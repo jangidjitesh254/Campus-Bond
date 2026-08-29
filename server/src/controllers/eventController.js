@@ -135,9 +135,8 @@ export async function applyToEvent(req, res) {
 }
 
 /**
- * One-tap "I'm interested": records interest and immediately opens a chat with
- * the poster, auto-sending an intro message. Idempotent — tapping again just
- * returns the existing conversation without resending.
+ * Toggle "I'm interested". This only records the request — no chat is opened
+ * and the poster is not messaged. Tapping again withdraws the request.
  * POST /api/events/:id/interest
  */
 export async function expressInterest(req, res) {
@@ -147,33 +146,21 @@ export async function expressInterest(req, res) {
     return res.status(400).json({ message: "You can't show interest in your own post." });
   }
 
-  const already = event.applicants.some((a) => String(a.user) === String(req.user._id));
-  if (!already) {
-    event.applicants.push({ user: req.user._id, status: 'pending', message: "I'm interested" });
+  const idx = event.applicants.findIndex((a) => String(a.user) === String(req.user._id));
+
+  if (idx >= 0) {
+    event.applicants.splice(idx, 1); // withdraw
     await event.save();
+    return res.status(200).json({ interested: false, myStatus: null, interestCount: event.applicants.length });
   }
 
-  // Get or create the 1:1 conversation between the interested user and the poster.
-  let convo = await Conversation.findOne({
-    participants: { $all: [req.user._id, event.createdBy], $size: 2 },
-    event: event._id,
-  });
-  if (!convo) {
-    convo = await Conversation.create({ participants: [req.user._id, event.createdBy], event: event._id });
+  if (event.status !== 'open') {
+    return res.status(400).json({ message: 'This post is closed and no longer accepting responses.' });
   }
 
-  if (!already) {
-    const text = `👋 ${req.user.name} is interested in "${event.title}" and would love to discuss with you.`;
-    await Message.create({ conversation: convo._id, sender: req.user._id, text });
-    convo.lastMessage = text;
-    convo.lastMessageAt = new Date();
-    await convo.save();
-  }
-
-  await convo.populate('participants', 'name branch semester');
-  await convo.populate('event', 'title');
-
-  res.status(200).json({ conversation: convo, alreadyInterested: already });
+  event.applicants.push({ user: req.user._id, status: 'pending', message: "I'm interested" });
+  await event.save();
+  res.status(201).json({ interested: true, myStatus: 'pending', interestCount: event.applicants.length });
 }
 
 /**
@@ -196,11 +183,34 @@ export async function reviewApplicant(req, res) {
   const applicant = event.applicants.id(req.params.applicantId);
   if (!applicant) return res.status(404).json({ message: 'Applicant not found.' });
 
+  const wasApproved = applicant.status === 'approved';
   applicant.status = status;
   await event.save();
+
+  // Approving is what opens the chat — and only the first time, so re-approving
+  // an already-approved applicant does not post the greeting twice.
+  let conversationId = null;
+  if (status === 'approved') {
+    let convo = await Conversation.findOne({
+      participants: { $all: [event.createdBy, applicant.user], $size: 2 },
+      event: event._id,
+    });
+    if (!convo) {
+      convo = await Conversation.create({ participants: [event.createdBy, applicant.user], event: event._id });
+    }
+    if (!wasApproved) {
+      const text = `Your interest for "${event.title}" is accepted. Let's connect!`;
+      await Message.create({ conversation: convo._id, sender: event.createdBy, text });
+      convo.lastMessage = text;
+      convo.lastMessageAt = new Date();
+      await convo.save();
+    }
+    conversationId = convo._id;
+  }
+
   await event.populate('applicants.user', 'name branch semester avatar');
 
-  res.status(200).json({ message: `Applicant ${status}.`, event });
+  res.status(200).json({ message: `Applicant ${status}.`, event, conversationId });
 }
 
 /**

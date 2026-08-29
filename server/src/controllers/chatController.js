@@ -3,9 +3,9 @@ import Message from '../models/Message.js';
 import Event from '../models/Event.js';
 import MarketItem from '../models/MarketItem.js';
 
-/** Has `userId` shown interest in `event` (any applicant status)? */
+/** Has the poster approved `userId` on this post? Chat is gated on that. */
 function hasShownInterest(event, userId) {
-  return event.applicants.some((a) => String(a.user) === String(userId));
+  return event.applicants.some((a) => String(a.user) === String(userId) && a.status === 'approved');
 }
 
 /** Find (or create) the 1:1 conversation between two users for an event. */
@@ -42,7 +42,7 @@ export async function openConversation(req, res) {
     (other === posterId && hasShownInterest(event, me));
 
   if (!allowed) {
-    return res.status(403).json({ message: 'Show interest in the post first to start a chat.' });
+    return res.status(403).json({ message: 'You can chat once the poster accepts your request.' });
   }
 
   const convo = await getOrCreateConversation(me, other, eventId);

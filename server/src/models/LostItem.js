@@ -20,6 +20,9 @@ const lostItemSchema = new mongoose.Schema(
     contact: { type: String, trim: true, default: '' }, // optional phone/handle
 
     status: { type: String, enum: ['open', 'resolved'], default: 'open' },
+    // Students who tapped "Interested" — a simple signal to the poster, with
+    // no approval step, since finding the owner is the whole point.
+    interested: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }
