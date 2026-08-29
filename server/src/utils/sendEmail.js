@@ -8,8 +8,10 @@ import nodemailer from 'nodemailer';
 export async function sendEmail({ to, subject, text, html }) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
 
-  if (!SMTP_HOST) {
-    console.log('\n────────────── 📧 DEV EMAIL (no SMTP configured) ──────────────');
+  // Any missing piece means we can't authenticate, so fall back to the console
+  // rather than failing every signup with an SMTP auth error.
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.log('\n────────────── 📧 DEV EMAIL (SMTP not fully configured) ──────────────');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(`Body:    ${text}`);

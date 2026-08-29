@@ -16,7 +16,23 @@ function firstValidationError(req) {
 function isEmailDomainAllowed(email) {
   const domain = (process.env.ALLOWED_EMAIL_DOMAIN || '').trim().toLowerCase();
   if (!domain) return true; // no restriction during development
-  return email.toLowerCase().endsWith(`@${domain}`) || email.toLowerCase().endsWith(domain);
+
+  // Compare the domain exactly. Matching on the bare suffix would also admit
+  // look-alikes such as someone@notvgu.ac.in.
+  const at = email.lastIndexOf('@');
+  if (at < 1) return false;
+  if (email.slice(at + 1).toLowerCase() !== domain) return false;
+
+  // Optional extra rule for the enrolment number itself.
+  const pattern = (process.env.ALLOWED_EMAIL_PATTERN || '').trim();
+  if (!pattern) return true;
+  try {
+    return new RegExp(pattern, 'i').test(email.slice(0, at));
+  } catch {
+    // A malformed pattern must never lock the whole campus out.
+    console.error('⚠️  ALLOWED_EMAIL_PATTERN is not a valid regex — ignoring it.');
+    return true;
+  }
 }
 
 /** Generate a 6-digit numeric OTP. */
@@ -39,7 +55,7 @@ export async function register(req, res) {
 
   if (!isEmailDomainAllowed(normalizedEmail)) {
     return res.status(403).json({
-      message: `Only ${process.env.ALLOWED_EMAIL_DOMAIN} campus emails can register.`,
+      message: `Please sign up with your VGU email — <enrollment>@${process.env.ALLOWED_EMAIL_DOMAIN}.`,
     });
   }
 

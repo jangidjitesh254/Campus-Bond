@@ -60,8 +60,8 @@ export default function LoginScreen({ navigation }) {
           </Text>
 
           <Field
-            label="College email"
-            placeholder="you@college.edu"
+            label="VGU email"
+            placeholder="enrollment@vgu.ac.in"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
