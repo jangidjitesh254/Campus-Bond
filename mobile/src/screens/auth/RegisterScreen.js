@@ -3,8 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
@@ -12,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font } from '../../theme';
 
 export default function RegisterScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { register } = useAuth();
   const [form, setForm] = useState({
     name: '',
@@ -61,11 +62,8 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Create account</Text>
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
             Use your VGU email — we'll send a verification code.
@@ -116,7 +114,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.link}>Log in</Text>
           </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

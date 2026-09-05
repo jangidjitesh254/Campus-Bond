@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Share, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
@@ -11,17 +11,18 @@ import { EventsApi } from '../../api/events';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import useKeyboardOpen from '../../hooks/useKeyboardOpen';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { radius, font, monoFamily } from '../../theme';
 
 const CAT = { hackathon: 'Hackathon', cultural: 'Cultural', competition: 'Competition', project: 'Project', other: 'General' };
 const BADGE = { hackathon: 'TEAM', project: 'TEAM', cultural: 'EVENT', competition: 'EVENT', other: 'NOTICE' };
 
 export default function EventDetailScreen({ route, navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { id } = route.params;
-  const keyboardOpen = useKeyboardOpen();
+  const keyboardOpen = keyboardHeight > 0;
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const inputRef = useRef(null);
@@ -72,10 +73,6 @@ export default function EventDetailScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Cannot open chat', e.message); }
   }
 
-  async function onShare() {
-    try { await Share.share({ message: `${event.title}\n\n${event.description}\n\n— shared from Campus Bond` }); } catch {}
-  }
-
   async function onPostComment() {
     const text = commentText.trim();
     if (!text || posting) return;
@@ -96,12 +93,12 @@ export default function EventDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView
           ref={scrollRef}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          automaticallyAdjustKeyboardInsets
+         
           contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
         >
           {/* Post card */}
@@ -266,7 +263,7 @@ export default function EventDetailScreen({ route, navigation }) {
             <Icon name="send" size={19} color={t.onPrimary} />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       <CelebrationOverlay
         visible={celebrating}

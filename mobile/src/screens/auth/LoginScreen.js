@@ -3,8 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
@@ -12,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font } from '../../theme';
 
 export default function LoginScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,11 +43,8 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <View style={styles.brand}>
             <Text style={styles.logo}>
               CAMPUS <Text style={{ color: t.primary }}>BOND</Text>
@@ -87,7 +85,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.link}>Create an account</Text>
           </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

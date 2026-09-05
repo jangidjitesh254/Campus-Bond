@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field, Loading } from '../../components/ui';
 import { EventsApi, CATEGORIES } from '../../api/events';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius, layout } from '../../theme';
 
 /**
@@ -57,6 +56,7 @@ function splitDeadline(value) {
 export default function CreateEventScreen({ navigation, route }) {
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
 
   // `id` turns this into an edit screen; `category` preselects a kind when the
   // compose menu sends us here.
@@ -152,11 +152,8 @@ export default function CreateEventScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.lg }]}>
             {editId
               ? 'Update the details — everyone sees the changes straight away.'
@@ -233,7 +230,7 @@ export default function CreateEventScreen({ navigation, route }) {
 
           <Button title={editId ? 'Save changes' : 'Post request'} onPress={onSubmit} loading={loading} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../../components/Icon';
 import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { Loading } from '../../components/ui';
 import { useTheme } from '../../context/ThemeContext';
-import useKeyboardOpen from '../../hooks/useKeyboardOpen';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 
 function clock(dateStr) {
   const d = new Date(dateStr);
@@ -15,10 +15,11 @@ function clock(dateStr) {
 }
 
 export default function ChatScreen({ route, navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { conversationId, title } = route.params;
-  const keyboardOpen = useKeyboardOpen();
+  const keyboardOpen = keyboardHeight > 0;
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
@@ -52,7 +53,7 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <FlatList
           ref={listRef}
           data={messages}
@@ -93,7 +94,7 @@ export default function ChatScreen({ route, navigation }) {
             <Icon name="send" size={20} color={t.onPrimary} strokeWidth={1.9} />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

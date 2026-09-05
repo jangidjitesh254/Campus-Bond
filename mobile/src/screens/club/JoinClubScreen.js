@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '../../components/Icon';
 import { Button, Field } from '../../components/ui';
 import { ClubApi } from '../../api/clubs';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { layout, monoFamily } from '../../theme';
 
 const STEPS = ['YOUR DETAILS', 'WHY YOU', 'CONSENT'];
@@ -21,6 +22,7 @@ export default function JoinClubScreen({ navigation, route }) {
   const { t, clubs, isDark } = useTheme();
   const c = clubs[category] || clubs.other;
   const styles = useMemo(() => makeStyles(t, c, isDark), [t, c, isDark]);
+  const keyboardHeight = useKeyboardHeight();
 
   const [why, setWhy] = useState('');
   const [skills, setSkills] = useState('');
@@ -63,8 +65,8 @@ export default function JoinClubScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           {/* progress strip */}
           <View style={styles.steps}>
             {STEPS.map((label, i) => (
@@ -126,7 +128,7 @@ export default function JoinClubScreen({ navigation, route }) {
             You are not joining yet. The president reviews every request.
           </Text>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

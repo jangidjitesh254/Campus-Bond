@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,11 +14,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Field, Loading } from '../../components/ui';
 import { LostApi, LOST_CATEGORIES, imageUrl } from '../../api/lostfound';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius, layout } from '../../theme';
 
 export default function CreateLostScreen({ navigation, route }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const [type, setType] = useState('lost');
   const [form, setForm] = useState({ title: '', description: '', category: 'other', location: '', contact: '' });
   const [image, setImage] = useState(null);
@@ -117,8 +117,8 @@ export default function CreateLostScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           {/* Lost / Found toggle */}
           <View style={styles.toggle}>
             {['lost', 'found'].map((kind) => (
@@ -198,7 +198,7 @@ export default function CreateLostScreen({ navigation, route }) {
 
           <Button title={editId ? 'Save changes' : 'Post item'} onPress={onSubmit} loading={loading} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

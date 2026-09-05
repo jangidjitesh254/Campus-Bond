@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius } from '../../theme';
 
 const CELLS = 6;
 
 export default function OtpScreen({ route }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { email } = route.params;
   const { verifyOtp, resendOtp } = useAuth();
   const [digits, setDigits] = useState(Array(CELLS).fill(''));
@@ -83,8 +85,8 @@ export default function OtpScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Verify email</Text>
         <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.xl }]}>
           Enter the 6-digit code we sent to{'\n'}
@@ -123,7 +125,7 @@ export default function OtpScreen({ route }) {
           Tip: in development the code is printed in your backend server console.
         </Text>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,16 +1,18 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from '../../components/Icon';
 import { Button, Field } from '../../components/ui';
 import { ClubApi, CLUB_CATEGORIES } from '../../api/clubs';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, font, radius, layout } from '../../theme';
+import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
+import { spacing, font, layout } from '../../theme';
 
 export default function CreateClubScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const [form, setForm] = useState({ name: '', description: '' });
   const [category, setCategory] = useState('tech');
   const [image, setImage] = useState(null);
@@ -35,8 +37,8 @@ export default function CreateClubScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <TouchableOpacity style={styles.logoWrap} onPress={pickLogo} activeOpacity={0.85}>
             {image ? <Image source={{ uri: image.uri }} style={styles.logo} /> : (
               <View style={[styles.logo, styles.logoEmpty]}>
@@ -65,7 +67,7 @@ export default function CreateClubScreen({ navigation }) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button title="Create club" onPress={onSubmit} loading={loading} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
