@@ -14,7 +14,7 @@ import { layout } from '../theme';
 const FILTERS = ['All', 'Requests', 'Comments'];
 
 export default function ActivityScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);

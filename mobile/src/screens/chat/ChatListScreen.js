@@ -11,7 +11,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { layout } from '../../theme';
 
 export default function ChatListScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { user } = useAuth();
   const [convos, setConvos] = useState([]);

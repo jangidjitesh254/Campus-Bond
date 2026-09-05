@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MonoLabel, ProgressBar } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
-import { spacing, font, radius, monoFamily } from '../theme';
+import { spacing, radius, monoFamily } from '../theme';
 
 /**
  * Editorial "coming soon" hero, styled after the dark-green reference:
@@ -18,7 +18,7 @@ export default function PlaceholderScreen({
   bullets = [],
   icon,
 }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

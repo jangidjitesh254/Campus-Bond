@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 
 /** Initials avatar. `bg` / `textColor` override the default green tint. */
 export default function Avatar({ name, size = 38, badge, style, bg, textColor }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const initials = (name || '?')
     .split(' ')

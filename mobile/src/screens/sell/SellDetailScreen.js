@@ -9,13 +9,13 @@ import { handleOf, timeAgo } from '../../components/ThreadPost';
 import { MarketApi, imageUrl } from '../../api/market';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, font, radius, layout } from '../../theme';
+import { spacing, font, layout } from '../../theme';
 
 const CONDITION = { new: 'New', 'like-new': 'Like new', good: 'Good', fair: 'Fair' };
 const CAT = { books: 'Books', notes: 'Notes', kit: 'Drawing Kit', electronics: 'Electronics', instruments: 'Instruments', furniture: 'Furniture', other: 'Other' };
 
 export default function SellDetailScreen({ route, navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { id } = route.params;
   const { user } = useAuth();

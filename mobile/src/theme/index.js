@@ -1,108 +1,12 @@
 import { Platform } from 'react-native';
 
 /**
- * Campus Bond design system — "Grove" theme (locked).
- * Deep forest-green chrome on a pale-green canvas, white cards, and
- * per-type accent colors (TEAM green · EVENT blue · NOTICE red).
+ * Campus Bond design system — "Ink & copper".
+ * Slate ink primary, copper accent, cool neutrals, white surfaces; a dark
+ * counterpart with the same keys so the palettes swap wholesale.
  */
 
-export const colors = {
-  // Surfaces
-  bg: '#EFF5EC', // pale green canvas
-  surface: '#FFFFFF', // cards
-  surfaceAlt: '#E4F3E9', // light-green tint (avatars, soft pills)
-  surfaceMuted: '#EAF1E6', // neutral-ish light (search, inputs)
-  surfaceHi: '#DCEBDF',
-  border: '#E6ECE3',
-  mediaStroke: '#B9C6B7',
-
-  // Accent — deep forest green (chrome: buttons, nav, FAB, brand)
-  primary: '#15532E',
-  primaryDark: '#0F3D22',
-  primaryLight: '#3E8A5A',
-  primarySoft: '#E4F3E9',
-  onPrimary: '#FFFFFF',
-  accent: '#15532E',
-  accentSoft: '#E4F3E9',
-  link: '#1E7A43',
-
-  cream: '#EBD5AB',
-  creamSoft: '#FBF0D9',
-
-  // Per-type accents (also used as badge colors)
-  badgeTeamBg: '#E4F3E9',
-  badgeTeamFg: '#1E7A43',
-  badgeEventBg: '#E6EEFC',
-  badgeEventFg: '#2F6FE0',
-  badgeNoticeBg: '#FBEAE2',
-  badgeNoticeFg: '#C6552E',
-
-  // Avatars (default)
-  avatarBg: '#E4F3E9',
-  avatarText: '#1E7A43',
-
-  // Lost / Found labels
-  amber: '#C6892E',
-  amberSoft: '#FBEFD5',
-
-  // Post-feed accents (colored filter pills, blobs, compose FAB)
-  sun: '#F5B301', // amber — Lost&Found pill, compose + filter buttons, blob
-  sunSoft: '#FDEFC4',
-  grape: '#8B5CF6', // Teams pill
-  coral: '#F0564F', // Notice pill
-  sky: '#2F80ED', // Events pill
-  ink: '#101413', // near-black "Interested" button
-  inkSoft: '#454C47', // unselected dark filter pill
-
-  // Chat
-  chatBg: '#EFF4EC',
-  bubbleOut: '#15532E',
-  bubbleIn: '#FFFFFF',
-  datePill: '#E6ECE3',
-
-  // Semantic
-  success: '#1E7A43',
-  successSoft: '#E4F3E9',
-  danger: '#C6552E',
-  dangerSoft: '#FBEAE2',
-  warning: '#C6892E',
-  like: '#C6552E',
-
-  // Text
-  text: '#16241C',
-  textMuted: '#6B7B72',
-  textFaint: '#A6B0A5',
-
-  // Legacy aliases
-  card: '#FFFFFF',
-  white: '#FFFFFF',
-  onDark: '#16241C',
-};
-
-export const dark = {
-  bg: '#12121C', // deep navy-violet canvas
-  surface: 'rgba(255,255,255,0.055)', // translucent card
-  surfaceStrong: 'rgba(255,255,255,0.085)',
-  border: 'rgba(255,255,255,0.10)',
-  rail: 'rgba(255,255,255,0.10)',
-  text: '#F3F3F8',
-  textMuted: '#9B9BB2',
-  textFaint: '#6F6F88',
-  navBar: 'rgba(32,32,48,0.94)',
-};
-
-/** Per-category accent colours, cycled across the feed. */
-export const accents = {
-  violet: { main: '#7C74E8', soft: 'rgba(124,116,232,0.18)' },
-  coral: { main: '#E8836F', soft: 'rgba(232,131,111,0.18)' },
-  amber: { main: '#E0A44A', soft: 'rgba(224,164,74,0.18)' },
-  teal: { main: '#4FBFA8', soft: 'rgba(79,191,168,0.18)' },
-};
-
-/**
- * "Ink & copper" palette — design handoff 7a for the home feed.
- * Slate ink primary, copper accent, cool neutrals, white surfaces.
- */
+/** Light palette — design handoff 7a for the home feed. */
 export const ink = {
   primary: '#2E3438', // slate ink — brand, active states, primary buttons
   onPrimary: '#FFFFFF',
@@ -258,14 +162,14 @@ export const layout = { tabBarSpace: 70 }; // clears the floating rounded tab ba
 export const monoFamily = Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' });
 
 export const font = {
-  h1: { fontSize: 22, fontWeight: '700', color: colors.text },
-  h2: { fontSize: 20, fontWeight: '700', color: colors.text },
-  h3: { fontSize: 16, fontWeight: '600', color: colors.text },
-  body: { fontSize: 15, fontWeight: '400', color: colors.text },
-  bodyMuted: { fontSize: 15, fontWeight: '400', color: colors.textMuted },
-  small: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: colors.textMuted, textTransform: 'uppercase' },
+  h1: { fontSize: 22, fontWeight: '700', color: ink.text },
+  h2: { fontSize: 20, fontWeight: '700', color: ink.text },
+  h3: { fontSize: 16, fontWeight: '600', color: ink.text },
+  body: { fontSize: 15, fontWeight: '400', color: ink.text },
+  bodyMuted: { fontSize: 15, fontWeight: '400', color: ink.textMuted },
+  small: { fontSize: 13, fontWeight: '400', color: ink.textMuted },
+  label: { fontSize: 14, fontWeight: '600', color: ink.text },
+  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: ink.textMuted, textTransform: 'uppercase' },
 };
 
 export const shadow = {
@@ -273,4 +177,3 @@ export const shadow = {
   soft: { shadowColor: '#173A26', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
 };
 
-export default { colors, spacing, radius, layout, font, shadow, monoFamily };

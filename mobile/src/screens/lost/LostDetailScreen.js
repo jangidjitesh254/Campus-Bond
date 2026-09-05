@@ -10,7 +10,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, radius, layout } from '../../theme';
 
 export default function LostDetailScreen({ route, navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { id } = route.params;
   const { user } = useAuth();

@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Animated } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from '../components/Icon';
-import HomeStack from './HomeStack';
 import PostStack from './PostStack';
 import ClubStack from './ClubStack';
 import MapStack from './MapStack';
@@ -16,17 +15,16 @@ import useKeyboardOpen from '../hooks/useKeyboardOpen';
 const Tab = createBottomTabNavigator();
 
 // The Post feed IS the home page, so the `Post` route is labelled "Home" and is
-// the navigator's initial route. `Home` (the tile dashboard) and `Map` stay
-// registered but have no slot — both are reached from the More/Profile rows.
-// Five slots means the centre action lands dead centre.
+// the navigator's initial route. `Map` stays registered but has no slot — it is
+// reached from a Profile row. Five slots means the centre action lands dead
+// centre.
 const BAR = [
   { name: 'Post', label: 'Home', icon: 'home' },
   { name: 'Club', label: 'Club', icon: 'users' },
   null, // slot for the centre action
   { name: 'Sell', label: 'Market', icon: 'tag' },
-  // `Home` (the tile dashboard) and `Map` have no slot of their own — they are
-  // reached from the More/Profile rows, so More stays lit while you're on them.
-  { name: 'More', label: 'More', icon: 'dotsH', owns: ['More', 'Home', 'Map'] },
+  // `Map` has no slot of its own, so More stays lit while you're on it.
+  { name: 'More', label: 'More', icon: 'dotsH', owns: ['More', 'Map'] },
 ];
 
 // What the centre + can create. Each entry drops the student straight into the
@@ -180,7 +178,6 @@ export default function AppTabs() {
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       {/* Post is first, so the app opens on the feed. */}
       <Tab.Screen name="Post" component={PostStack} />
-      <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Club" component={ClubStack} />
       <Tab.Screen name="Map" component={MapStack} />
       <Tab.Screen name="Sell" component={SellStack} />

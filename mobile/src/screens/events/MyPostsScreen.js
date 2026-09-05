@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, layout } from '../../theme';
 
 export default function MyPostsScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const [tab, setTab] = useState('created'); // 'created' | 'applied'
   const [created, setCreated] = useState([]);

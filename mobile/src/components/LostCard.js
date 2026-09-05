@@ -8,7 +8,7 @@ import { radius, shadow } from '../theme';
 
 /** Lost/found item as a light card with LOST/FOUND label + Raise Hand / Message / Share. */
 export default function LostCard({ item, onPress, style }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const uri = imageUrl(item.image);
   const owner = item.createdBy || {};
