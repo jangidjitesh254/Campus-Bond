@@ -66,12 +66,15 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
-  // Update profile (name / branch / semester / avatar image).
-  async function updateProfile({ name, branch, semester, avatar }) {
+  // Update profile (name / branch / semester / avatar image / skills).
+  async function updateProfile({ name, branch, semester, avatar, skills, learning }) {
     const form = new FormData();
     if (name != null) form.append('name', name);
     if (branch != null) form.append('branch', branch);
     if (semester != null && semester !== '') form.append('semester', String(semester));
+    // Arrays go over multipart as JSON strings; the server parses them back.
+    if (Array.isArray(skills)) form.append('skills', JSON.stringify(skills));
+    if (Array.isArray(learning)) form.append('learning', JSON.stringify(learning));
     if (avatar?.uri) {
       const n = avatar.fileName || avatar.uri.split('/').pop() || 'avatar.jpg';
       const ext = (n.split('.').pop() || 'jpg').toLowerCase();

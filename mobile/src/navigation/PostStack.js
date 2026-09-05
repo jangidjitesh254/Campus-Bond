@@ -10,6 +10,7 @@ import ChatScreen from '../screens/chat/ChatScreen';
 import CreateLostScreen from '../screens/lost/CreateLostScreen';
 import LostDetailScreen from '../screens/lost/LostDetailScreen';
 import MyLostPostsScreen from '../screens/lost/MyLostPostsScreen';
+import SearchScreen from '../screens/SearchScreen';
 import { useStackOptions } from './stackOptions';
 
 const Stack = createNativeStackNavigator();
@@ -28,6 +29,7 @@ export default function PostStack() {
       <Stack.Screen name="CreateLost" component={CreateLostScreen} options={{ title: 'Report an item' }} />
       <Stack.Screen name="LostDetail" component={LostDetailScreen} options={{ title: 'Item' }} />
       <Stack.Screen name="MyLostPosts" component={MyLostPostsScreen} options={{ title: 'My items' }} />
+      <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false, animation: 'fade' }} />
     </Stack.Navigator>
   );
 }

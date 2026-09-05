@@ -4,6 +4,7 @@ import MarketItem from '../models/MarketItem.js';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import { UPLOAD_DIR } from '../middleware/upload.js';
+import { award } from '../utils/score.js';
 
 function removeImageFile(imagePath) {
   if (!imagePath) return;
@@ -36,6 +37,8 @@ export async function createItem(req, res) {
     image: req.file ? `/uploads/${req.file.filename}` : '',
     seller: req.user._id,
   });
+
+  await award(req.user._id, 'listing_created', item._id, { refModel: 'MarketItem', note: item.title });
 
   await item.populate('seller', 'name branch semester');
   res.status(201).json({ item });
@@ -180,6 +183,9 @@ export async function updateStatus(req, res) {
   }
   item.status = status;
   await item.save();
+  if (status === 'sold') {
+    await award(req.user._id, 'item_sold', item._id, { refModel: 'MarketItem', note: item.title });
+  }
   res.status(200).json({ item });
 }
 

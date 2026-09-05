@@ -1,22 +1,29 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Avatar from '../components/Avatar';
 import Icon from '../components/Icon';
+import TagInput from '../components/TagInput';
 import { Button, Field } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { imageUrl } from '../api/market';
 import { useTheme } from '../context/ThemeContext';
+import { useKeyboardHeight } from '../hooks/useKeyboardOpen';
 import { spacing, font, layout } from '../theme';
 
+const SKILL_SUGGESTIONS = ['Python', 'React', 'Flutter', 'UI Design', 'Video Editing', 'Java', 'C++', 'Data Science', 'Public Speaking', 'Content Writing', 'Photography', 'Machine Learning'];
+
 export default function EditProfileScreen({ navigation }) {
-  const { t, kinds, isDark } = useTheme();
+  const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const keyboardHeight = useKeyboardHeight();
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [branch, setBranch] = useState(user?.branch || '');
   const [semester, setSemester] = useState(user?.semester ? String(user.semester) : '');
+  const [skills, setSkills] = useState(user?.skills || []);
+  const [learning, setLearning] = useState(user?.learning || []);
   const [avatar, setAvatar] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,15 +42,15 @@ export default function EditProfileScreen({ navigation }) {
     if (!name.trim()) return setError('Name is required.');
     setLoading(true);
     try {
-      await updateProfile({ name: name.trim(), branch: branch.trim(), semester, avatar });
+      await updateProfile({ name: name.trim(), branch: branch.trim(), semester, avatar, skills, learning });
       navigation.goBack();
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} activeOpacity={0.85}>
             {avatar ? (
               <Image source={{ uri: avatar.uri }} style={styles.avatarImg} />
@@ -60,6 +67,21 @@ export default function EditProfileScreen({ navigation }) {
           <Field label="Department / Branch" placeholder="CSE" autoCapitalize="characters" value={branch} onChangeText={setBranch} />
           <Field label="Semester" placeholder="5" keyboardType="number-pad" value={semester} onChangeText={setSemester} />
 
+          {/* Skills are how teammates find each other in search. */}
+          <TagInput
+            label="Skills"
+            placeholder="e.g. React Native, Figma, Python"
+            value={skills}
+            onChange={setSkills}
+            suggestions={SKILL_SUGGESTIONS}
+          />
+          <TagInput
+            label="Want to learn"
+            placeholder="e.g. Machine learning, Public speaking"
+            value={learning}
+            onChange={setLearning}
+          />
+
           <View style={styles.readonly}>
             <Text style={styles.roLabel}>Email</Text>
             <Text style={styles.roValue}>{user?.email}</Text>
@@ -68,7 +90,7 @@ export default function EditProfileScreen({ navigation }) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button title="Save changes" onPress={onSave} loading={loading} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -31,3 +31,24 @@ export const uploadImage = multer({
   fileFilter,
   limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
 });
+
+// Study material: PDFs and office docs as well as images. Past papers scanned
+// on a phone are often 10 MB+, so the cap is more generous here.
+const DOC_TYPES = [
+  /^image\/(jpe?g|png|webp|heic|heif)$/,
+  /^application\/pdf$/,
+  /^application\/(msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/,
+  /^application\/(vnd\.ms-powerpoint|vnd\.openxmlformats-officedocument\.presentationml\.presentation)$/,
+  /^text\/plain$/,
+];
+
+function documentFilter(_req, file, cb) {
+  if (DOC_TYPES.some((re) => re.test(file.mimetype))) cb(null, true);
+  else cb(new Error('Only PDF, Word, PowerPoint, text or image files are allowed.'));
+}
+
+export const uploadDocument = multer({
+  storage,
+  fileFilter: documentFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+});

@@ -204,12 +204,45 @@ export async function getMe(req, res) {
 }
 
 /**
- * Update the current user's profile (name, branch, semester, avatar).
+ * Update the current user's profile (name, branch, semester, avatar, skills).
  * PATCH /api/auth/profile  (multipart/form-data; optional `avatar` file)
+ *
+ * `skills` / `learning` arrive as a JSON array or a comma-separated string
+ * (multipart cannot carry arrays natively).
  */
+function parseTags(value) {
+  if (value === undefined) return undefined;
+  let list = value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      list = Array.isArray(parsed) ? parsed : value.split(',');
+    } catch {
+      list = value.split(',');
+    }
+  }
+  if (!Array.isArray(list)) return undefined;
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    const tag = String(raw).trim().slice(0, 40);
+    const k = tag.toLowerCase();
+    if (tag && !seen.has(k)) {
+      seen.add(k);
+      out.push(tag);
+    }
+  }
+  return out.slice(0, 20);
+}
+
 export async function updateProfile(req, res) {
   const { name, branch, semester } = req.body;
   const user = req.user;
+
+  const skills = parseTags(req.body.skills);
+  const learning = parseTags(req.body.learning);
+  if (skills !== undefined) user.skills = skills;
+  if (learning !== undefined) user.learning = learning;
 
   if (name !== undefined && name.trim()) user.name = name.trim();
   if (branch !== undefined) user.branch = branch.trim();

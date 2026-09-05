@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Club from '../models/Club.js';
 import { UPLOAD_DIR } from '../middleware/upload.js';
+import { award } from '../utils/score.js';
 
 function removeImageFile(imagePath) {
   if (!imagePath) return;
@@ -52,6 +53,8 @@ export async function createClub(req, res) {
     createdBy: req.user._id,
     members: [req.user._id],
   });
+
+  await award(req.user._id, 'club_created', club._id, { refModel: 'Club', note: club.name });
 
   await club.populate('createdBy', 'name branch');
   res.status(201).json({ club: decorate(club, req.user._id) });
@@ -143,6 +146,9 @@ export async function reviewRequest(req, res) {
   entry.status = status;
   if (status === 'approved' && !isMember(club, entry.user)) club.members.push(entry.user);
   await club.save();
+  if (status === 'approved') {
+    await award(entry.user, 'club_joined', club._id, { refModel: 'Club', note: club.name });
+  }
 
   await club.populate('createdBy', 'name branch');
   await club.populate('members', 'name branch semester');

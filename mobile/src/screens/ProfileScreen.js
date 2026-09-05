@@ -11,10 +11,10 @@ import { imageUrl } from '../api/market';
 import { EventsApi } from '../api/events';
 import { MarketApi } from '../api/market';
 import { ClubApi } from '../api/clubs';
-import { spacing, font, radius, layout, shadow, monoFamily } from '../theme';
+import { font, radius, layout, shadow, monoFamily } from '../theme';
 
 export default function ProfileScreen({ navigation }) {
-  const { t, kinds, isDark, toggle } = useTheme();
+  const { t, isDark, toggle } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const { user, logout } = useAuth();
   const [counts, setCounts] = useState({ posts: 0, listings: 0, clubs: 0 });
@@ -41,10 +41,11 @@ export default function ProfileScreen({ navigation }) {
   const rows = [
     { icon: 'edit', label: 'Edit profile', onPress: () => navigation.navigate('EditProfile') },
     { icon: 'moon', label: 'Dark theme', switchOn: isDark, onPress: toggle },
-    { icon: 'grid', label: 'Campus dashboard', onPress: () => navigation.getParent()?.navigate('Home') },
     { icon: 'map', label: 'Campus map', onPress: () => navigation.getParent()?.navigate('Map') },
     // One place for everything they have posted, of any kind.
     { icon: 'list', label: 'My activity', onPress: () => navigation.navigate('MyActivity') },
+    { icon: 'trophy', label: 'Campus score', onPress: () => navigation.navigate('CampusScore') },
+    { icon: 'bookmark', label: 'Past papers & notes', onPress: () => navigation.navigate('Resources') },
     { icon: 'users', label: 'My clubs', onPress: () => navigation.getParent()?.navigate('Club') },
     { icon: 'chat', label: 'Messages', onPress: () => navigation.getParent()?.navigate('Post', { screen: 'ChatList' }) },
     { icon: 'bell', label: 'Settings', onPress: () => navigation.navigate('Feature', { step: '00', label: 'SETTINGS', headerTitle: 'Settings', title: 'Settings', subtitle: 'Notifications, privacy and account settings are coming soon.', bullets: ['NOTIFY', 'PRIVACY', 'ACCOUNT'] }) },
@@ -92,7 +93,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           <View style={styles.statRow}>
-            <Stat styles={styles} num={user?.campusScore ?? 0} label="Points" />
+            <Stat styles={styles} num={user?.campusScore ?? 0} label="Points" onPress={() => navigation.navigate('CampusScore')} />
             <View style={styles.statDivider} />
             <Stat styles={styles} num={counts.posts} label="Posts" />
             <View style={styles.statDivider} />
@@ -108,6 +109,32 @@ export default function ProfileScreen({ navigation }) {
           <Detail styles={styles} label="Department" value={user?.branch || '—'} />
           <Detail styles={styles} label="Semester" value={user?.semester ? `Semester ${user.semester}` : '—'} />
           <Detail styles={styles} label="Email" value={user?.email} last />
+        </View>
+
+        {/* Skills — what teammates search for */}
+        <Text style={styles.groupTitle}>Skills</Text>
+        <View style={[styles.card, styles.skillsCard]}>
+          {user?.skills?.length ? (
+            <View style={styles.tags}>
+              {user.skills.map((s) => (
+                <View key={s} style={styles.tag}><Text style={styles.tagText}>{s}</Text></View>
+              ))}
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} activeOpacity={0.7}>
+              <Text style={styles.addSkills}>Add your skills so teams can find you →</Text>
+            </TouchableOpacity>
+          )}
+          {user?.learning?.length ? (
+            <>
+              <Text style={styles.learningLabel}>WANT TO LEARN</Text>
+              <View style={styles.tags}>
+                {user.learning.map((s) => (
+                  <View key={s} style={[styles.tag, styles.tagLearn]}><Text style={[styles.tagText, styles.tagLearnText]}>{s}</Text></View>
+                ))}
+              </View>
+            </>
+          ) : null}
         </View>
 
         {/* Actions */}
@@ -141,12 +168,13 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function Stat({ num, label, styles}) {
+function Stat({ num, label, styles, onPress }) {
+  const Wrap = onPress ? TouchableOpacity : View;
   return (
-    <View style={styles.stat}>
+    <Wrap style={styles.stat} onPress={onPress} activeOpacity={0.7}>
       <Text style={styles.statNum}>{num}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </Wrap>
   );
 }
 function Detail({ label, value, last, styles}) {
@@ -206,6 +234,14 @@ function makeStyles(t, isDark) {
     statDivider: { width: 1, height: 24, backgroundColor: t.hairline },
     groupTitle: { ...font.eyebrow, color: t.textMuted, marginTop: 24, marginBottom: 8, marginLeft: 18 },
     card: { marginHorizontal: 14, backgroundColor: t.surface, borderRadius: 20, borderWidth: 1, borderColor: t.border, ...shadow.card },
+    skillsCard: { padding: 14 },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+    tag: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: t.primary },
+    tagText: { fontSize: 12.5, fontWeight: '600', color: t.onPrimary },
+    tagLearn: { backgroundColor: t.accentSoft },
+    tagLearnText: { color: t.accent },
+    learningLabel: { fontFamily: monoFamily, fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: t.textMuted, marginTop: 12, marginBottom: 7 },
+    addSkills: { fontSize: 14, fontWeight: '600', color: t.accent },
     detail: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingHorizontal: 16, paddingVertical: 14 },
     detailLabel: { fontSize: 14, color: t.textMuted },
     detailValue: { fontSize: 14, fontWeight: '600', color: t.text, flexShrink: 1, textAlign: 'right' },

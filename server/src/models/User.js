@@ -18,10 +18,15 @@ const userSchema = new mongoose.Schema(
     semester: { type: Number, min: 1, max: 12 },
     avatar: { type: String, default: '' },
 
+    // What they can do and what they want to pick up — the matching signal
+    // for team posts and the "people" section of search.
+    skills: { type: [String], default: [] },
+    learning: { type: [String], default: [] },
+
     // Verification
     isVerified: { type: Boolean, default: false },
 
-    // Gamification (used later by Campus Score feature)
+    // Campus Score — running total; the ledger lives in ScoreEvent.
     campusScore: { type: Number, default: 0 },
 
     role: { type: String, enum: ['student', 'admin'], default: 'student' },

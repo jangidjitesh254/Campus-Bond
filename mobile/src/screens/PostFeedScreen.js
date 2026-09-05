@@ -256,12 +256,15 @@ export default function PostFeedScreen({ navigation, route }) {
             <Icon name="search" size={15} color={t.textMuted} strokeWidth={1.9} />
             <TextInput
               style={styles.fieldInput}
-              placeholder="Search people, posts, notices..."
+              placeholder="Filter this feed — press search for all of campus"
               placeholderTextColor={t.textMuted}
               value={query}
               onChangeText={setQuery}
               autoFocus
               returnKeyType="search"
+              // Typing filters the feed; submitting searches people, papers,
+              // clubs and listings too.
+              onSubmitEditing={() => query.trim() && navigation.navigate('Search', { q: query.trim() })}
             />
           </View>
         ) : null}

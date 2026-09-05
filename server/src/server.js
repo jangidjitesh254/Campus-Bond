@@ -10,6 +10,9 @@ import lostRoutes from './routes/lostRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import marketRoutes from './routes/marketRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
+import resourceRoutes from './routes/resourceRoutes.js';
+import scoreRoutes from './routes/scoreRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 import { UPLOAD_DIR } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -29,7 +32,7 @@ app.use(cors()); // allow the mobile app to call the API
 app.use(express.json());
 app.use(morgan('dev')); // request logging in the console
 
-// Serve uploaded images (lost & found photos, etc.)
+// Serve uploaded files (photos, avatars, past papers and notes)
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 // ---- Health check ----
@@ -44,6 +47,9 @@ app.use('/api/lostfound', lostRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/clubs', clubRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/score', scoreRoutes);
+app.use('/api/search', searchRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);

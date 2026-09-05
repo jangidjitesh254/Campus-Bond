@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import LostItem from '../models/LostItem.js';
 import { UPLOAD_DIR } from '../middleware/upload.js';
+import { award } from '../utils/score.js';
 
 /** Remove an uploaded file from disk (best-effort). */
 function removeImageFile(imagePath) {
@@ -48,6 +49,8 @@ export async function createLostItem(req, res) {
     image: req.file ? `/uploads/${req.file.filename}` : '',
     createdBy: req.user._id,
   });
+
+  await award(req.user._id, 'lost_reported', item._id, { refModel: 'LostItem', note: item.title });
 
   await item.populate('createdBy', 'name branch semester');
   res.status(201).json({ item: decorate(item, req.user._id) });
@@ -117,6 +120,9 @@ export async function updateLostStatus(req, res) {
   }
   item.status = status;
   await item.save();
+  if (status === 'resolved') {
+    await award(req.user._id, 'lost_resolved', item._id, { refModel: 'LostItem', note: item.title });
+  }
   res.status(200).json({ item });
 }
 

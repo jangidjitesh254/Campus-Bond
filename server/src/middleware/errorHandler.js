@@ -23,10 +23,10 @@ export function errorHandler(err, req, res, next) {
   // Multer (file upload) errors
   if (err.name === 'MulterError') {
     const msg =
-      err.code === 'LIMIT_FILE_SIZE' ? 'Image is too large (max 8 MB).' : `Upload error: ${err.message}`;
+      err.code === 'LIMIT_FILE_SIZE' ? 'That file is too large (max 8 MB for images, 20 MB for documents).' : `Upload error: ${err.message}`;
     return res.status(400).json({ message: msg });
   }
-  if (err.message === 'Only image files are allowed.') {
+  if (/^Only .* files are allowed\.$/.test(err.message || '')) {
     return res.status(400).json({ message: err.message });
   }
 

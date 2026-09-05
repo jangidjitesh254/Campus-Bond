@@ -2,6 +2,7 @@ import { validationResult } from 'express-validator';
 import Event from '../models/Event.js';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
+import { award } from '../utils/score.js';
 
 function firstValidationError(req) {
   const errors = validationResult(req);
@@ -34,6 +35,8 @@ export async function createEvent(req, res) {
     venue,
     createdBy: req.user._id,
   });
+
+  await award(req.user._id, 'post_created', event._id, { refModel: 'Event', note: event.title });
 
   await event.populate('createdBy', 'name branch semester avatar');
   res.status(201).json({ event });
@@ -104,6 +107,11 @@ export async function addComment(req, res) {
   event.comments.push({ user: req.user._id, text });
   await event.save();
   await event.populate('comments.user', 'name branch avatar');
+
+  // One reply-award per post per person, so a thread of ten replies is not ten awards.
+  if (String(event.createdBy) !== String(req.user._id)) {
+    await award(req.user._id, 'comment_posted', event._id, { refModel: 'Event', note: event.title });
+  }
 
   res.status(201).json({ comments: event.comments });
 }
@@ -204,6 +212,9 @@ export async function reviewApplicant(req, res) {
       convo.lastMessage = text;
       convo.lastMessageAt = new Date();
       await convo.save();
+
+      await award(applicant.user, 'team_joined', event._id, { refModel: 'Event', note: event.title });
+      await award(event.createdBy, 'request_reviewed', applicant._id, { refModel: 'Event', note: event.title });
     }
     conversationId = convo._id;
   }
