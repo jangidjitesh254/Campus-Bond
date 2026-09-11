@@ -1,26 +1,17 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import CampusMapScreen from '../screens/map/CampusMapScreen';
+import WalkthroughScreen from '../screens/map/WalkthroughScreen';
 import { useStackOptions } from './stackOptions';
 
 const Stack = createNativeStackNavigator();
-
-const MapScreen = () => (
-  <PlaceholderScreen
-    step="06"
-    label="CAMPUS MAP"
-    title="Find your way around"
-    subtitle="An interactive campus map for blocks, labs, canteens and event venues is on the way."
-    bullets={['LOCATE', 'NAVIGATE', 'ARRIVE']}
-    icon="map-outline"
-  />
-);
 
 export default function MapStack() {
   const screenOptions = useStackOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="Map" component={MapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Map" component={CampusMapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Walkthrough" component={WalkthroughScreen} options={{ title: 'Campus walks' }} />
     </Stack.Navigator>
   );
 }

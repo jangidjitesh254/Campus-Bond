@@ -17,6 +17,7 @@ import { layout, monoFamily } from '../theme';
 const QUICK = [
   { key: 'papers', ion: 'document-text', label: 'Past papers & notes', tab: 'More', to: { screen: 'Resources' } },
   { key: 'score', ion: 'trophy', label: 'Campus score', tab: 'More', to: { screen: 'CampusScore' } },
+  { key: 'map', ion: 'map', label: '3D campus map', tab: 'Map' },
   { key: 'clubs', ion: 'people-circle', label: 'Clubs', tab: 'Club' },
   { key: 'market', ion: 'pricetag', label: 'Marketplace', tab: 'Sell' },
   { key: 'lost', ion: 'search', label: 'Lost & Found', tab: 'Post', to: { screen: 'PostFeed', params: { filter: 'Lost Found' } } },

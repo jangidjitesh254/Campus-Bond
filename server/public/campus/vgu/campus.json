@@ -1,0 +1,212 @@
+{
+  "id": "vgu",
+  "name": "Vivekananda Global University",
+  "short": "VGU Jaipur",
+  "units": "metres — x runs east, z runs south, origin is the middle of the central lawn",
+  "note": "Building footprints were modelled from the campus photos. Places marked approx:true are placed by convention, not measurement — move them by editing x/z here; the app reloads this file.",
+  "ground": { "size": 340 },
+
+  "places": [
+    {
+      "id": "main-north",
+      "name": "Academic Block · North Wing",
+      "category": "academic",
+      "type": "building",
+      "x": 0, "z": -60, "w": 176, "d": 20, "h": 26, "floors": 7,
+      "style": "stripes",
+      "door": { "x": 0, "z": -36 }, "node": "porch",
+      "desc": "The long seven-storey block that closes the north side of the lawn — classrooms, labs and department offices, entered through the central porch.",
+      "photos": ["main-block-front", "main-block-wide", "main-block-aerial", "approach-road", "corridor"]
+    },
+    {
+      "id": "admin-tower",
+      "name": "Admin Tower & Reception",
+      "category": "admin",
+      "type": "building",
+      "x": 0, "z": -44, "w": 30, "d": 14, "h": 20, "floors": 5,
+      "style": "white",
+      "door": { "x": 0, "z": -36 }, "node": "porch",
+      "desc": "The white tower over the main entrance. Reception, admissions and the administrative offices are here — walk in under the porch, up the red steps.",
+      "photos": ["main-entrance", "reception-lobby", "main-block-aerial"]
+    },
+    {
+      "id": "west-wing",
+      "name": "Academic Block · West Wing",
+      "category": "academic",
+      "type": "building",
+      "x": -100, "z": -10, "w": 20, "d": 120, "h": 26, "floors": 7,
+      "style": "balcony",
+      "door": { "x": -88, "z": 0 }, "node": "west-door",
+      "desc": "The wing with open balcony corridors on every floor, along the west edge of the lawn. Connected to the north wing by the walkway bridge.",
+      "photos": ["lawn-south-wing", "courtyard-aerial", "walkway-bridge"]
+    },
+    {
+      "id": "colonnade",
+      "name": "Colonnade Block",
+      "category": "academic",
+      "type": "building",
+      "x": 82, "z": 0, "w": 22, "d": 96, "h": 18, "floors": 4,
+      "style": "colonnade",
+      "door": { "x": 70, "z": 0 }, "node": "east-door",
+      "desc": "The white block on pillars along the east side of the lawn. Its open ground floor is the shaded hang-out spot between classes.",
+      "photos": ["colonnade-block", "porch-parking", "courtyard-aerial", "open-hall"]
+    },
+    {
+      "id": "gateway",
+      "name": "Gateway Building",
+      "category": "admin",
+      "type": "building",
+      "x": 0, "z": 72, "w": 44, "d": 14, "h": 12, "floors": 3,
+      "style": "arch",
+      "door": { "x": 0, "z": 72 }, "node": "arch",
+      "desc": "The road from the main gate passes right under this building — the archway is the way into the inner campus.",
+      "photos": ["gateway-arch", "tree-lined-road"]
+    },
+
+    {
+      "id": "porch",
+      "name": "Main Entrance & Porch",
+      "category": "admin",
+      "type": "spot",
+      "x": 0, "z": -30, "node": "porch",
+      "desc": "The covered drop-off in front of the admin tower. Cars park under it; the reception lobby is straight ahead.",
+      "photos": ["porch-parking", "main-entrance", "main-block-front"]
+    },
+    {
+      "id": "lawn",
+      "name": "Central Lawn",
+      "category": "outdoor",
+      "type": "spot",
+      "x": 0, "z": 0, "node": "loop-n",
+      "desc": "The big lawn in the middle of the academic complex — fests, morning assemblies and the best place to sit in winter.",
+      "photos": ["courtyard-aerial", "lawn-south-wing"]
+    },
+    {
+      "id": "main-gate",
+      "name": "Main Gate",
+      "category": "admin",
+      "type": "spot",
+      "x": 0, "z": 128, "node": "gate",
+      "desc": "Where the campus road starts. Directions default to starting from here.",
+      "photos": ["tree-lined-road", "approach-road"]
+    },
+    {
+      "id": "parking",
+      "name": "Parking",
+      "category": "parking",
+      "type": "spot",
+      "x": -44, "z": 66, "node": "parking",
+      "approx": true,
+      "desc": "Two-wheeler and car parking off the south road. Visitor cars can also pull in under the porch.",
+      "photos": ["porch-parking"]
+    },
+    {
+      "id": "canteen",
+      "name": "Canteen",
+      "category": "food",
+      "type": "building",
+      "x": 48, "z": 68, "w": 24, "d": 14, "h": 5, "floors": 1,
+      "style": "plain",
+      "door": { "x": 48, "z": 58 }, "node": "canteen",
+      "approx": true,
+      "desc": "Food court and tea point.",
+      "photos": []
+    },
+    {
+      "id": "library",
+      "name": "Library",
+      "category": "academic",
+      "type": "spot",
+      "x": -94, "z": 20, "node": "west-door",
+      "approx": true,
+      "desc": "Central library, ground floor of the west wing.",
+      "photos": ["corridor"]
+    },
+    {
+      "id": "sports",
+      "name": "Sports Ground",
+      "category": "sports",
+      "type": "field",
+      "x": 150, "z": 30, "w": 80, "d": 50,
+      "node": "sports",
+      "approx": true,
+      "desc": "Cricket and football ground, east of the colonnade block.",
+      "photos": []
+    }
+  ],
+
+  "roads": [
+    { "from": [0, 132], "to": [0, 46], "w": 8 },
+    { "from": [-64, 46], "to": [64, 46], "w": 7 },
+    { "from": [64, 46], "to": [64, -46], "w": 7 },
+    { "from": [64, -46], "to": [-64, -46], "w": 7 },
+    { "from": [-64, -46], "to": [-64, 46], "w": 7 },
+    { "from": [-44, 46], "to": [-44, 66], "w": 6 },
+    { "from": [48, 46], "to": [48, 58], "w": 5 },
+    { "from": [64, 0], "to": [110, 0], "w": 6 },
+    { "from": [110, 0], "to": [110, 30], "w": 5 }
+  ],
+
+  "lawns": [
+    { "x": 0, "z": 0, "w": 112, "d": 78 },
+    { "x": -30, "z": 95, "w": 40, "d": 50 },
+    { "x": 36, "z": 100, "w": 46, "d": 44 }
+  ],
+
+  "trees": [
+    [-30, 42], [-15, 42], [15, 42], [30, 42], [45, 42],
+    [-58, 20], [-58, 5], [-58, -12], [-58, -28],
+    [58, 22], [58, 8], [58, -8], [58, -24],
+    [-8, 96], [-8, 110], [-8, 122], [8, 96], [8, 110], [8, 122],
+    [-30, 86], [-40, 100], [-22, 108], [40, 88], [52, 104], [30, 112],
+    [-24, -40], [-36, -40], [24, -40], [36, -40], [48, -40],
+    [125, 8], [125, 22]
+  ],
+
+  "graph": {
+    "nodes": {
+      "gate": [0, 128],
+      "south-mid": [0, 96],
+      "arch": [0, 72],
+      "loop-s": [0, 46],
+      "loop-se": [64, 46],
+      "loop-sw": [-64, 46],
+      "loop-e": [64, 0],
+      "loop-w": [-64, 0],
+      "loop-ne": [64, -46],
+      "loop-nw": [-64, -46],
+      "loop-n": [0, -46],
+      "porch": [0, -36],
+      "parking": [-44, 66],
+      "canteen": [48, 58],
+      "east-door": [70, 0],
+      "west-door": [-88, 0],
+      "east-spur": [110, 0],
+      "sports": [110, 30]
+    },
+    "edges": [
+      ["gate", "south-mid"], ["south-mid", "arch"], ["arch", "loop-s"],
+      ["loop-s", "loop-se"], ["loop-s", "loop-sw"],
+      ["loop-se", "loop-e"], ["loop-e", "loop-ne"], ["loop-ne", "loop-n"],
+      ["loop-sw", "loop-w"], ["loop-w", "loop-nw"], ["loop-nw", "loop-n"],
+      ["loop-n", "porch"],
+      ["loop-sw", "parking"], ["loop-se", "canteen"],
+      ["loop-e", "east-door"], ["loop-w", "west-door"],
+      ["loop-e", "east-spur"], ["east-spur", "sports"]
+    ]
+  },
+
+  "videos": [
+    { "id": "walk-1", "title": "Campus walk · 1", "file": "videos/walk-1.mp4", "seconds": 22 },
+    { "id": "walk-2", "title": "Campus walk · 2", "file": "videos/walk-2.mp4", "seconds": 16 }
+  ],
+
+  "categories": [
+    { "key": "academic", "label": "Academic" },
+    { "key": "admin", "label": "Admin" },
+    { "key": "food", "label": "Food" },
+    { "key": "parking", "label": "Parking" },
+    { "key": "sports", "label": "Sports" },
+    { "key": "outdoor", "label": "Outdoors" }
+  ]
+}

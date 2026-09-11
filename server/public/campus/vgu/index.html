@@ -1,0 +1,540 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>VGU · 3D campus</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #DCE6EC; touch-action: none; -webkit-user-select: none; user-select: none; font-family: -apple-system, Roboto, "Segoe UI", sans-serif; }
+  body.dark { background: #0F1315; }
+  canvas { display: block; }
+  #hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 11px; letter-spacing: 1.2px; color: rgba(23,27,29,0.55); pointer-events: none; transition: opacity .6s; }
+  body.dark #hint { color: rgba(230,234,235,0.55); }
+  #err { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; color: #171B1D; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="hint">DRAG TO LOOK · PINCH TO ZOOM · TAP A BUILDING</div>
+<div id="err"></div>
+<script src="vendor/three.min.js"></script>
+<script>
+/*
+ * Campus Bond · 3D campus map.
+ *
+ * Runs inside the app's WebView. Everything on screen is built from
+ * campus.json, so a different campus is a different folder, not new code.
+ *
+ * Messages in  (RN -> page): { type: 'focus', id } · { type: 'route', from, to }
+ *                            { type: 'clearRoute' } · { type: 'theme', dark } · { type: 'reset' }
+ * Messages out (page -> RN): { type: 'ready', places } · { type: 'select', id | null }
+ *                            { type: 'route', from, to, metres, steps } · { type: 'error', message }
+ */
+(function () {
+  const RN = window.ReactNativeWebView;
+  const send = (msg) => { try { RN ? RN.postMessage(JSON.stringify(msg)) : console.log('OUT', msg); } catch (e) {} };
+  const params = new URLSearchParams(location.search);
+  let dark = params.get('dark') === '1';
+  if (dark) document.body.classList.add('dark');
+
+  // ---- palette (mirrors the app's ink & copper theme) ----
+  const P = {
+    light: { sky: 0xDCE6EC, ground: 0xD9D6CC, lawn: 0x7FAE68, road: 0x5F6366, kerb: 0xE9C13F, beige: 0xC9B98A, white: 0xF4F3EE, tower: 0xF7F7F4, roof: 0xB9B3A6, trunk: 0x6B4F35, leaf: 0x4F8A4C, accent: 0xA9603A, ink: 0x2E3438, field: 0x8DB86E, label: '#171B1D', labelBg: 'rgba(255,255,255,0.92)', fog: 0xDCE6EC },
+    dark:  { sky: 0x0F1315, ground: 0x1D2225, lawn: 0x2F4A33, road: 0x2A2F33, kerb: 0x8A7A3A, beige: 0x5F5844, white: 0x8B8E8B, tower: 0x9A9C99, roof: 0x4A4D4B, trunk: 0x3E3128, leaf: 0x2E5A34, accent: 0xC9834F, ink: 0xE6EAEB, field: 0x35553A, label: '#E6EAEB', labelBg: 'rgba(23,27,29,0.9)', fog: 0x0F1315 },
+  };
+  const C = () => (dark ? P.dark : P.light);
+
+  // ---- renderer / scene / camera ----
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 1, 2000);
+
+  // r160 uses physical light units, so these are brighter than they look.
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x9AA6AE, 1.9);
+  const sun = new THREE.DirectionalLight(0xFFF6E8, 2.6);
+  sun.position.set(-120, 220, 90);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -220, right: 220, top: 220, bottom: -220, near: 10, far: 700 });
+  sun.shadow.bias = -0.0008;
+  scene.add(hemi, sun);
+
+  // ---- orbit state ----
+  // Opening view: whole complex in frame on a portrait phone, seen from the
+  // south-east so the entrance porch faces the viewer.
+  const HOME = { theta: -0.42, phi: 1.02, radius: 300, target: [-6, 6, -4] };
+  const orbit = { target: new THREE.Vector3(...HOME.target), theta: HOME.theta, phi: HOME.phi, radius: HOME.radius };
+  const LIM = { phiMin: 0.18, phiMax: 1.36, rMin: 28, rMax: 480, pan: 210 };
+  function applyCamera() {
+    const { target, theta, phi, radius } = orbit;
+    camera.position.set(
+      target.x + radius * Math.sin(phi) * Math.sin(theta),
+      target.y + radius * Math.cos(phi),
+      target.z + radius * Math.sin(phi) * Math.cos(theta)
+    );
+    camera.lookAt(target);
+  }
+
+  // ---- data ----
+  let DATA = null;
+  const clickables = []; // meshes with userData.place
+  const labels = [];     // sprites
+  let selectedId = null;
+  let routeGroup = null;
+  let world = null;      // everything rebuilt on theme change
+
+  const errBox = document.getElementById('err');
+  function fail(message) {
+    errBox.style.display = 'flex';
+    errBox.textContent = message;
+    send({ type: 'error', message });
+  }
+
+  fetch('campus.json?v=' + Date.now())
+    .then((r) => { if (!r.ok) throw new Error('campus.json ' + r.status); return r.json(); })
+    .then((d) => { DATA = d; build(); loop(); send({ type: 'ready', places: d.places.map(({ id, name, category, type, approx }) => ({ id, name, category, type, approx })) }); })
+    .catch((e) => fail('Could not load the campus layout: ' + e.message));
+
+  // ---- procedural facade textures ----
+  function facadeTexture(style, floors, widthM) {
+    const c = document.createElement('canvas');
+    const floorPx = 40;
+    c.width = 512; c.height = Math.max(1, floors) * floorPx;
+    const g = c.getContext('2d');
+    const col = C();
+    const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+    if (style === 'stripes') {
+      // beige piers with white window bands — the north wing look
+      g.fillStyle = hex(col.beige); g.fillRect(0, 0, c.width, c.height);
+      const bay = 64;
+      for (let x = 0; x < c.width; x += bay) {
+        g.fillStyle = hex(col.white); g.fillRect(x + 12, 0, bay - 24, c.height);
+        for (let f = 0; f < floors; f++) {
+          g.fillStyle = dark ? '#5B6B78' : '#7A8FA0';
+          g.fillRect(x + 20, f * floorPx + 9, bay - 40, floorPx - 18);
+          g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x + 20, f * floorPx + 9, (bay - 40) / 2, 6);
+        }
+      }
+    } else if (style === 'balcony') {
+      g.fillStyle = hex(col.white); g.fillRect(0, 0, c.width, c.height);
+      for (let f = 0; f < floors; f++) {
+        const y = f * floorPx;
+        g.fillStyle = dark ? '#3A4247' : '#5E6B74'; g.fillRect(0, y + 6, c.width, floorPx - 16); // open corridor shadow
+        g.fillStyle = hex(col.beige); g.fillRect(0, y + floorPx - 12, c.width, 12); // slab
+        g.strokeStyle = dark ? '#8B8E8B' : '#C9CDCD'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, y + 22); g.lineTo(c.width, y + 22); g.stroke(); // railing
+        for (let x = 0; x < c.width; x += 72) { g.fillStyle = hex(col.beige); g.fillRect(x, y, 10, floorPx); }
+      }
+    } else if (style === 'white') {
+      g.fillStyle = hex(col.tower); g.fillRect(0, 0, c.width, c.height);
+      for (let f = 0; f < floors; f++) for (let x = 24; x < c.width - 24; x += 64) {
+        g.fillStyle = dark ? '#5B6B78' : '#7A8FA0'; g.fillRect(x, f * floorPx + 10, 34, 22);
+        g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x, f * floorPx + 10, 17, 5);
+      }
+    } else if (style === 'plain') {
+      g.fillStyle = hex(col.white); g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = dark ? '#6A3A2A' : '#A9603A'; g.fillRect(0, c.height - 10, c.width, 10);
+      for (let x = 24; x < c.width; x += 80) { g.fillStyle = dark ? '#5B6B78' : '#7A8FA0'; g.fillRect(x, 10, 40, 18); }
+    } else {
+      g.fillStyle = hex(col.white); g.fillRect(0, 0, c.width, c.height);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.x = Math.max(1, Math.round(widthM / 24));
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  function labelSprite(text, sub) {
+    const c = document.createElement('canvas');
+    const g = c.getContext('2d');
+    const font = '600 26px -apple-system, Roboto, "Segoe UI", sans-serif';
+    g.font = font;
+    const w = Math.ceil(g.measureText(text).width) + 44;
+    c.width = w; c.height = sub ? 76 : 54;
+    const col = C();
+    g.fillStyle = col.labelBg;
+    const r = 14;
+    g.beginPath();
+    g.moveTo(r, 0); g.lineTo(w - r, 0); g.quadraticCurveTo(w, 0, w, r); g.lineTo(w, c.height - r); g.quadraticCurveTo(w, c.height, w - r, c.height); g.lineTo(r, c.height); g.quadraticCurveTo(0, c.height, 0, c.height - r); g.lineTo(0, r); g.quadraticCurveTo(0, 0, r, 0); g.closePath(); g.fill();
+    g.font = font; g.fillStyle = col.label; g.textBaseline = 'middle';
+    g.fillText(text, 22, sub ? 26 : 27);
+    if (sub) { g.font = '700 15px -apple-system, Roboto, sans-serif'; g.fillStyle = '#' + col.accent.toString(16).padStart(6, '0'); g.fillText(sub, 22, 56); }
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    sp.userData.aspect = w / c.height;
+    sp.renderOrder = 10;
+    return sp;
+  }
+
+  // ---- world ----
+  function build() {
+    if (world) { scene.remove(world); disposeDeep(world); clickables.length = 0; labels.length = 0; }
+    world = new THREE.Group();
+    const col = C();
+    scene.background = new THREE.Color(col.sky);
+    scene.fog = new THREE.Fog(col.fog, 420, 1100);
+    document.body.classList.toggle('dark', dark);
+
+    const S = DATA.ground.size;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(S * 3, S * 3), new THREE.MeshLambertMaterial({ color: col.ground }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; world.add(ground);
+
+    // lawns
+    for (const l of DATA.lawns) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(l.w, l.d), new THREE.MeshLambertMaterial({ color: col.lawn }));
+      m.rotation.x = -Math.PI / 2; m.position.set(l.x, 0.05, l.z); m.receiveShadow = true; world.add(m);
+    }
+
+    // roads with a dashed centre line and yellow kerbs
+    for (const r of DATA.roads) {
+      const dx = r.to[0] - r.from[0], dz = r.to[1] - r.from[1];
+      const len = Math.hypot(dx, dz);
+      const ang = Math.atan2(dx, dz);
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(r.w, len), new THREE.MeshLambertMaterial({ color: col.road }));
+      road.rotation.x = -Math.PI / 2; road.rotation.z = -ang;
+      road.position.set((r.from[0] + r.to[0]) / 2, 0.08, (r.from[1] + r.to[1]) / 2);
+      road.rotation.order = 'YXZ'; road.rotation.set(-Math.PI / 2, 0, 0); road.rotateZ(ang);
+      road.receiveShadow = true; world.add(road);
+      // centre dashes
+      const dashes = new THREE.Group();
+      for (let t = 4; t < len - 4; t += 8) {
+        const d = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 3.2), new THREE.MeshBasicMaterial({ color: 0xF1F1EC }));
+        d.rotation.x = -Math.PI / 2; d.position.set(0, 0.12, t - len / 2); dashes.add(d);
+      }
+      dashes.position.copy(road.position); dashes.rotation.y = ang; world.add(dashes);
+      for (const side of [-1, 1]) {
+        const k = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, len), new THREE.MeshLambertMaterial({ color: col.kerb }));
+        k.position.set(0, 0.15, 0); k.position.x = side * (r.w / 2 + 0.25);
+        const kg = new THREE.Group(); kg.add(k); kg.position.copy(road.position); kg.position.y = 0; kg.rotation.y = ang; world.add(kg);
+      }
+    }
+
+    // trees
+    const trunkMat = new THREE.MeshLambertMaterial({ color: col.trunk });
+    const leafMat = new THREE.MeshLambertMaterial({ color: col.leaf });
+    for (const [x, z] of DATA.trees) {
+      const t = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 3.2, 6), trunkMat); trunk.position.y = 1.6; trunk.castShadow = true;
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6 + ((x * 7 + z * 3) % 5) * 0.25, 1), leafMat); crown.position.y = 4.6; crown.castShadow = true;
+      t.add(trunk, crown); t.position.set(x, 0, z); world.add(t);
+    }
+
+    // places
+    for (const p of DATA.places) {
+      if (p.type === 'building') addBuilding(p);
+      else if (p.type === 'field') addField(p);
+      else addSpot(p);
+    }
+
+    scene.add(world);
+    applyCamera();
+  }
+
+  function addBuilding(p) {
+    const col = C();
+    const g = new THREE.Group();
+    g.position.set(p.x, 0, p.z);
+    const box = (w, h, d, mat, x = 0, y = 0, z = 0) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m;
+    };
+    const roofMat = new THREE.MeshLambertMaterial({ color: col.roof });
+    let hit;
+    if (p.style === 'colonnade') {
+      // open ground floor on pillars, then slab-and-band floors
+      const pillarMat = new THREE.MeshLambertMaterial({ color: col.beige });
+      const slabMat = new THREE.MeshLambertMaterial({ color: col.white });
+      const floorH = p.h / p.floors;
+      const nx = Math.max(2, Math.round(p.w / 8)), nz = Math.max(2, Math.round(p.d / 8));
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+        if (i !== 0 && i !== nx - 1 && j !== 0 && j !== nz - 1) continue;
+        const px = -p.w / 2 + (i + 0.5) * (p.w / nx), pz = -p.d / 2 + (j + 0.5) * (p.d / nz);
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, p.h, 8), pillarMat);
+        c.position.set(px, p.h / 2, pz); c.castShadow = true; g.add(c);
+      }
+      for (let f = 1; f <= p.floors; f++) box(p.w, 0.9, p.d, f === p.floors ? roofMat : slabMat, 0, f * floorH, 0);
+      for (let f = 1; f < p.floors; f++) box(p.w - 4, floorH * 0.35, p.d - 4, new THREE.MeshLambertMaterial({ color: dark ? 0x3A4247 : 0x5E6B74 }), 0, f * floorH + floorH * 0.55, 0);
+      hit = box(p.w, p.h, p.d, new THREE.MeshBasicMaterial({ visible: false }), 0, p.h / 2, 0);
+    } else if (p.style === 'arch') {
+      const legW = p.w * 0.28;
+      const mat = new THREE.MeshLambertMaterial({ color: col.white });
+      box(legW, p.h * 0.55, p.d, mat, -p.w / 2 + legW / 2, p.h * 0.275, 0);
+      box(legW, p.h * 0.55, p.d, mat, p.w / 2 - legW / 2, p.h * 0.275, 0);
+      box(p.w, p.h * 0.45, p.d, new THREE.MeshLambertMaterial({ map: facadeTexture('white', 2, p.w) }), 0, p.h * 0.775, 0);
+      box(p.w + 1.5, 0.6, p.d + 1.5, roofMat, 0, p.h + 0.3, 0);
+      hit = box(p.w, p.h, p.d, new THREE.MeshBasicMaterial({ visible: false }), 0, p.h / 2, 0);
+    } else {
+      const tex = facadeTexture(p.style, p.floors, p.w);
+      const texD = facadeTexture(p.style, p.floors, p.d);
+      const side = (t) => new THREE.MeshLambertMaterial({ map: t });
+      const mats = [side(texD), side(texD), roofMat, roofMat, side(tex), side(tex)];
+      hit = box(p.w, p.h, p.d, mats, 0, p.h / 2, 0);
+      box(p.w + 1.2, 0.5, p.d + 1.2, roofMat, 0, p.h + 0.25, 0); // parapet
+      if (p.style === 'white') {
+        // rooftop lift room, like the tower has
+        box(6, 3, 5, new THREE.MeshLambertMaterial({ color: col.tower }), p.w * 0.15, p.h + 1.5, 0);
+        // porch canopy in front (south) on four columns
+        const cm = new THREE.MeshLambertMaterial({ color: col.white });
+        const canopyZ = p.d / 2 + 8;
+        box(p.w + 6, 1.1, 16, cm, 0, 6.5, canopyZ);
+        for (const cx of [-p.w / 2 - 1, p.w / 2 + 1]) for (const cz of [canopyZ - 6, canopyZ + 6]) {
+          const c = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 8), cm); c.position.set(cx, 3, cz); c.castShadow = true; g.add(c);
+        }
+        // red entrance wall + steps
+        box(p.w * 0.8, 5, 0.6, new THREE.MeshLambertMaterial({ color: col.accent }), 0, 2.5, p.d / 2 + 0.3);
+        box(p.w * 0.9, 0.6, 4, new THREE.MeshLambertMaterial({ color: dark ? 0x6A3A2A : 0xB9705A }), 0, 0.3, p.d / 2 + 2.5);
+      }
+    }
+    hit.userData.place = p;
+    clickables.push(hit);
+    g.userData.place = p;
+    const lab = labelSprite(p.name, p.approx ? 'APPROX' : null);
+    lab.position.set(0, p.h + 9, 0);
+    g.add(lab); labels.push(lab);
+    world.add(g);
+  }
+
+  function addField(p) {
+    const col = C();
+    const g = new THREE.Group(); g.position.set(p.x, 0, p.z);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.d), new THREE.MeshLambertMaterial({ color: col.field }));
+    m.rotation.x = -Math.PI / 2; m.position.y = 0.06; m.receiveShadow = true; g.add(m);
+    const line = new THREE.Mesh(new THREE.RingGeometry(9, 9.5, 40), new THREE.MeshBasicMaterial({ color: 0xF1F1EC }));
+    line.rotation.x = -Math.PI / 2; line.position.y = 0.1; g.add(line);
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(p.w, 2, p.d), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 1; hit.userData.place = p; g.add(hit); clickables.push(hit);
+    const lab = labelSprite(p.name, p.approx ? 'APPROX' : null); lab.position.set(0, 10, 0); g.add(lab); labels.push(lab);
+    g.userData.place = p; world.add(g);
+  }
+
+  function addSpot(p) {
+    const col = C();
+    const g = new THREE.Group(); g.position.set(p.x, 0, p.z);
+    const pin = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.SphereGeometry(1.6, 14, 12), new THREE.MeshLambertMaterial({ color: col.accent }));
+    head.position.y = 5.2; head.castShadow = true;
+    const stem = new THREE.Mesh(new THREE.ConeGeometry(1.1, 4.2, 12), new THREE.MeshLambertMaterial({ color: col.accent }));
+    stem.position.y = 2.2; stem.rotation.x = Math.PI;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.4, 24), new THREE.MeshBasicMaterial({ color: col.accent, transparent: true, opacity: 0.5 }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.15;
+    pin.add(head, stem, ring); g.add(pin);
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 8, 8), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 4; hit.userData.place = p; g.add(hit); clickables.push(hit);
+    const lab = labelSprite(p.name, p.approx ? 'APPROX' : null); lab.position.set(0, 10.5, 0); g.add(lab); labels.push(lab);
+    g.userData.place = p; g.userData.pin = pin; world.add(g);
+  }
+
+  function disposeDeep(obj) {
+    obj.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of mats) { if (m.map) m.map.dispose(); m.dispose(); }
+    });
+  }
+
+  // ---- selection ----
+  const raycaster = new THREE.Raycaster();
+  function pick(clientX, clientY) {
+    const v = new THREE.Vector2((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+    raycaster.setFromCamera(v, camera);
+    const hits = raycaster.intersectObjects(clickables, false);
+    return hits.length ? hits[0].object.userData.place : null;
+  }
+  function placeById(id) { return DATA && DATA.places.find((p) => p.id === id); }
+  function groupFor(id) { let found = null; world.children.forEach((c) => { if (c.userData.place && c.userData.place.id === id) found = c; }); return found; }
+
+  let highlight = null;
+  function select(id, opts = {}) {
+    if (highlight) { world.remove(highlight); disposeDeep(highlight); highlight = null; }
+    selectedId = id;
+    const p = placeById(id);
+    if (p) {
+      const col = C();
+      const w = p.w ? p.w + 4 : 10, d = p.d ? p.d + 4 : 10;
+      const geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, (p.h || 4) + 1.5, d));
+      highlight = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: col.accent, linewidth: 2 }));
+      highlight.position.set(p.x, ((p.h || 4) + 1.5) / 2 - 0.2, p.z);
+      world.add(highlight);
+      if (!opts.silent) send({ type: 'select', id });
+      // Close enough to read the facade, far enough to see the neighbours.
+      if (opts.fly) flyTo(new THREE.Vector3(p.x, (p.h || 0) * 0.3, p.z), Math.max(120, Math.max(p.w || 0, p.d || 0) * 1.6), orbit.theta, 0.95);
+    } else if (!opts.silent) send({ type: 'select', id: null });
+  }
+
+  // ---- camera animation ----
+  let anim = null;
+  function flyTo(target, radius, theta, phi) {
+    anim = {
+      t0: performance.now(), dur: 900,
+      from: { target: orbit.target.clone(), radius: orbit.radius, theta: orbit.theta, phi: orbit.phi },
+      to: { target, radius, theta: theta == null ? orbit.theta : theta, phi: phi == null ? Math.min(orbit.phi, 1.0) : phi },
+    };
+  }
+  function tickAnim(now) {
+    if (!anim) return;
+    let k = Math.min(1, (now - anim.t0) / anim.dur);
+    k = 1 - Math.pow(1 - k, 3);
+    orbit.target.lerpVectors(anim.from.target, anim.to.target, k);
+    orbit.radius = anim.from.radius + (anim.to.radius - anim.from.radius) * k;
+    orbit.theta = anim.from.theta + (anim.to.theta - anim.from.theta) * k;
+    orbit.phi = anim.from.phi + (anim.to.phi - anim.from.phi) * k;
+    if (k >= 1) anim = null;
+  }
+
+  // ---- routing (Dijkstra over campus.json graph) ----
+  function route(fromId, toId) {
+    clearRoute();
+    const a = placeById(fromId), b = placeById(toId);
+    if (!a || !b || !DATA.graph) return;
+    const N = DATA.graph.nodes, adj = {};
+    for (const [u, v] of DATA.graph.edges) {
+      const d = Math.hypot(N[u][0] - N[v][0], N[u][1] - N[v][1]);
+      (adj[u] ||= []).push([v, d]); (adj[v] ||= []).push([u, d]);
+    }
+    const dist = {}, prev = {}, done = new Set();
+    for (const k in N) dist[k] = Infinity;
+    dist[a.node] = 0;
+    while (true) {
+      let u = null;
+      for (const k in N) if (!done.has(k) && (u === null || dist[k] < dist[u])) u = k;
+      if (u === null || dist[u] === Infinity || u === b.node) break;
+      done.add(u);
+      for (const [v, d] of adj[u] || []) if (dist[u] + d < dist[v]) { dist[v] = dist[u] + d; prev[v] = u; }
+    }
+    if (dist[b.node] === Infinity) { send({ type: 'route', from: fromId, to: toId, metres: 0, steps: [] }); return; }
+    const chain = [b.node]; while (prev[chain[0]]) chain.unshift(prev[chain[0]]);
+    const pts = chain.map((k) => new THREE.Vector3(N[k][0], 0.35, N[k][1]));
+    // walk the last metres from the road to the door / spot itself
+    const aStart = new THREE.Vector3(a.door ? a.door.x : a.x, 0.35, a.door ? a.door.z : a.z);
+    const bEnd = new THREE.Vector3(b.door ? b.door.x : b.x, 0.35, b.door ? b.door.z : b.z);
+    if (aStart.distanceTo(pts[0]) > 1) pts.unshift(aStart);
+    if (bEnd.distanceTo(pts[pts.length - 1]) > 1) pts.push(bEnd);
+    let metres = 0; for (let i = 1; i < pts.length; i++) metres += pts[i].distanceTo(pts[i - 1]);
+
+    const col = C();
+    routeGroup = new THREE.Group();
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.05);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(24, pts.length * 12), 0.9, 8, false), new THREE.MeshBasicMaterial({ color: col.accent }));
+    routeGroup.add(tube);
+    // moving dots along the route give it direction
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    for (let i = 0; i < 14; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 8), dotMat); d.userData.u = i / 14; routeGroup.add(d); }
+    routeGroup.userData.curve = curve;
+    const mk = (pos, color) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.6, 24), new THREE.MeshBasicMaterial({ color })); m.position.copy(pos); m.position.y = 0.3; routeGroup.add(m); };
+    mk(pts[0], col.ink); mk(pts[pts.length - 1], col.accent);
+    world.add(routeGroup);
+
+    // frame the whole route
+    const bb = new THREE.Box3().setFromPoints(pts);
+    const center = bb.getCenter(new THREE.Vector3()); const size = bb.getSize(new THREE.Vector3());
+    flyTo(new THREE.Vector3(center.x, 0, center.z), Math.max(90, Math.max(size.x, size.z) * 1.35), orbit.theta, 0.7);
+    send({ type: 'route', from: fromId, to: toId, metres: Math.round(metres), steps: chain });
+  }
+  function clearRoute() { if (routeGroup) { world.remove(routeGroup); disposeDeep(routeGroup); routeGroup = null; } }
+
+  // ---- touch controls: 1 finger orbit, 2 fingers pinch-zoom + pan, tap = pick ----
+  const touch = { pts: new Map(), lastD: 0, lastMid: null, start: null, moved: false, startTime: 0 };
+  const el = renderer.domElement;
+  const hint = document.getElementById('hint');
+  let hinted = false;
+  el.addEventListener('pointerdown', (e) => {
+    el.setPointerCapture(e.pointerId);
+    touch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touch.pts.size === 1) { touch.start = { x: e.clientX, y: e.clientY }; touch.moved = false; touch.startTime = performance.now(); }
+    if (touch.pts.size === 2) { const [a, b] = [...touch.pts.values()]; touch.lastD = Math.hypot(a.x - b.x, a.y - b.y); touch.lastMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+    anim = null;
+    if (!hinted) { hinted = true; setTimeout(() => (hint.style.opacity = 0), 1500); }
+  });
+  el.addEventListener('pointermove', (e) => {
+    const prev = touch.pts.get(e.pointerId); if (!prev) return;
+    const cur = { x: e.clientX, y: e.clientY };
+    if (touch.pts.size === 1) {
+      const dx = cur.x - prev.x, dy = cur.y - prev.y;
+      if (Math.hypot(cur.x - touch.start.x, cur.y - touch.start.y) > 8) touch.moved = true;
+      orbit.theta -= dx * 0.006;
+      orbit.phi = Math.max(LIM.phiMin, Math.min(LIM.phiMax, orbit.phi - dy * 0.004));
+    } else if (touch.pts.size === 2) {
+      touch.moved = true;
+      touch.pts.set(e.pointerId, cur);
+      const [a, b] = [...touch.pts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (touch.lastD) orbit.radius = Math.max(LIM.rMin, Math.min(LIM.rMax, orbit.radius * (touch.lastD / d)));
+      if (touch.lastMid) {
+        // pan in the camera's ground plane
+        const k = orbit.radius * 0.0016;
+        const fwd = new THREE.Vector3(Math.sin(orbit.theta), 0, Math.cos(orbit.theta));
+        const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
+        orbit.target.addScaledVector(right, -(mid.x - touch.lastMid.x) * k);
+        orbit.target.addScaledVector(fwd, (mid.y - touch.lastMid.y) * k);
+        orbit.target.x = Math.max(-LIM.pan, Math.min(LIM.pan, orbit.target.x));
+        orbit.target.z = Math.max(-LIM.pan, Math.min(LIM.pan, orbit.target.z));
+      }
+      touch.lastD = d; touch.lastMid = mid;
+      return;
+    }
+    touch.pts.set(e.pointerId, cur);
+  });
+  const end = (e) => {
+    const wasSingle = touch.pts.size === 1;
+    touch.pts.delete(e.pointerId);
+    if (wasSingle && !touch.moved && performance.now() - touch.startTime < 450) {
+      const p = pick(e.clientX, e.clientY);
+      select(p ? p.id : null);
+    }
+    if (touch.pts.size < 2) { touch.lastD = 0; touch.lastMid = null; }
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', (e) => { orbit.radius = Math.max(LIM.rMin, Math.min(LIM.rMax, orbit.radius * (1 + e.deltaY * 0.001))); }, { passive: true });
+
+  // ---- messages from the app ----
+  function onMessage(raw) {
+    let msg; try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return; }
+    if (!DATA) { setTimeout(() => onMessage(raw), 200); return; }
+    switch (msg.type) {
+      case 'focus': select(msg.id, { fly: true, silent: true }); break;
+      case 'route': route(msg.from, msg.to); break;
+      case 'clearRoute': clearRoute(); break;
+      case 'theme': if (!!msg.dark !== dark) { dark = !!msg.dark; build(); if (selectedId) select(selectedId, { silent: true }); } break;
+      case 'reset': clearRoute(); select(null, { silent: true }); flyTo(new THREE.Vector3(...HOME.target), HOME.radius, HOME.theta, HOME.phi); break;
+    }
+  }
+  window.addEventListener('message', (e) => onMessage(e.data));
+  document.addEventListener('message', (e) => onMessage(e.data));
+  window.campusMap = { onMessage }; // for injectJavaScript fallbacks
+
+  // ---- loop ----
+  const tmp = new THREE.Vector3();
+  function loop() {
+    requestAnimationFrame(loop);
+    const now = performance.now();
+    tickAnim(now);
+    applyCamera();
+    // labels keep a readable size whatever the zoom
+    for (const s of labels) {
+      s.getWorldPosition(tmp);
+      const d = tmp.distanceTo(camera.position);
+      const h = d * 0.021;
+      s.scale.set(h * s.userData.aspect, h, 1);
+      s.material.opacity = d > 520 ? 0 : 1;
+    }
+    // spot pins bob, route dots flow
+    for (const g of world ? world.children : []) if (g.userData.pin) g.userData.pin.position.y = Math.sin(now * 0.003 + g.position.x) * 0.35;
+    if (routeGroup) {
+      const c = routeGroup.userData.curve;
+      for (const d of routeGroup.children) if (d.userData.u !== undefined) { const u = (d.userData.u + (now * 0.00008)) % 1; c.getPointAt(u, d.position); d.position.y = 0.9; }
+    }
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+  window.addEventListener('error', (e) => send({ type: 'error', message: String(e.message || e) }));
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -25,6 +27,7 @@ process.on('uncaughtException', (err) => {
   console.error('⚠️  Uncaught exception:', err);
 });
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // ---- Global middleware ----
@@ -34,6 +37,10 @@ app.use(morgan('dev')); // request logging in the console
 
 // Serve uploaded files (photos, avatars, past papers and notes)
 app.use('/uploads', express.static(UPLOAD_DIR));
+
+// The 3D campus map: one folder per campus (public/campus/<id>/) holding the
+// three.js scene, its layout JSON and the real photos/videos of the buildings.
+app.use('/campus', express.static(path.join(__dirname, '..', 'public', 'campus'), { maxAge: '1h' }));
 
 // ---- Health check ----
 app.get('/', (req, res) => {

@@ -29,7 +29,8 @@
           "photosPermission": "Campus Bond needs access to your photos so you can add a picture to a lost & found or marketplace post.",
           "cameraPermission": "Campus Bond needs camera access so you can take a photo for a lost & found or marketplace post."
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }
