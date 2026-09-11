@@ -33,7 +33,7 @@ export default function WalkthroughScreen({ route }) {
   return (
     <View style={styles.safe}>
       <View style={styles.playerWrap}>
-        {clip ? <VideoView player={player} style={styles.player} contentFit="contain" nativeControls allowsFullscreen /> : null}
+        {clip ? <VideoView player={player} style={styles.player} contentFit="contain" nativeControls fullscreenOptions={{ enable: true }} /> : null}
       </View>
       <ScrollView contentContainerStyle={styles.list}>
         <Text style={styles.eyebrow}>CLIPS</Text>

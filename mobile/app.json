@@ -30,7 +30,8 @@
           "cameraPermission": "Campus Bond needs camera access so you can take a photo for a lost & found or marketplace post."
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-status-bar"
     ]
   }
 }
