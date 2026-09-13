@@ -23,14 +23,14 @@ export const FONT = {
 
 // Shared accent ramps — identical in both modes (they sit on their own fills).
 export const gradients = {
-  accent: ['#E23744', '#F25A66'],
+  accent: ['#E23747', '#F25A66'],
   avatar: ['#F0475A', '#B8202E'],
   hero: ['#3A151B', '#7A1F2B'],
 };
 
 /** Light — "Home feed (Light)" and friends. */
 export const ink = {
-  primary: '#E23744', // Zomato red — pill buttons, active chips, the +
+  primary: '#E23747', // Zomato red — pill buttons, active chips, the +
   onPrimary: '#FFFFFF',
   ink: '#14141A', // the old solid ink, for things that must stay neutral
   text: '#14141A',
@@ -45,11 +45,11 @@ export const ink = {
   borderSoft: 'rgba(20,20,26,0.12)', // chips, outlined pills
   field: '#EDEAE4',
   accent: '#CB2A38', // red as text: active tab, TODAY, See All
-  accentFill: '#E23744', // red as a fill (dots, tags)
-  accentSoft: 'rgba(226,55,68,0.12)',
+  accentFill: '#E23747', // red as a fill (dots, tags)
+  accentSoft: 'rgba(226,55,71,0.12)',
 
   // glow blobs — red top-right, soft rose bottom-left
-  glowA: '#E23744',
+  glowA: '#E23747',
   glowB: '#FF8A80',
   glowAOpacity: 0.13,
   glowBOpacity: 0.1,
@@ -76,8 +76,8 @@ export const ink = {
   warning: '#A85D14',
   amber: '#A85D14',
   amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#E23744',
-  avatarBg: 'rgba(226,55,68,0.13)',
+  like: '#E23747',
+  avatarBg: 'rgba(226,55,71,0.13)',
   avatarText: '#CB2A38',
   avatarNeutral: '#E8E5DF',
   chatBg: '#F5F4F1',
@@ -106,7 +106,7 @@ export const kinds = {
 
 /** Dark — the primary artboards. */
 export const inkDark = {
-  primary: '#E23744',
+  primary: '#E23747',
   onPrimary: '#FFFFFF',
   ink: '#F6F5F3',
   text: '#F6F5F3',
@@ -121,10 +121,10 @@ export const inkDark = {
   borderSoft: 'rgba(255,255,255,0.1)',
   field: '#1E1E23',
   accent: '#FF6B75',
-  accentFill: '#E23744',
-  accentSoft: 'rgba(226,55,68,0.2)',
+  accentFill: '#E23747',
+  accentSoft: 'rgba(226,55,71,0.2)',
 
-  glowA: '#E23744',
+  glowA: '#E23747',
   glowB: '#FF8A80',
   glowAOpacity: 0.32,
   glowBOpacity: 0.16,
@@ -152,7 +152,7 @@ export const inkDark = {
   amber: '#FFB25C',
   amberSoft: 'rgba(255,169,69,0.16)',
   like: '#FF6B75',
-  avatarBg: 'rgba(226,55,68,0.22)',
+  avatarBg: 'rgba(226,55,71,0.22)',
   avatarText: '#FF8A93',
   avatarNeutral: '#232028',
   chatBg: '#0A0A0D',
@@ -226,5 +226,5 @@ export const font = {
 export const shadow = {
   card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 0 },
   soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 0 },
-  glow: { shadowColor: '#E23744', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
+  glow: { shadowColor: '#E23747', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
 };

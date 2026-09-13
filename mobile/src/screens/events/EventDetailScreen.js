@@ -348,11 +348,11 @@ function makeStyles(t, isDark) {
     hero: {
       marginHorizontal: 20, marginTop: 14, height: 150, borderRadius: 26,
       alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-      shadowColor: '#E23744', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 0.35, shadowRadius: 25, elevation: 6,
+      shadowColor: '#E23747', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 0.35, shadowRadius: 25, elevation: 6,
     },
     heroTags: { position: 'absolute', left: 16, bottom: 14, flexDirection: 'row', gap: 8 },
     heroTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.14)' },
-    heroTagHot: { backgroundColor: 'rgba(226,55,68,0.92)' },
+    heroTagHot: { backgroundColor: 'rgba(226,55,71,0.92)' },
     heroTagMuted: { backgroundColor: 'rgba(0,0,0,0.35)' },
     heroTagText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', color: '#FFFFFF' },
 
@@ -369,7 +369,7 @@ function makeStyles(t, isDark) {
     desc: { fontSize: 14.5, lineHeight: 24, fontWeight: '600', color: t.textMuted, marginTop: 16 },
 
     skills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-    skill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, borderWidth: 1.4, borderColor: 'rgba(226,55,68,0.4)' },
+    skill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, borderWidth: 1.4, borderColor: 'rgba(226,55,71,0.4)' },
     skillText: { fontSize: 12.5, fontWeight: '700', color: t.accent },
 
     ctaRow: { flexDirection: 'row', gap: 10, marginTop: 22 },

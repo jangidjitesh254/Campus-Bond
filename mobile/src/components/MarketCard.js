@@ -119,7 +119,7 @@ function makeStyles(t, isDark) {
       paddingHorizontal: 20, paddingVertical: 6, borderRadius: 16,
       borderWidth: 1.4, borderColor: '#FF8A93', backgroundColor: 'rgba(10,10,13,0.45)',
     },
-    buyFilled: { backgroundColor: '#E23744', borderColor: '#E23744' },
+    buyFilled: { backgroundColor: '#E23747', borderColor: '#E23747' },
     buyMuted: { borderColor: 'rgba(255,255,255,0.25)' },
     buyText: { fontSize: 12, fontWeight: '800', color: '#FF8A93' },
 
