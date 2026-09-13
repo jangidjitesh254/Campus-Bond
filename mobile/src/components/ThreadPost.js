@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from './Text';
-import Icon from './Icon';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -36,7 +35,7 @@ export function fmtDeadline(value) {
   return `${date} · ${d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
 }
 
-/** How a deadline should read on the card: due date, time left, and urgency. */
+/** How a deadline should read: due date, time left, and urgency. */
 export function deadlineState(value) {
   if (!value) return null;
   const d = new Date(value);
@@ -49,10 +48,6 @@ export function deadlineState(value) {
   return { text: `Due ${fmtDeadline(value)} · ${left}`, past: false, soon: hours < 48, left };
 }
 
-/**
- * The design has three kinds — team, lost and notice. Our event categories fold
- * into notice, which is what the "Notice" chip is scoped to cover.
- */
 const KIND = {
   hackathon: { label: 'TEAM', kind: 'team' },
   project: { label: 'TEAM', kind: 'team' },
@@ -69,152 +64,82 @@ export function postKind(post) {
   return KIND[key] || KIND.other;
 }
 
-function replyLabel(n) {
-  if (!n) return 'no replies';
-  return n === 1 ? '1 reply' : `${n} replies`;
-}
-
-// Descriptions longer than this are cut to two lines with a "See more".
-const EXCERPT_CHARS = 110;
+const EXCERPT_CHARS = 100;
 
 /**
- * Feed card, social-post style: who posted (top), what (title + a short
- * excerpt that opens the full post), when it closes, then one row of
- * actions. Nothing decorative — a hairline edge on a quiet surface.
+ * Feed item. Three lines and one action, nothing else:
+ *   who · when
+ *   title
+ *   excerpt… more
+ *   Interested · N replies
  */
-export default function ThreadPost({ post, onOpen, onLongPress, onInterested, onComment, onShare }) {
+export default function ThreadPost({ post, onOpen, onLongPress, onInterested, onComment }) {
   const { user } = useAuth();
-  const { t, kinds, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(t, kinds, isDark), [t, kinds, isDark]);
+  const { t, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
 
   const owner = post.createdBy || {};
   const isOwner = String(owner._id || post.createdBy) === String(user?._id);
-  // Lost & found tracks a flat interest list; posts track applicants.
   const isLost = post.type === 'lost' || post.type === 'found';
   const interested = isLost
     ? !!post.isInterested
     : (post.applicants || []).some((a) => String(a.user?._id || a.user) === String(user?._id));
-  const myStatus = isLost
-    ? null
-    : (post.applicants || []).find((a) => String(a.user?._id || a.user) === String(user?._id))?.status;
+  const myStatus = isLost ? null : (post.applicants || []).find((a) => String(a.user?._id || a.user) === String(user?._id))?.status;
   const replies = post.comments?.length || 0;
-  const responses = isLost ? post.interestCount || 0 : (post.applicants || []).length;
-  const meta = postKind(post);
   const due = deadlineState(post.deadline);
-  const k = kinds[meta.kind];
-  const countLabel = isLost
-    ? responses ? `${responses} interested` : 'no responses yet'
-    : [replies ? replyLabel(replies) : null, responses ? `${responses} interested` : null].filter(Boolean).join(' · ') || 'no replies';
-
-  const initials = (owner.name || '?').split(' ').map((w) => w.charAt(0)).slice(0, 2).join('').toUpperCase();
   const description = (post.description || '').trim();
   const long = description.length > EXCERPT_CHARS || description.includes('\n');
+  const initial = (owner.name || '?').charAt(0).toUpperCase();
 
-  const pillLabel = isOwner
-    ? 'Your post'
-    : !interested
-    ? 'Interested'
-    : myStatus === 'approved'
-    ? 'Accepted'
-    : isLost
-    ? 'Interested ✓'
-    : 'Requested';
-  const solid = !isOwner && !interested;
+  const action = isOwner ? null : !interested ? 'Interested' : myStatus === 'approved' ? 'Accepted' : 'Requested';
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.96} onPress={onOpen} onLongPress={onLongPress} delayLongPress={280}>
-      {/* Who — avatar, handle, branch; the kind and age on the right */}
+    <TouchableOpacity style={styles.row} activeOpacity={0.85} onPress={onOpen} onLongPress={onLongPress} delayLongPress={280}>
       <View style={styles.who}>
-        <View style={[styles.ava, { backgroundColor: k.bg }]}>
-          <Text style={[styles.avaText, { color: k.fg }]}>{initials}</Text>
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.name} numberOfLines={1}>{handleOf(owner.name)}</Text>
-          <Text style={styles.sub} numberOfLines={1}>
-            {owner.branch || 'Campus'}{owner.semester ? ` · Sem ${owner.semester}` : ''}
-          </Text>
-        </View>
-        <Text style={[styles.kind, { color: k.fg }]}>{meta.label}</Text>
-        <Text style={styles.age}>{timeAgo(post.createdAt)}</Text>
+        <View style={styles.ava}><Text style={styles.avaText}>{initial}</Text></View>
+        <Text style={styles.meta} numberOfLines={1}>
+          {handleOf(owner.name)} · {timeAgo(post.createdAt)}
+          {due ? <Text style={[styles.metaDue, due.soon && !due.past && { color: t.accent }]}> · {due.left}</Text> : null}
+        </Text>
       </View>
 
-      {/* What */}
       <Text style={styles.title}>{post.title}</Text>
+
       {description ? (
-        <View>
-          <Text style={styles.desc} numberOfLines={2}>{description}</Text>
-          {long ? (
-            <TouchableOpacity onPress={onOpen} hitSlop={6} style={styles.moreWrap}>
-              <Text style={styles.more}>See more</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <Text style={styles.desc} numberOfLines={2}>
+          {long ? `${description.slice(0, EXCERPT_CHARS).trimEnd()}… ` : description}
+          {long ? <Text style={styles.more}>more</Text> : null}
+        </Text>
       ) : null}
 
-      {/* When */}
-      {due ? (
-        <View style={styles.due}>
-          <Icon name="calendar" size={12} color={due.past ? t.textDim : due.soon ? t.accent : t.textFaint} strokeWidth={1.6} />
-          <Text style={[styles.dueText, due.past && styles.duePast, due.soon && !due.past && styles.dueSoon]}>{due.text}</Text>
-        </View>
-      ) : null}
-
-      {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.pill, solid ? styles.pillSolid : styles.pillOutline]}
-          onPress={isOwner ? onOpen : onInterested}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.pillText, { color: solid ? t.onPrimary : t.text }]}>{pillLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onComment} hitSlop={10} style={{ flexShrink: 1 }}>
-          <Text style={styles.count} numberOfLines={1}>{countLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onShare} hitSlop={10} style={styles.shareBtn}>
-          <Icon name="shareArrow" size={15} color={t.textFaint} strokeWidth={1.7} />
+        {action ? (
+          <TouchableOpacity onPress={onInterested} hitSlop={10}>
+            <Text style={[styles.action, interested && styles.actionDone]}>{action}</Text>
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity onPress={onComment} hitSlop={10}>
+          <Text style={styles.count}>{replies ? `${replies} ${replies === 1 ? 'reply' : 'replies'}` : 'Reply'}</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 }
 
-function makeStyles(t, kinds, isDark) {
+function makeStyles(t, isDark) {
   return StyleSheet.create({
-    card: {
-      backgroundColor: t.glass,
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: t.glassBorder,
-      paddingHorizontal: 16,
-      paddingTop: 14,
-      paddingBottom: 14,
-      marginBottom: 12,
-    },
-    who: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    ava: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    avaText: { fontSize: 11.5, fontWeight: '700' },
-    name: { fontSize: 13.5, fontWeight: '600', color: t.text },
-    sub: { fontSize: 11.5, fontWeight: '500', color: t.textDim, marginTop: 1 },
-    kind: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-    age: { fontSize: 11.5, fontWeight: '500', color: t.textDim, marginLeft: 2 },
-
-    title: { fontSize: 16, lineHeight: 22, fontWeight: '600', color: t.text, marginTop: 12 },
-    desc: { fontSize: 13.5, lineHeight: 19.5, fontWeight: '500', color: t.textMuted, marginTop: 4 },
-    moreWrap: { alignSelf: 'flex-start', marginTop: 2 },
-    more: { fontSize: 13, fontWeight: '600', color: t.accent },
-
-    due: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-    dueText: { fontSize: 12, fontWeight: '500', color: t.textFaint },
-    dueSoon: { color: t.accent, fontWeight: '600' },
-    duePast: { color: t.textDim },
-
-    actions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
-    pill: { borderRadius: 999, paddingVertical: 7, paddingHorizontal: 16, borderWidth: 1 },
-    pillSolid: { backgroundColor: t.primary, borderColor: t.primary },
-    pillOutline: { backgroundColor: 'transparent', borderColor: t.borderSoft },
-    pillText: { fontSize: 12.5, fontWeight: '700' },
-    count: { fontSize: 12.5, fontWeight: '500', color: t.textFaint },
-    shareBtn: { marginLeft: 'auto', padding: 2 },
+    row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: t.hairline },
+    who: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    ava: { width: 22, height: 22, borderRadius: 11, backgroundColor: t.avatarBg, alignItems: 'center', justifyContent: 'center' },
+    avaText: { fontSize: 10, fontWeight: '700', color: t.avatarText },
+    meta: { flex: 1, fontSize: 12.5, fontWeight: '500', color: t.textFaint },
+    metaDue: { fontWeight: '600' },
+    title: { fontSize: 16, lineHeight: 22, fontWeight: '600', color: t.text, marginTop: 8 },
+    desc: { fontSize: 13.5, lineHeight: 19, fontWeight: '500', color: t.textMuted, marginTop: 3 },
+    more: { color: t.accent, fontWeight: '600' },
+    actions: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 10 },
+    action: { fontSize: 13, fontWeight: '700', color: t.accent },
+    actionDone: { color: t.textFaint },
+    count: { fontSize: 13, fontWeight: '500', color: t.textFaint },
   });
 }
