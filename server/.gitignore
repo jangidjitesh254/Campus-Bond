@@ -5,3 +5,9 @@ node_modules/
 
 # Uploaded images (user content, not source)
 uploads/
+
+# Vercel
+.vercel
+
+.vercel
+.env*

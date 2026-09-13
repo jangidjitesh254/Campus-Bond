@@ -1,14 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import LostItem from '../models/LostItem.js';
-import { UPLOAD_DIR } from '../middleware/upload.js';
+import { storeImage, deleteImage, discardUpload } from '../middleware/upload.js';
 
-/** Remove an uploaded file from disk (best-effort). */
-function removeImageFile(imagePath) {
-  if (!imagePath) return;
-  const filename = path.basename(imagePath);
-  fs.promises.unlink(path.join(UPLOAD_DIR, filename)).catch(() => {});
-}
 
 /**
  * Create a lost/found post. Expects multipart/form-data with an optional `image`.
@@ -18,11 +10,11 @@ export async function createLostItem(req, res) {
   const { type, title, description, category, location, contact } = req.body;
 
   if (!['lost', 'found'].includes(type)) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: "Type must be 'lost' or 'found'." });
   }
   if (!title || !title.trim()) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: 'A title is required.' });
   }
 
@@ -33,7 +25,7 @@ export async function createLostItem(req, res) {
     category: category || 'other',
     location: location?.trim() || '',
     contact: contact?.trim() || '',
-    image: req.file ? `/uploads/${req.file.filename}` : '',
+    image: await storeImage(req.file),
     createdBy: req.user._id,
   });
 
@@ -113,7 +105,7 @@ export async function deleteLostItem(req, res) {
   if (String(item.createdBy) !== String(req.user._id)) {
     return res.status(403).json({ message: 'Only the poster can delete this item.' });
   }
-  removeImageFile(item.image);
+  deleteImage(item.image);
   await item.deleteOne();
   res.status(200).json({ message: 'Item deleted.' });
 }
