@@ -80,14 +80,23 @@ export async function register(req, res) {
     expiresAt,
   });
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'Your Campus Bond verification code',
-    text: `Welcome to Campus Bond! Your verification code is ${code}. It expires in ${minutes} minutes.`,
-  });
+  // The OTP record stays either way, so a failed send can be retried with
+  // "resend code" instead of registering again.
+  let delivery;
+  try {
+    delivery = await sendEmail({
+      to: normalizedEmail,
+      subject: 'Your Campus Bond verification code',
+      text: `Welcome to Campus Bond! Your verification code is ${code}. It expires in ${minutes} minutes.`,
+    });
+  } catch (err) {
+    return res.status(502).json({ message: err.message, email: normalizedEmail });
+  }
 
   res.status(200).json({
-    message: `Verification code sent to ${normalizedEmail}. It expires in ${minutes} minutes.`,
+    message: delivery.devMode
+      ? `Email is not set up on this server — the code for ${normalizedEmail} was printed in the server console.`
+      : `Verification code sent to ${normalizedEmail}. It expires in ${minutes} minutes.`,
     email: normalizedEmail,
   });
 }
@@ -159,13 +168,22 @@ export async function resendOtp(req, res) {
   otp.expiresAt = new Date(Date.now() + minutes * 60 * 1000);
   await otp.save();
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'Your new Campus Bond verification code',
-    text: `Your new verification code is ${code}. It expires in ${minutes} minutes.`,
-  });
+  let delivery;
+  try {
+    delivery = await sendEmail({
+      to: normalizedEmail,
+      subject: 'Your new Campus Bond verification code',
+      text: `Your new verification code is ${code}. It expires in ${minutes} minutes.`,
+    });
+  } catch (err) {
+    return res.status(502).json({ message: err.message });
+  }
 
-  res.status(200).json({ message: `A new code was sent to ${normalizedEmail}.` });
+  res.status(200).json({
+    message: delivery.devMode
+      ? `Email is not set up on this server — the new code was printed in the server console.`
+      : `A new code was sent to ${normalizedEmail}.`,
+  });
 }
 
 /**
