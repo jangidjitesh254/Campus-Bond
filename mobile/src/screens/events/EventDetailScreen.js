@@ -211,8 +211,8 @@ export default function EventDetailScreen({ route, navigation }) {
             {/* Primary action */}
             <View style={styles.ctaRow}>
               {cta.kind === 'accent' ? (
-                <TouchableOpacity style={[styles.ctaWrap, shadow.glow]} onPress={cta.onPress} activeOpacity={0.88}>
-                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cta}>
+                <TouchableOpacity style={styles.ctaWrap} onPress={cta.onPress} activeOpacity={0.88}>
+                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.cta, shadow.glow]}>
                     <Text style={[styles.ctaText, { color: '#FFFFFF' }]}>{cta.label}</Text>
                   </LinearGradient>
                 </TouchableOpacity>

@@ -216,8 +216,15 @@ export const font = {
   eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: ink.accent, textTransform: 'uppercase' },
 };
 
+/**
+ * Shadows. On Android an `elevation` shadow on a view with a translucent
+ * background is drawn *inside* the view (a pale rectangle inset by the
+ * padding), so glass surfaces get no elevation there — the 1px border
+ * carries the edge and iOS keeps the real shadow. `glow` is for opaque
+ * gradient fills only (the + button, coral CTAs), where elevation is safe.
+ */
 export const shadow = {
-  card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 3 },
-  soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2 },
-  glow: { shadowColor: '#FF6B45', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8 },
+  card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 0 },
+  soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 0 },
+  glow: { shadowColor: '#FF6B45', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
 };

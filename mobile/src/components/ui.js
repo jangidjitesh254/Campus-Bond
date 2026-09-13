@@ -45,7 +45,7 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary',
   if (variant === 'accent') {
     return (
       <TouchableOpacity onPress={onPress} disabled={isDisabled} activeOpacity={0.88} style={[styles.btnShadow, isDisabled && styles.btnDisabled, style]}>
-        <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
+        <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.btn, shadow.glow]}>
           {inner}
         </LinearGradient>
       </TouchableOpacity>
@@ -194,7 +194,7 @@ function makeStyles(t, isDark) {
     card: { backgroundColor: t.glass, borderRadius: 26, padding: 18, borderWidth: 1, borderColor: t.glassBorder, ...shadow.card },
 
     btn: { height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22, borderWidth: 1.5, borderColor: 'transparent' },
-    btnShadow: { borderRadius: 999, ...shadow.glow },
+    btnShadow: { borderRadius: 999 },
     btnRow: { flexDirection: 'row', alignItems: 'center' },
     btnPrimary: { backgroundColor: t.primary, borderColor: t.primary, ...(isDark ? {} : shadow.soft) },
     btnSecondary: { backgroundColor: 'transparent', borderColor: t.borderSoft },

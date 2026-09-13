@@ -184,8 +184,8 @@ function makeStyles(t, isDark) {
     labelOn: { fontWeight: '700' },
 
     // Coral disc lifted out of the bar.
-    fabWrap: { marginTop: -26, borderRadius: 24, ...shadow.glow },
-    fab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    fabWrap: { marginTop: -26, borderRadius: 24 },
+    fab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', ...shadow.glow },
 
     composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,20,26,0.28)' },
     composeStack: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },

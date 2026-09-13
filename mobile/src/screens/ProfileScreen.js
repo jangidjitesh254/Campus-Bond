@@ -63,7 +63,7 @@ export default function ProfileScreen({ navigation }) {
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
-              <Avatar name={user?.name} size={62} bg={t.primary} textColor={t.onPrimary} />
+              <Avatar name={user?.name} size={62} gradient />
             )}
 
             <View style={{ flex: 1, minWidth: 0 }}>
