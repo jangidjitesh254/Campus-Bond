@@ -128,7 +128,15 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
-    row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: t.hairline },
+    row: {
+      backgroundColor: t.glass,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: t.glassBorder,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      marginBottom: 12,
+    },
     who: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     ava: { width: 22, height: 22, borderRadius: 11, backgroundColor: t.avatarBg, alignItems: 'center', justifyContent: 'center' },
     avaText: { fontSize: 10, fontWeight: '700', color: t.avatarText },
