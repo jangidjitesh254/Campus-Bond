@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '../../components/Icon';
 import { Button, Field } from '../../components/ui';
@@ -8,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { layout, monoFamily } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 const STEPS = ['YOUR DETAILS', 'WHY YOU', 'CONSENT'];
 
@@ -65,6 +67,7 @@ export default function JoinClubScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           {/* progress strip */}

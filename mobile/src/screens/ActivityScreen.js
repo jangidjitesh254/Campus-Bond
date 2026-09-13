@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../components/Avatar';
@@ -10,6 +11,7 @@ import { EventsApi } from '../api/events';
 import { useTheme } from '../context/ThemeContext';
 import { markActivitySeen } from '../utils/activitySeen';
 import { layout } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 const FILTERS = ['All', 'Requests', 'Comments'];
 
@@ -72,6 +74,7 @@ export default function ActivityScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <AmbientGlow />
       <View style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Icon name="dotsV" size={20} color={t.text} />

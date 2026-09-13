@@ -7,6 +7,7 @@ import { Loading, EmptyState } from '../../components/ui';
 import { LostApi } from '../../api/lostfound';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function MyLostPostsScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -34,6 +35,7 @@ export default function MyLostPostsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(item) => item._id}

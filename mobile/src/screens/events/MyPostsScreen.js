@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Card, Chip, Loading, EmptyState } from '../../components/ui';
 import { EventsApi, categoryTone } from '../../api/events';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function MyPostsScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -37,6 +39,7 @@ export default function MyPostsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={styles.tabs}>
         <Tab styles={styles} label={`My Posts (${created.length})`} active={tab === 'created'} onPress={() => setTab('created')} />
         <Tab styles={styles} label={`Applied (${applied.length})`} active={tab === 'applied'} onPress={() => setTab('applied')} />

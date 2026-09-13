@@ -1,17 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field, Loading } from '../../components/ui';
 import { EventsApi, CATEGORIES } from '../../api/events';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 /**
  * Turn the date + time boxes into a deadline.
@@ -152,6 +148,7 @@ export default function CreateEventScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <Text style={[font.bodyMuted, { color: t.textMuted }, { marginBottom: spacing.lg }]}>

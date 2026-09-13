@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../../components/Icon';
@@ -9,6 +10,7 @@ import { handleOf } from '../../components/ThreadPost';
 import { ClubApi } from '../../api/clubs';
 import { useTheme } from '../../context/ThemeContext';
 import { layout, monoFamily } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 const CAT = {
   tech: 'TECH', cultural: 'CULTURAL', sports: 'SPORTS',
@@ -41,6 +43,7 @@ export default function ClubDetailScreen({ route, navigation }) {
   if (!club) {
     return (
       <SafeAreaView style={styles.safe}>
+        <AmbientGlow />
         <Text style={styles.blank}>Not found.</Text>
       </SafeAreaView>
     );

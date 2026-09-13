@@ -1,10 +1,13 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Share } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
 import Icon from '../../components/Icon';
-import { handleOf, timeAgo, fmtDate } from '../../components/ThreadPost';
+import AmbientGlow from '../../components/AmbientGlow';
+import { handleOf, timeAgo, deadlineState } from '../../components/ThreadPost';
 import CelebrationOverlay from '../../components/CelebrationOverlay';
 import { Loading } from '../../components/ui';
 import { EventsApi } from '../../api/events';
@@ -12,11 +15,16 @@ import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
-import { radius, font, monoFamily } from '../../theme';
+import { gradients, shadow } from '../../theme';
 
-const CAT = { hackathon: 'Hackathon', cultural: 'Cultural', competition: 'Competition', project: 'Project', other: 'General' };
 const BADGE = { hackathon: 'TEAM', project: 'TEAM', cultural: 'EVENT', competition: 'EVENT', other: 'NOTICE' };
 
+/**
+ * Post detail — the handoff's "Post detail" artboard: custom top bar, a
+ * gradient hero carrying the kind and time-left tags, title, deadline,
+ * author, description, skill chips, the coral Interested action, then the
+ * replies with a fixed reply bar.
+ */
 export default function EventDetailScreen({ route, navigation }) {
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
@@ -35,6 +43,8 @@ export default function EventDetailScreen({ route, navigation }) {
   const [commentText, setCommentText] = useState('');
   const [posting, setPosting] = useState(false);
 
+  useLayoutEffect(() => { navigation.setOptions({ headerShown: false }); }, [navigation]);
+
   const load = useCallback(async () => {
     try { setEvent(await EventsApi.get(id)); } catch (e) { Alert.alert('Error', e.message); } finally { setLoading(false); }
   }, [id]);
@@ -50,15 +60,23 @@ export default function EventDetailScreen({ route, navigation }) {
   }, [event]);
 
   if (loading) return <Loading />;
-  if (!event) return <SafeAreaView style={styles.safe}><Text style={[font.bodyMuted, { color: t.textMuted }, { padding: 24 }]}>Not found.</Text></SafeAreaView>;
+  if (!event) {
+    return (
+      <SafeAreaView style={styles.safe}><Text style={styles.notFound}>Not found.</Text></SafeAreaView>
+    );
+  }
 
   const owner = event.createdBy || {};
   const isOwner = String(owner._id || event.createdBy) === String(user?._id);
   const myApp = event.applicants?.find((a) => String(a.user?._id || a.user) === String(user?._id));
   const comments = event.comments || [];
+  const interestedCount = (event.applicants || []).length;
+  const due = deadlineState(event.deadline);
+  const skills = event.skillsNeeded || [];
 
   /** Toggle the request. Chat only opens once the poster accepts. */
   async function onInterest() {
+    if (isOwner) return;
     try {
       const res = await EventsApi.interest(id);
       if (res.interested) setCelebrating(true);
@@ -73,6 +91,10 @@ export default function EventDetailScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Cannot open chat', e.message); }
   }
 
+  async function onShare() {
+    try { await Share.share({ message: `${event.title}\n\n${event.description}\n\n— shared from Campus Bond` }); } catch {}
+  }
+
   async function onPostComment() {
     const text = commentText.trim();
     if (!text || posting) return;
@@ -81,257 +103,314 @@ export default function EventDetailScreen({ route, navigation }) {
     catch (e) { Alert.alert('Error', e.message); } finally { setPosting(false); }
   }
 
-  const tiles = [
-    { icon: 'star', label: 'Skill Needed', value: event.skillsNeeded?.length ? event.skillsNeeded.join(', ') : 'Any' },
-    { icon: 'tag', label: 'Type', value: CAT[event.category] || 'General' },
-    { icon: 'location', label: 'Status', value: event.status === 'open' ? 'Open' : 'Closed' },
-    { icon: 'user', label: 'Team Size', value: event.teamSize ? `${event.teamSize} needed` : '—' },
-  ];
-  // The feed card no longer shows these, so surface them here when set.
-  if (event.deadline) tiles.push({ icon: 'calendar', label: 'Date', value: fmtDate(event.deadline) });
-  if (event.venue) tiles.push({ icon: 'location', label: 'Venue', value: event.venue });
+  // The one big action, by where this student stands with the post.
+  const cta = isOwner
+    ? { label: 'Your post', kind: 'muted' }
+    : myApp?.status === 'approved'
+    ? { label: 'Message', kind: 'accent', onPress: () => openChatWith(owner._id, owner.name) }
+    : myApp?.status === 'rejected'
+    ? { label: 'Not selected', kind: 'muted' }
+    : myApp
+    ? { label: 'Requested · tap to withdraw', kind: 'outline', onPress: onInterest }
+    : event.status === 'open'
+    ? { label: 'Interested', kind: 'accent', onPress: onInterest }
+    : { label: 'Closed', kind: 'muted' };
+
+  const metaBits = [event.venue ? { icon: 'location', text: event.venue } : null, event.teamSize ? { icon: 'users', text: `${event.teamSize} needed` } : null].filter(Boolean);
 
   return (
-    <SafeAreaView style={styles.safe} edges={[]}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.round36} onPress={() => navigation.goBack()} hitSlop={8}>
+            <Icon name="back" size={18} color={t.text} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <View style={styles.topRight}>
+            <TouchableOpacity style={styles.topStat} onPress={onInterest} disabled={isOwner} hitSlop={8}>
+              <Icon name="heart" size={19} color={myApp ? t.accentFill : t.textMuted} filled={!!myApp} strokeWidth={1.8} />
+              <Text style={[styles.topStatText, myApp && { color: t.accentFill }]}>{interestedCount}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.topStat} onPress={() => { scrollRef.current?.scrollToEnd({ animated: true }); inputRef.current?.focus(); }} hitSlop={8}>
+              <Icon name="comment" size={19} color={t.textMuted} strokeWidth={1.8} />
+              <Text style={styles.topStatText}>{comments.length}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onShare} hitSlop={8}>
+              <Icon name="shareArrow" size={18} color={t.textMuted} strokeWidth={1.8} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <ScrollView
           ref={scrollRef}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-         
-          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
         >
-          {/* Post card */}
-          <View style={styles.card}>
-            <View style={styles.eyebrow}>
-              <View style={styles.badge}><Text style={styles.badgeText}>{BADGE[event.category] || 'POST'}</Text></View>
-              <Text style={styles.time}>{timeAgo(event.createdAt)}</Text>
+          {/* Hero */}
+          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+            <Icon name="briefcase" size={56} color="rgba(255,255,255,0.14)" strokeWidth={1.4} />
+            <View style={styles.heroTags}>
+              <View style={styles.heroTag}><Text style={styles.heroTagText}>{BADGE[event.category] || 'POST'}</Text></View>
+              {due && !due.past ? (
+                <View style={[styles.heroTag, styles.heroTagHot]}><Text style={styles.heroTagText}>{due.left}</Text></View>
+              ) : event.status !== 'open' ? (
+                <View style={[styles.heroTag, styles.heroTagMuted]}><Text style={styles.heroTagText}>CLOSED</Text></View>
+              ) : null}
+            </View>
+          </LinearGradient>
+
+          <View style={styles.body}>
+            <Text style={styles.title}>{event.title}</Text>
+
+            {due ? (
+              <View style={styles.metaRow}>
+                <Icon name="calendar" size={14} color={t.textFaint} strokeWidth={1.6} />
+                <Text style={styles.metaText}>{due.text}</Text>
+              </View>
+            ) : null}
+            {metaBits.length ? (
+              <View style={styles.metaRow}>
+                {metaBits.map((m, i) => (
+                  <View key={m.icon} style={[styles.metaBit, i > 0 && { marginLeft: 12 }]}>
+                    <Icon name={m.icon} size={14} color={t.textFaint} strokeWidth={1.6} />
+                    <Text style={styles.metaText}>{m.text}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {/* Author */}
+            <View style={styles.author}>
+              <Avatar name={owner.name} size={36} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.handle} numberOfLines={1}>{handleOf(owner.name)}</Text>
+                <Text style={styles.sub} numberOfLines={1}>{owner.branch || 'Campus'}{owner.semester ? ` · Sem ${owner.semester}` : ''}</Text>
+              </View>
+              {!isOwner && myApp?.status === 'approved' ? (
+                <TouchableOpacity style={styles.round34} onPress={() => openChatWith(owner._id, owner.name)} hitSlop={8}>
+                  <Icon name="comment" size={16} color={t.textMuted} strokeWidth={1.8} />
+                </TouchableOpacity>
+              ) : null}
             </View>
 
-            <Text style={styles.title}>{event.title}</Text>
+            <View style={styles.divider} />
+
             {event.description ? <Text style={styles.desc}>{event.description}</Text> : null}
 
-            <View style={styles.head}>
-              <Avatar name={owner.name} size={38} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.handle}>{handleOf(owner.name)}</Text>
-                <Text style={styles.sub}>{owner.branch || 'Campus'}{owner.semester ? ` · Sem ${owner.semester}` : ''}</Text>
+            {skills.length ? (
+              <View style={styles.skills}>
+                {skills.map((s) => (
+                  <View key={s} style={styles.skill}><Text style={styles.skillText}>{s}</Text></View>
+                ))}
               </View>
-            </View>
-
-            {/* Details grid */}
-            <View style={styles.grid}>
-              {tiles.map((tile) => (
-                <View key={tile.label} style={styles.tile}>
-                  <Icon name={tile.icon} size={18} color={t.primary} strokeWidth={1.7} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.tileLabel}>{tile.label}</Text>
-                    <Text style={styles.tileValue} numberOfLines={1}>{tile.value}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+            ) : null}
 
             {/* Primary action */}
-            {isOwner ? (
-              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Your post</Text></View>
-            ) : myApp?.status === 'approved' ? (
-              <TouchableOpacity style={styles.cta} onPress={() => openChatWith(owner._id, owner.name)}>
-                <Icon name="chat" size={18} color={t.onPrimary} strokeWidth={1.8} />
-                <Text style={styles.ctaText}>Message</Text>
+            <View style={styles.ctaRow}>
+              {cta.kind === 'accent' ? (
+                <TouchableOpacity style={[styles.ctaWrap, shadow.glow]} onPress={cta.onPress} activeOpacity={0.88}>
+                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cta}>
+                    <Text style={[styles.ctaText, { color: '#FFFFFF' }]}>{cta.label}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.ctaWrap, styles.cta, cta.kind === 'outline' ? styles.ctaOutline : styles.ctaMuted]}
+                  onPress={cta.onPress}
+                  disabled={!cta.onPress}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.ctaText, { color: cta.kind === 'outline' ? t.text : t.textMuted }]}>{cta.label}</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.ctaSquare} onPress={onShare} activeOpacity={0.85}>
+                <Icon name="shareArrow" size={18} color={t.textMuted} strokeWidth={1.8} />
               </TouchableOpacity>
-            ) : myApp?.status === 'rejected' ? (
-              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Not selected</Text></View>
-            ) : myApp ? (
-              <TouchableOpacity style={[styles.cta, styles.ctaMuted]} onPress={onInterest}>
-                <Icon name="check" size={18} color={t.primary} strokeWidth={2} />
-                <Text style={[styles.ctaText, { color: t.primary }]}>Requested · tap to withdraw</Text>
-              </TouchableOpacity>
-            ) : event.status === 'open' ? (
-              <TouchableOpacity style={styles.cta} onPress={onInterest}>
-                <Icon name="star" size={18} color={t.onPrimary} strokeWidth={1.8} />
-                <Text style={styles.ctaText}>Interested</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={[styles.cta, styles.ctaMuted]}><Text style={[styles.ctaText, { color: t.textMuted }]}>Closed</Text></View>
-            )}
-          </View>
+            </View>
 
-          {/* Owner: interested list */}
-          {isOwner && event.applicants?.length ? (
-            <View style={styles.section}>
-              <View style={styles.cHeadInline}>
-                <Text style={styles.sectionTitle}>Interested</Text>
-                <Text style={styles.cCount}>{event.applicants.length}</Text>
-              </View>
-              {event.applicants.map((a) => {
-                const u = a.user || {};
-                const accepted = a.status === 'approved';
-                return (
-                  <View key={a._id} style={styles.applicant}>
-                    <Avatar name={u.name} size={40} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <View style={styles.appTop}>
-                        <Text style={styles.appName} numberOfLines={1}>{handleOf(u.name)}</Text>
-                        <View style={[styles.appChip, accepted && styles.appChipOk]}>
-                          <Text style={[styles.appChipText, accepted && styles.appChipTextOk]}>
-                            {accepted ? 'ACCEPTED' : 'PENDING'}
-                          </Text>
+            {/* Owner: interested list */}
+            {isOwner && event.applicants?.length ? (
+              <View style={styles.applicants}>
+                <View style={styles.sectionHead}>
+                  <Text style={styles.sectionTitle}>Interested</Text>
+                  <Text style={styles.sectionCount}>{event.applicants.length}</Text>
+                </View>
+                {event.applicants.map((a) => {
+                  const u = a.user || {};
+                  const accepted = a.status === 'approved';
+                  return (
+                    <View key={a._id} style={styles.applicant}>
+                      <Avatar name={u.name} size={36} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={styles.appTop}>
+                          <Text style={styles.appName} numberOfLines={1}>{handleOf(u.name)}</Text>
+                          <View style={[styles.appChip, accepted && styles.appChipOk]}>
+                            <Text style={[styles.appChipText, accepted && { color: t.success }]}>{accepted ? 'ACCEPTED' : 'PENDING'}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.sub} numberOfLines={1}>{u.branch || 'Campus'}{u.semester ? ` · Sem ${u.semester}` : ''}</Text>
+                        {a.message ? <Text style={styles.appMsg}>{a.message}</Text> : null}
+                        <View style={styles.appBtns}>
+                          {accepted ? (
+                            <TouchableOpacity style={[styles.smallPill, styles.smallFilled]} onPress={() => openChatWith(u._id, u.name)}>
+                              <Text style={[styles.smallText, { color: t.onPrimary }]}>Message</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <>
+                              <TouchableOpacity
+                                style={[styles.smallPill, styles.smallFilled]}
+                                onPress={() => EventsApi.review(id, a._id, 'approved').then(setEvent).catch((e) => Alert.alert('Error', e.message))}
+                              >
+                                <Text style={[styles.smallText, { color: t.onPrimary }]}>Accept</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={[styles.smallPill, styles.smallOutline]}
+                                onPress={() => EventsApi.review(id, a._id, 'rejected').then(setEvent).catch((e) => Alert.alert('Error', e.message))}
+                              >
+                                <Text style={[styles.smallText, { color: t.textMuted }]}>Decline</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
                         </View>
                       </View>
-                      <Text style={styles.appSub} numberOfLines={1}>
-                        {u.branch || 'Campus'}{u.semester ? ` · Sem ${u.semester}` : ''}
-                      </Text>
-                      {a.message ? <Text style={styles.appMsg}>{a.message}</Text> : null}
-                      <View style={styles.appBtns}>
-                        {accepted ? (
-                          // Once accepted there is nothing left to decide — just talk.
-                          <TouchableOpacity
-                            style={[styles.smallPill, styles.smallFilled]}
-                            onPress={() => openChatWith(u._id, u.name)}
-                          >
-                            <Text style={[styles.smallText, { color: t.onPrimary }]}>Message</Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <>
-                            <TouchableOpacity
-                              style={[styles.smallPill, styles.smallFilled]}
-                              onPress={() =>
-                                EventsApi.review(id, a._id, 'approved')
-                                  .then(setEvent)
-                                  .catch((e) => Alert.alert('Error', e.message))
-                              }
-                            >
-                              <Text style={[styles.smallText, { color: t.onPrimary }]}>Accept</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[styles.smallPill, styles.smallOutline]}
-                              onPress={() =>
-                                EventsApi.review(id, a._id, 'rejected')
-                                  .then(setEvent)
-                                  .catch((e) => Alert.alert('Error', e.message))
-                              }
-                            >
-                              <Text style={[styles.smallText, { color: t.textMuted }]}>Decline</Text>
-                            </TouchableOpacity>
-                          </>
-                        )}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            <View style={[styles.divider, { marginTop: 24 }]} />
+
+            {/* Replies */}
+            <Text style={styles.repliesTitle}>{comments.length ? `${comments.length} ${comments.length === 1 ? 'reply' : 'replies'}` : 'No replies yet'}</Text>
+            <View style={styles.replies}>
+              {comments.map((c) => {
+                const mine = String(c.user?._id) === String(user?._id);
+                return (
+                  <View key={c._id} style={styles.reply}>
+                    <Avatar name={c.user?.name} size={30} neutral={!mine} gradient={mine} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <View style={styles.replyLine}>
+                        <Text style={styles.replyName}>{handleOf(c.user?.name)}</Text>
+                        <Text style={styles.replyMeta}>{c.user?.branch || 'Campus'}{c.user?.semester ? ` · Sem ${c.user.semester}` : ''} · {timeAgo(c.createdAt)}</Text>
                       </View>
+                      <Text style={styles.replyBody}>{c.text}</Text>
                     </View>
                   </View>
                 );
               })}
             </View>
-          ) : null}
-
-          {/* Comments */}
-          <View style={styles.cHead}>
-            <Text style={styles.cTitle}>Comments</Text>
-            {comments.length ? <Text style={styles.cCount}>{comments.length}</Text> : null}
           </View>
-          {comments.length === 0 ? null : (
-            comments.map((c) => (
-              <View key={c._id} style={styles.comment}>
-                <Avatar name={c.user?.name} size={34} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={styles.cLine}>
-                    <Text style={styles.cName}>{handleOf(c.user?.name)}</Text>
-                    <Text style={styles.cTime}>{timeAgo(c.createdAt)}</Text>
-                  </View>
-                  <Text style={styles.cBody}>{c.text}</Text>
-                </View>
-              </View>
-            ))
-          )}
         </ScrollView>
 
-        {/* Comment input */}
-        <View style={[styles.inputBar, { paddingBottom: keyboardOpen ? 10 : Math.max(insets.bottom, 10) }]}>
+        {/* Reply bar */}
+        <View style={[styles.inputBar, { paddingBottom: keyboardOpen ? 12 : Math.max(insets.bottom, 12) + 4 }]}>
+          <Avatar name={user?.name} size={30} gradient />
           <View style={styles.inputPill}>
             <TextInput
               ref={inputRef}
               style={styles.input}
-              placeholder="Add a comment..."
-              placeholderTextColor={t.textMuted}
+              placeholder="Add a reply..."
+              placeholderTextColor={t.textFaint}
               value={commentText}
               onChangeText={setCommentText}
               multiline
             />
-            <Icon name="image" size={20} color={t.textMuted} strokeWidth={1.6} />
           </View>
-          <TouchableOpacity style={styles.send} onPress={onPostComment} disabled={!commentText.trim() || posting}>
-            <Icon name="send" size={19} color={t.onPrimary} />
+          <TouchableOpacity onPress={onPostComment} disabled={!commentText.trim() || posting} activeOpacity={0.85} style={!commentText.trim() && { opacity: 0.5 }}>
+            <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.send}>
+              <Icon name="send" size={15} color="#FFFFFF" strokeWidth={1.7} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
 
-      <CelebrationOverlay
-        visible={celebrating}
-        onDone={() => setCelebrating(false)}
-        message="Request sent! 🎉"
-        subtitle="The poster will review it"
-      />
+      <CelebrationOverlay visible={celebrating} onDone={() => setCelebrating(false)} message="Request sent! 🎉" subtitle="The poster will review it" />
     </SafeAreaView>
   );
 }
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: t.bg },
-    card: { backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16 },
-    head: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
-    handle: { fontSize: 15, fontWeight: '700', color: t.text },
-    sub: { fontSize: 12.5, color: t.textMuted, marginTop: 1, fontWeight: '400' },
-    badge: { backgroundColor: t.primarySoft, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
-    badgeText: { fontFamily: monoFamily, fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, color: t.text },
-    time: { fontSize: 12, color: t.textMuted },
-    eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
-    // The heading is the loudest thing on this screen.
-    title: { fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.7, color: t.text },
-    desc: { fontSize: 14.5, lineHeight: 21, color: t.textMuted, marginTop: 9 },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-    tile: { width: '47.5%', flexGrow: 1, flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: t.surfaceMuted, borderRadius: 12, padding: 12 },
-    tileLabel: { fontSize: 11.5, color: t.textMuted },
-    tileValue: { fontSize: 13.5, fontWeight: '600', color: t.text, marginTop: 1 },
-    cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: t.primary, borderRadius: 12, paddingVertical: 15, marginTop: 16 },
-    ctaMuted: { backgroundColor: t.surfaceMuted },
-    ctaText: { fontSize: 15, fontWeight: '700', color: t.onPrimary },
-    section: { marginTop: 16, backgroundColor: t.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, padding: 16, gap: 12 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', color: t.text },
-    cHeadInline: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    applicant: {
-      flexDirection: 'row',
-      gap: 12,
-      padding: 12,
-      borderRadius: 14,
-      backgroundColor: t.surfaceAlt,
-      borderWidth: 1,
-      borderColor: t.hairlineAlt,
+    safe: { flex: 1, backgroundColor: t.page },
+    notFound: { fontSize: 14.5, fontWeight: '600', color: t.textMuted, padding: 24 },
+
+    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+    round36: { width: 36, height: 36, borderRadius: 18, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    round34: { width: 34, height: 34, borderRadius: 17, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    topRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    topStat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    topStatText: { fontSize: 13, fontWeight: '700', color: t.textMuted },
+
+    hero: {
+      marginHorizontal: 20, marginTop: 14, height: 150, borderRadius: 26,
+      alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+      shadowColor: '#6C4DFF', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 0.4, shadowRadius: 25, elevation: 6,
     },
+    heroTags: { position: 'absolute', left: 16, bottom: 14, flexDirection: 'row', gap: 8 },
+    heroTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.14)' },
+    heroTagHot: { backgroundColor: 'rgba(255,107,69,0.9)' },
+    heroTagMuted: { backgroundColor: 'rgba(0,0,0,0.35)' },
+    heroTagText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', color: '#FFFFFF' },
+
+    body: { paddingHorizontal: 20, paddingTop: 20 },
+    title: { fontSize: 22, lineHeight: 29, fontWeight: '800', color: t.text },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+    metaBit: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    metaText: { fontSize: 13, fontWeight: '600', color: t.textFaint },
+
+    author: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+    handle: { fontSize: 14, fontWeight: '700', color: t.text },
+    sub: { fontSize: 12, fontWeight: '600', color: t.textDim, marginTop: 1 },
+    divider: { height: 1, backgroundColor: t.hairlineAlt, marginTop: 18 },
+    desc: { fontSize: 14.5, lineHeight: 24, fontWeight: '600', color: t.textMuted, marginTop: 16 },
+
+    skills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+    skill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, borderWidth: 1.4, borderColor: 'rgba(255,107,69,0.4)' },
+    skillText: { fontSize: 12.5, fontWeight: '700', color: t.accent },
+
+    ctaRow: { flexDirection: 'row', gap: 10, marginTop: 22 },
+    ctaWrap: { flex: 1, borderRadius: 20 },
+    cta: { height: 48, borderRadius: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+    ctaOutline: { borderWidth: 1.5, borderColor: t.borderSoft },
+    ctaMuted: { backgroundColor: t.surfaceAlt },
+    ctaText: { fontSize: 14.5, fontWeight: '800' },
+    ctaSquare: { width: 48, height: 48, borderRadius: 20, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+
+    applicants: { marginTop: 22, backgroundColor: t.glass, borderRadius: 26, borderWidth: 1, borderColor: t.glassBorder, padding: 16, gap: 12 },
+    sectionHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+    sectionTitle: { fontSize: 15, fontWeight: '800', color: t.text },
+    sectionCount: { fontSize: 13, fontWeight: '700', color: t.textDim },
+    applicant: { flexDirection: 'row', gap: 12, padding: 12, borderRadius: 18, backgroundColor: t.surfaceAlt },
     appTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    appName: { flexShrink: 1, fontSize: 14, fontWeight: '700', letterSpacing: -0.2, color: t.text },
-    appChip: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: t.field },
+    appName: { flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.text },
+    appChip: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: t.primarySoft },
     appChipOk: { backgroundColor: t.successSoft },
-    appChipText: { fontFamily: monoFamily, fontSize: 8, fontWeight: '700', letterSpacing: 0.8, color: t.textMuted },
-    appChipTextOk: { color: t.success },
-    appSub: { fontSize: 11.5, color: t.textMuted, marginTop: 3 },
-    appMsg: { fontSize: 13, lineHeight: 18, color: t.text, marginTop: 7 },
+    appChipText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.6, color: t.textMuted },
+    appMsg: { fontSize: 13, lineHeight: 18, fontWeight: '600', color: t.text, marginTop: 7 },
     appBtns: { flexDirection: 'row', gap: 8, paddingTop: 8 },
-    smallPill: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8 },
+    smallPill: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8, borderWidth: 1.5, borderColor: 'transparent' },
     smallFilled: { backgroundColor: t.primary },
-    smallOutline: { borderWidth: 1, borderColor: t.border },
-    smallText: { fontSize: 13, fontWeight: '700' },
-    cHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 6, paddingHorizontal: 4 },
-    cTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3, color: t.text },
-    cCount: { fontFamily: monoFamily, fontSize: 10, fontWeight: '500', color: t.textDim },
-    comment: { flexDirection: 'row', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.border },
-    cLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cName: { fontSize: 14, fontWeight: '700', color: t.text },
-    cTime: { fontSize: 12, color: t.textMuted },
-    cBody: { fontSize: 14.5, lineHeight: 20, color: t.text, marginTop: 3 },
-    inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, backgroundColor: t.page, borderTopWidth: 1, borderTopColor: t.hairline },
-    inputPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.surfaceMuted, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4 },
-    input: { flex: 1, fontSize: 15, color: t.text, maxHeight: 100, paddingVertical: 9 },
-    send: { width: 46, height: 46, borderRadius: 23, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center' },
-    });
-  }
+    smallOutline: { borderColor: t.borderSoft },
+    smallText: { fontSize: 13, fontWeight: '800' },
+
+    repliesTitle: { fontSize: 15, fontWeight: '800', color: t.text, marginTop: 20 },
+    replies: { gap: 16, marginTop: 14 },
+    reply: { flexDirection: 'row', gap: 10 },
+    replyLine: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
+    replyName: { fontSize: 13.5, fontWeight: '700', color: t.text },
+    replyMeta: { fontSize: 11.5, fontWeight: '600', color: t.textDim },
+    replyBody: { fontSize: 13.5, lineHeight: 20, fontWeight: '600', color: t.textMuted, marginTop: 3 },
+
+    inputBar: {
+      flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 12,
+      backgroundColor: t.barGlass, borderTopWidth: 1, borderTopColor: t.borderSoft,
+    },
+    inputPill: { flex: 1, backgroundColor: t.field, borderRadius: 20, paddingHorizontal: 16 },
+    input: { fontSize: 13.5, fontWeight: '600', color: t.text, maxHeight: 100, paddingVertical: 10 },
+    send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  });
+}

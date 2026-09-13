@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../../components/Icon';
 import { ChatApi } from '../../api/chat';
@@ -7,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Loading } from '../../components/ui';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
+import AmbientGlow from '../../components/AmbientGlow';
 
 function clock(dateStr) {
   const d = new Date(dateStr);
@@ -53,6 +55,7 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <FlatList
           ref={listRef}

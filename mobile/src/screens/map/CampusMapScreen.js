@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Modal, FlatList, Pressable, ActivityIndicator, useWindowDimensions, Keyboard } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, FlatList, Pressable, ActivityIndicator, useWindowDimensions, Keyboard } from 'react-native';
+import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';

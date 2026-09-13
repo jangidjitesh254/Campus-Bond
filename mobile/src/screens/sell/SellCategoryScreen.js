@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/ui';
 import { MarketApi } from '../../api/market';
 import { useTheme } from '../../context/ThemeContext';
 import { layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 /** Every listing in one category — the "Show more" destination. */
 export default function SellCategoryScreen({ navigation, route }) {
@@ -44,6 +45,7 @@ export default function SellCategoryScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(i) => i._id}

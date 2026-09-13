@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { Text, TextInput } from '../../components/Text';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Icon from '../../components/Icon';
@@ -9,16 +10,17 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { ResourcesApi, RESOURCE_KINDS, openResource, formatSize } from '../../api/resources';
 import { layout, monoFamily } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 const FILTERS = [{ key: 'all', label: 'All' }, ...RESOURCE_KINDS.filter((k) => k.key !== 'other').map((k) => ({ key: k.key, label: k.label + 's' }))];
 
 /** Icon + tint for a file, by what it is. */
 export function fileGlyph(r, t) {
-  if (/^image\//.test(r.mime || '')) return { ion: 'image', color: '#6B5B7B', bg: '#F2EFF5' };
-  if (/pdf/.test(r.mime || '')) return { ion: 'document-text', color: '#C0503C', bg: '#FAEAE6' };
-  if (/presentation|powerpoint/.test(r.mime || '')) return { ion: 'easel', color: '#A9603A', bg: '#FAEFE8' };
-  if (/word|msword/.test(r.mime || '')) return { ion: 'document', color: '#3F7A5E', bg: '#E8F1EC' };
-  return { ion: 'document-outline', color: t.primary, bg: t.primarySoft };
+  if (/^image\//.test(r.mime || '')) return { ion: 'image', color: t.avatarText, bg: t.avatarBg };
+  if (/pdf/.test(r.mime || '')) return { ion: 'document-text', color: t.accent, bg: t.accentSoft };
+  if (/presentation|powerpoint/.test(r.mime || '')) return { ion: 'easel', color: t.amber, bg: t.amberSoft };
+  if (/word|msword/.test(r.mime || '')) return { ion: 'document', color: t.success, bg: t.successSoft };
+  return { ion: 'document-outline', color: t.text, bg: t.primarySoft };
 }
 
 export function resourceMeta(r) {
@@ -114,6 +116,7 @@ export default function ResourcesScreen({ navigation, route }) {
 
   return (
     <View style={styles.safe}>
+      <AmbientGlow />
       <View style={styles.search}>
         <Icon name="search" size={15} color={t.textMuted} strokeWidth={1.9} />
         <TextInput

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../components/Icon';
@@ -11,6 +12,7 @@ import { LostApi } from '../api/lostfound';
 import { MarketApi } from '../api/market';
 import { useTheme } from '../context/ThemeContext';
 import { layout, monoFamily } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 const FILTERS = ['All', 'Posts', 'Lost & Found', 'Market'];
 
@@ -161,6 +163,7 @@ export default function MyActivityScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={styles.chips}>
         {FILTERS.map((f) => {
           const active = filter === f;

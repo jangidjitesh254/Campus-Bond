@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, TextInput } from './Text';
 import Icon from './Icon';
 import { useTheme } from '../context/ThemeContext';
 import { monoFamily } from '../theme';

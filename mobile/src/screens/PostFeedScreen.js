@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Share, Alert, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Image, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Share, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../components/Icon';
+import { LinearGradient } from 'expo-linear-gradient';
 import ThreadPost from '../components/ThreadPost';
 import CelebrationOverlay from '../components/CelebrationOverlay';
 import ActionSheet from '../components/ActionSheet';
@@ -11,7 +13,8 @@ import { LostApi, imageUrl } from '../api/lostfound';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getActivitySeenAt } from '../utils/activitySeen';
-import { layout, monoFamily } from '../theme';
+import { layout, gradients } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 // The design has four chips. "Notice" covers everything announced to campus,
 // which is where our cultural / competition categories live.
@@ -195,6 +198,7 @@ export default function PostFeedScreen({ navigation, route }) {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      <AmbientGlow />
       {/* For you / Campus sit in the top row, beside the actions */}
       <View style={styles.head}>
         <View style={styles.topRow}>
@@ -204,7 +208,6 @@ export default function PostFeedScreen({ navigation, route }) {
               return (
                 <TouchableOpacity key={key} onPress={() => setTab(key)} activeOpacity={0.8}>
                   <Text style={[styles.tab, active && styles.tabOn]}>{label}</Text>
-                  <View style={[styles.tabRule, active && styles.tabRuleOn]} />
                 </TouchableOpacity>
               );
             })}
@@ -216,7 +219,7 @@ export default function PostFeedScreen({ navigation, route }) {
               activeOpacity={0.8}
               onPress={() => { setSearching((v) => !v); if (searching) setQuery(''); }}
             >
-              <Icon name="search" size={16} color={searching ? t.onPrimary : t.primary} strokeWidth={1.7} />
+              <Icon name="search" size={16} color={searching ? t.onPrimary : t.textMuted} strokeWidth={1.8} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -224,7 +227,7 @@ export default function PostFeedScreen({ navigation, route }) {
               activeOpacity={0.8}
               onPress={() => navigation.navigate('Activity')}
             >
-              <Icon name="bell" size={16} color={t.primary} strokeWidth={1.7} />
+              <Icon name="bell" size={16} color={t.textMuted} strokeWidth={1.8} />
               {pending > 0 ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{pending > 9 ? '9+' : pending}</Text>
@@ -233,7 +236,7 @@ export default function PostFeedScreen({ navigation, route }) {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => navigation.navigate('ChatList')}>
-              <Icon name="chat" size={16} color={t.primary} strokeWidth={1.7} />
+              <Icon name="chat" size={16} color={t.textMuted} strokeWidth={1.8} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -244,7 +247,9 @@ export default function PostFeedScreen({ navigation, route }) {
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={styles.avatarImg} />
               ) : (
-                <Text style={styles.avatarText}>{initials}</Text>
+                <LinearGradient colors={gradients.avatar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatarImg}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </LinearGradient>
               )}
             </TouchableOpacity>
           </View>
@@ -370,87 +375,45 @@ function makeStyles(t, isDark) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: t.page },
 
-    head: { paddingHorizontal: 18, paddingTop: 2 },
-    topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 },
-    brandActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-    iconBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: t.surface,
-      borderWidth: 1,
-      borderColor: t.borderSoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    iconBtnOn: { backgroundColor: t.primary, borderColor: t.primary },
+    head: { paddingHorizontal: 20, paddingTop: 10 },
+    topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 },
+    brandActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    iconBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    iconBtnOn: { backgroundColor: t.primary },
     badge: {
-      position: 'absolute',
-      top: -3,
-      right: -3,
-      minWidth: 16,
-      height: 16,
-      borderRadius: 8,
-      paddingHorizontal: 4,
-      backgroundColor: t.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1.5,
-      borderColor: t.page,
+      position: 'absolute', top: 5, right: 6, minWidth: 9, height: 9, borderRadius: 5, paddingHorizontal: 0,
+      backgroundColor: t.accentFill, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.page,
     },
-    badgeText: { fontSize: 8.5, fontWeight: '800', color: '#fff' },
-    avatar: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: t.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    },
-    avatarImg: { width: '100%', height: '100%' },
-    avatarText: { fontFamily: monoFamily, fontSize: 11, fontWeight: '700', color: t.onPrimary },
+    badgeText: { fontSize: 0, color: 'transparent' },
+    avatar: { width: 34, height: 34, borderRadius: 17, overflow: 'hidden' },
+    avatarImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 13, fontWeight: '800', color: '#FFFFFF' },
 
-    tabs: { flexDirection: 'row', gap: 22, alignItems: 'flex-end' },
-    tab: { fontSize: 15, fontWeight: '500', letterSpacing: -0.3, color: t.textMuted, paddingBottom: 6 },
-    tabOn: { fontWeight: '600', color: t.text },
-    tabRule: { height: 2, backgroundColor: 'transparent' },
-    tabRuleOn: { backgroundColor: t.primary },
+    tabs: { flexDirection: 'row', gap: 18, alignItems: 'baseline' },
+    tab: { fontSize: 15, fontWeight: '600', color: t.textFaint },
+    tabOn: { fontSize: 18, fontWeight: '800', color: t.text },
 
     field: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 9,
-      height: 40,
-      marginTop: 10,
-      paddingHorizontal: 13,
-      borderRadius: 999,
-      backgroundColor: t.field,
+      flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, marginTop: 14, paddingHorizontal: 16,
+      borderRadius: 20, backgroundColor: t.glass, borderWidth: 1, borderColor: t.borderSoft,
     },
-    fieldInput: { flex: 1, fontSize: 13.5, color: t.text, padding: 0 },
+    fieldInput: { flex: 1, fontSize: 14, fontWeight: '600', color: t.text, padding: 0 },
 
-    chips: { paddingTop: 12, paddingBottom: 6 },
-    chipsInner: { gap: 8, paddingRight: 18 },
-    chip: {
-      borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
-      backgroundColor: t.surface,
-      borderWidth: 1,
-      borderColor: t.borderSoft,
-    },
+    chips: { paddingTop: 18, paddingBottom: 4 },
+    chipsInner: { gap: 8, paddingRight: 20 },
+    chip: { borderRadius: 20, paddingVertical: 8, paddingHorizontal: 18, borderWidth: 1, borderColor: t.borderSoft },
     chipOn: { backgroundColor: t.primary, borderColor: t.primary },
-    chipText: { fontSize: 12.5, fontWeight: '600', letterSpacing: -0.2, color: t.textMuted },
-    chipTextOn: { color: t.onPrimary },
+    chipText: { fontSize: 13, fontWeight: '600', color: t.textFaint },
+    chipTextOn: { color: t.onPrimary, fontWeight: '700' },
 
-    feed: { flex: 1, paddingHorizontal: 18, paddingTop: 6 },
-    daybar: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingTop: 4, paddingBottom: 10, paddingHorizontal: 2 },
-    dayLabel: { fontFamily: monoFamily, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: t.accent },
-    dayRule: { flex: 1, height: 1, backgroundColor: t.hairline },
-    dayCount: { fontFamily: monoFamily, fontSize: 10, fontWeight: '500', color: t.textDim },
+    feed: { flex: 1, paddingHorizontal: 20, paddingTop: 14 },
+    daybar: { flexDirection: 'row', alignItems: 'baseline', gap: 10, paddingTop: 4, paddingBottom: 16 },
+    dayLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: t.accent },
+    dayRule: { flex: 1, height: 1, backgroundColor: t.hairlineAlt },
+    dayCount: { fontSize: 12, fontWeight: '600', color: t.textDim },
 
     empty: { alignItems: 'center', paddingTop: 50, paddingHorizontal: 30 },
-    emptyTitle: { fontSize: 16, fontWeight: '600', color: t.text, textAlign: 'center' },
-    emptySub: { fontSize: 13, color: t.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 19 },
-    });
-  }
+    emptyTitle: { fontSize: 15, fontWeight: '800', color: t.text, textAlign: 'center' },
+    emptySub: { fontSize: 13, fontWeight: '600', color: t.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 19 },
+  });
+}

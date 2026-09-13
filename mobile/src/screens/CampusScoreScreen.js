@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Image } from 'react-native';
+import { Text } from '../components/Text';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import ScoreRing from '../components/ScoreRing';
@@ -11,6 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 import { ScoreApi, nextMilestone } from '../api/score';
 import { imageUrl } from '../api/lostfound';
 import { layout, shadow, monoFamily } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 const ACTION_ION = {
   post_created: 'megaphone-outline',
@@ -68,8 +70,10 @@ export default function CampusScoreScreen() {
   const earnedKeys = new Set(earned.map((b) => b.action));
 
   return (
+    <View style={styles.safe}>
+    <AmbientGlow />
     <ScrollView
-      style={styles.safe}
+      style={{ flex: 1 }}
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={t.primary} />}
       showsVerticalScrollIndicator={false}
@@ -168,6 +172,7 @@ export default function CampusScoreScreen() {
         </>
       ) : null}
     </ScrollView>
+    </View>
   );
 }
 

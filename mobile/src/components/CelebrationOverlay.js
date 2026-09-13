@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
+import { Text } from './Text';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, radius, shadow } from '../theme';
 
 const { width } = Dimensions.get('window');
 // Literals only — this runs at module load, before any theme exists.
-const CONFETTI_COLORS = ['#3F7A5E', '#33708F', '#A9603A', '#6B5B7B', '#8A5A6B', '#4A5A73'];
+const CONFETTI_COLORS = ['#FF6B45', '#FF9153', '#6C4DFF', '#A99BFF', '#FF7FA0', '#FFB25C'];
 
 /**
  * A one-second celebration burst shown after a delightful action

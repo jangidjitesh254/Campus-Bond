@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Share } from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, Share } from 'react-native';
+import { Text } from './Text';
 import Icon from './Icon';
 import { handleOf, timeAgo } from './ThreadPost';
 import { imageUrl } from '../api/lostfound';

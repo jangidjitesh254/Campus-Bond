@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from './Text';
 import Icon from './Icon';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { monoFamily } from '../theme';
+import { shadow } from '../theme';
 
 export function handleOf(name) {
   return (name || 'student').toLowerCase().replace(/\s+/g, '');
@@ -42,11 +43,11 @@ export function deadlineState(value) {
   const d = new Date(value);
   if (isNaN(d.getTime())) return null;
   const ms = d.getTime() - Date.now();
-  if (ms <= 0) return { text: `Closed ${fmtDeadline(value)}`, past: true, soon: false };
+  if (ms <= 0) return { text: `Closed ${fmtDeadline(value)}`, past: true, soon: false, left: 'closed' };
   const hours = Math.floor(ms / 3600000);
   const days = Math.floor(hours / 24);
   const left = days >= 1 ? `${days}d left` : hours >= 1 ? `${hours}h left` : 'closing soon';
-  return { text: `Due ${fmtDeadline(value)} · ${left}`, past: false, soon: hours < 48 };
+  return { text: `Due ${fmtDeadline(value)} · ${left}`, past: false, soon: hours < 48, left };
 }
 
 /**
@@ -74,7 +75,10 @@ function replyLabel(n) {
   return n === 1 ? '1 reply' : `${n} replies`;
 }
 
-/** Home feed post card — badge + age, title, author row, then an action bar. */
+/**
+ * Home feed post card — glass surface, kind tag + age, title, deadline,
+ * divider, author, then the action row: Interested pill · counts · Share.
+ */
 export default function ThreadPost({ post, onOpen, onLongPress, onInterested, onComment, onShare }) {
   const { user } = useAuth();
   const { t, kinds, isDark } = useTheme();
@@ -95,98 +99,76 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
   const meta = postKind(post);
   const due = deadlineState(post.deadline);
   const k = kinds[meta.kind];
-  // "1 reply · 3 interested" — both halves grow as people engage.
+  // "3 replies · 1 interested" — both halves grow as people engage.
   const countLabel = isLost
     ? responses
       ? `${responses} interested`
       : 'no responses yet'
-    : [replies ? replyLabel(replies) : null, responses ? `${responses} interested` : null]
-        .filter(Boolean)
-        .join(' · ') || 'no replies';
+    : [replies ? replyLabel(replies) : null, responses ? `${responses} interested` : null].filter(Boolean).join(' · ') || 'no replies';
 
-  const initials = (owner.name || '?')
-    .split(' ')
-    .map((w) => w.charAt(0))
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const initials = (owner.name || '?').split(' ').map((w) => w.charAt(0)).slice(0, 2).join('').toUpperCase();
+  // Team posts get the violet avatar tint; the other kinds use their own tint.
+  const avaBg = meta.kind === 'team' ? t.avatarBg : k.bg;
+  const avaFg = meta.kind === 'team' ? t.avatarText : k.fg;
+
+  const pillLabel = isOwner
+    ? 'Your post'
+    : !interested
+    ? 'Interested'
+    : myStatus === 'approved'
+    ? 'Accepted ✓'
+    : isLost
+    ? 'Interested ✓'
+    : 'Requested ✓';
+  const solid = !isOwner && !interested;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.96}
-      onPress={onOpen}
-      onLongPress={onLongPress}
-      delayLongPress={280}
-    >
-      <View style={styles.body}>
-        <View style={styles.meta}>
-          <View style={[styles.badge, { backgroundColor: k.bg }]}>
-            <Text style={[styles.badgeText, { color: k.fg }]}>{meta.label}</Text>
-          </View>
-          <Text style={styles.age}>{timeAgo(post.createdAt)}</Text>
+    <TouchableOpacity style={styles.card} activeOpacity={0.96} onPress={onOpen} onLongPress={onLongPress} delayLongPress={280}>
+      <View style={styles.meta}>
+        <View style={[styles.badge, { backgroundColor: k.bg }]}>
+          <Text style={[styles.badgeText, { color: k.fg }]}>{meta.label}</Text>
         </View>
+        <Text style={styles.age}>{timeAgo(post.createdAt)}</Text>
+      </View>
 
-        <Text style={styles.title}>{post.title}</Text>
+      <Text style={styles.title}>{post.title}</Text>
 
-        {due ? (
-          <View style={styles.due}>
-            <Icon
-              name="calendar"
-              size={13}
-              color={due.past ? t.textFaint : due.soon ? t.accent : t.textMuted}
-              strokeWidth={1.8}
-            />
-            <Text style={[styles.dueText, due.past && styles.duePast, due.soon && !due.past && styles.dueSoon]}>
-              {due.text}
-            </Text>
-          </View>
-        ) : null}
+      {due ? (
+        <View style={styles.due}>
+          <Icon name="calendar" size={14} color={due.past ? t.textDim : due.soon ? t.accent : t.textFaint} strokeWidth={1.6} />
+          <Text style={[styles.dueText, due.past && styles.duePast, due.soon && !due.past && styles.dueSoon]}>{due.text}</Text>
+        </View>
+      ) : null}
 
-        <View style={styles.author}>
-          <View style={[styles.ava, { backgroundColor: k.bg }]}>
-            <Text style={[styles.avaText, { color: k.fg }]}>{initials}</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.name} numberOfLines={1}>{handleOf(owner.name)}</Text>
-            <Text style={styles.sub} numberOfLines={1}>
-              {owner.branch || 'Campus'}{owner.semester ? ` • Sem ${owner.semester}` : ''}
-            </Text>
-          </View>
+      <View style={styles.divider} />
+
+      <View style={styles.author}>
+        <View style={[styles.ava, { backgroundColor: avaBg }]}>
+          <Text style={[styles.avaText, { color: avaFg }]}>{initials}</Text>
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.name} numberOfLines={1}>{handleOf(owner.name)}</Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {owner.branch || 'Campus'}{owner.semester ? ` · Sem ${owner.semester}` : ''}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.actionbar}>
-        {isOwner ? (
-          <View style={[styles.btn, styles.btnOn]}>
-            <Text style={[styles.btnText, { color: t.text }]}>Your post</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.btn, interested ? styles.btnOn : { backgroundColor: k.fg, borderColor: k.fg }]}
-            onPress={onInterested}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.btnText, { color: interested ? t.text : k.on }]}>
-              {!interested
-                ? 'Interested'
-                : myStatus === 'approved'
-                ? 'Accepted ✓'
-                : isLost
-                ? 'Interested ✓'
-                : 'Requested ✓'}
-            </Text>
-          </TouchableOpacity>
-        )}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={[styles.pill, solid ? styles.pillSolid : styles.pillOutline]}
+          onPress={isOwner ? onOpen : onInterested}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.pillText, { color: solid ? t.onPrimary : t.text }]}>{pillLabel}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={onComment} hitSlop={10} style={{ flexShrink: 1 }}>
-          <Text style={styles.count} numberOfLines={1}>
-            {countLabel}
-          </Text>
+          <Text style={styles.count} numberOfLines={1}>{countLabel}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onShare} hitSlop={10} style={styles.shareBtn}>
-          <Text style={styles.count}>Share</Text>
+          <Text style={styles.share}>Share</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -196,48 +178,37 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
 function makeStyles(t, kinds, isDark) {
   return StyleSheet.create({
     card: {
-      backgroundColor: t.surface,
-      borderRadius: 18,
-      marginBottom: 12,
-      overflow: 'hidden',
-      // Shadows vanish on a dark canvas, so lean on a hairline instead.
-      borderWidth: isDark ? 1 : 0,
-      borderColor: t.hairline,
-      shadowColor: '#171B1D',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0 : 0.05,
-      shadowRadius: 20,
-      elevation: isDark ? 0 : 2,
-    },
-    body: { paddingTop: 15, paddingHorizontal: 16, paddingBottom: 13 },
-    meta: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-    badge: { borderRadius: 7, paddingTop: 5, paddingBottom: 5, paddingLeft: 6, paddingRight: 8 },
-    badgeText: { fontFamily: monoFamily, fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8 },
-    age: { fontSize: 11.5, color: t.textFaint },
-    title: { fontSize: 16.5, lineHeight: 22, fontWeight: '600', letterSpacing: -0.3, color: t.text, marginTop: 11, marginBottom: 10 },
-    due: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-    dueText: { fontSize: 11.5, fontWeight: '500', color: t.textMuted },
-    dueSoon: { color: t.accent, fontWeight: '600' },
-    duePast: { color: t.textFaint },
-    author: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-    ava: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-    avaText: { fontFamily: monoFamily, fontSize: 11, fontWeight: '700' },
-    name: { fontSize: 12.5, fontWeight: '600', color: t.text },
-    sub: { fontSize: 11.5, color: t.textMuted, marginTop: 4 },
-    actionbar: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      backgroundColor: t.glass,
+      borderRadius: 26,
+      borderWidth: 1,
+      borderColor: t.glassBorder,
+      padding: 18,
+      marginBottom: 14,
       gap: 12,
-      paddingVertical: 11,
-      paddingHorizontal: 16,
-      backgroundColor: t.surfaceAlt,
-      borderTopWidth: 1,
-      borderTopColor: t.hairlineAlt,
+      ...shadow.card,
     },
-    btn: { borderRadius: 999, borderWidth: 1, paddingVertical: 9, paddingHorizontal: 15 },
-    btnOn: { backgroundColor: kinds.team.bg, borderColor: kinds.team.ring },
-    btnText: { fontSize: 12.5, fontWeight: '600', letterSpacing: -0.13 },
-    count: { fontSize: 12, fontWeight: '500', color: t.textMuted },
+    meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    badge: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10 },
+    badgeText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
+    age: { fontSize: 12, fontWeight: '600', color: t.textDim },
+    title: { fontSize: 17, lineHeight: 22, fontWeight: '800', color: t.text },
+    due: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    dueText: { fontSize: 13, fontWeight: '600', color: t.textFaint },
+    dueSoon: { color: t.accent },
+    duePast: { color: t.textDim },
+    divider: { height: 1, backgroundColor: t.hairline },
+    author: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    ava: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    avaText: { fontSize: 12, fontWeight: '800' },
+    name: { fontSize: 14, fontWeight: '700', color: t.text },
+    sub: { fontSize: 12, fontWeight: '600', color: t.textDim, marginTop: 1 },
+    actions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 2 },
+    pill: { borderRadius: 20, paddingVertical: 9, paddingHorizontal: 20, borderWidth: 1.5 },
+    pillSolid: { backgroundColor: t.primary, borderColor: t.primary, ...(isDark ? {} : shadow.soft) },
+    pillOutline: { backgroundColor: 'transparent', borderColor: t.borderSoft },
+    pillText: { fontSize: 13, fontWeight: '800' },
+    count: { fontSize: 13, fontWeight: '600', color: t.textFaint },
     shareBtn: { marginLeft: 'auto' },
+    share: { fontSize: 13, fontWeight: '700', color: t.textMuted },
   });
 }

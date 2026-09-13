@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 const CELLS = 6;
 
@@ -85,6 +87,7 @@ export default function OtpScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Verify email</Text>

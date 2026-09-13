@@ -1,13 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +9,7 @@ import { LostApi, LOST_CATEGORIES, imageUrl } from '../../api/lostfound';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, radius, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function CreateLostScreen({ navigation, route }) {
   const { t, isDark } = useTheme();
@@ -117,6 +111,7 @@ export default function CreateLostScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           {/* Lost / Found toggle */}
@@ -131,9 +126,9 @@ export default function CreateLostScreen({ navigation, route }) {
                 <Ionicons
                   name={kind === 'lost' ? 'help-buoy-outline' : 'checkmark-circle-outline'}
                   size={18}
-                  color={type === kind ? '#fff' : t.textMuted}
+                  color={type === kind ? t.onPrimary : t.textMuted}
                 />
-                <Text style={[styles.toggleText, type === kind && { color: '#fff' }]}>
+                <Text style={[styles.toggleText, type === kind && { color: t.onPrimary }]}>
                   I {kind} this
                 </Text>
               </TouchableOpacity>

@@ -1,18 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Field } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function RegisterScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -62,6 +57,7 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <Text style={[font.h1, { color: t.text }, { color: t.text }]}>Create account</Text>

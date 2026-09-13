@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Avatar from '../components/Avatar';
@@ -11,6 +12,7 @@ import { imageUrl } from '../api/market';
 import { useTheme } from '../context/ThemeContext';
 import { useKeyboardHeight } from '../hooks/useKeyboardOpen';
 import { spacing, font, layout } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 const SKILL_SUGGESTIONS = ['Python', 'React', 'Flutter', 'UI Design', 'Video Editing', 'Java', 'C++', 'Data Science', 'Public Speaking', 'Content Writing', 'Photography', 'Machine Learning'];
 
@@ -49,6 +51,7 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} activeOpacity={0.85}>

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Switch } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Switch } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../components/Avatar';
@@ -12,6 +13,7 @@ import { EventsApi } from '../api/events';
 import { MarketApi } from '../api/market';
 import { ClubApi } from '../api/clubs';
 import { font, radius, layout, shadow, monoFamily } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 export default function ProfileScreen({ navigation }) {
   const { t, isDark, toggle } = useTheme();
@@ -53,6 +55,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <AmbientGlow />
       <ScrollView contentContainerStyle={{ paddingBottom: layout.tabBarSpace }}>
         {/* Identity card — avatar, name and stats read as one block */}
         <View style={styles.idCard}>

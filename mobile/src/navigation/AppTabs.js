@@ -1,16 +1,19 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Animated } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Text } from '../components/Text';
 import Icon from '../components/Icon';
 import PostStack from './PostStack';
 import ClubStack from './ClubStack';
 import MapStack from './MapStack';
 import SellStack from './SellStack';
 import ProfileStack from './ProfileStack';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import useKeyboardOpen from '../hooks/useKeyboardOpen';
+import { gradients, shadow } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -24,7 +27,7 @@ const BAR = [
   null, // slot for the centre action
   { name: 'Sell', label: 'Market', icon: 'tag' },
   // `Map` has no slot of its own, so More stays lit while you're on it.
-  { name: 'More', label: 'More', icon: 'dotsH', owns: ['More', 'Map'] },
+  { name: 'More', label: 'More', icon: 'gridDots', owns: ['More', 'Map'] },
 ];
 
 // What the centre + can create. Each entry drops the student straight into the
@@ -36,8 +39,10 @@ const COMPOSE = [
   { key: 'other', label: 'Other', hint: 'Anything else', icon: 'compose', screen: 'CreateEvent', params: { category: 'other' } },
 ];
 
-/** Bottom bar with curved shoulders: icon over label, the active one lifted
- *  into a raised pill, and an ink circle carrying the centre + action. */
+/**
+ * Floating glass pill: icon over label, the active item lit coral, and the
+ * coral-gradient + raised out of the centre.
+ */
 function TabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { t, isDark } = useTheme();
@@ -48,12 +53,7 @@ function TabBar({ state, navigation }) {
 
   // The menu springs up out of the + rather than just appearing.
   useEffect(() => {
-    Animated.spring(pop, {
-      toValue: composeOpen ? 1 : 0,
-      useNativeDriver: true,
-      friction: 7,
-      tension: 90,
-    }).start();
+    Animated.spring(pop, { toValue: composeOpen ? 1 : 0, useNativeDriver: true, friction: 7, tension: 90 }).start();
   }, [composeOpen, pop]);
 
   function compose(option) {
@@ -75,61 +75,42 @@ function TabBar({ state, navigation }) {
   // Pushed screens — chat, a post, any form — own the whole screen. Leaving the
   // bar floating over them buries their input bars behind it.
   const onRootScreen = (active.state?.index ?? 0) === 0;
-
-  // Likewise while typing: the bar would cover the input the keyboard raised.
   if (keyboardOpen || !onRootScreen) return null;
 
+  const bottom = Math.max(insets.bottom, 10) + 6;
+
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
-      {BAR.map((item) => {
-        if (!item) {
+    <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
+      <View style={styles.bar}>
+        <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, styles.barTint]} />
+
+        {BAR.map((item) => {
+          if (!item) {
+            return (
+              <View key="fab" style={styles.item}>
+                <TouchableOpacity activeOpacity={0.85} onPress={() => setComposeOpen(true)} style={styles.fabWrap}>
+                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fab}>
+                    <Icon name="plus" size={22} color="#FFFFFF" strokeWidth={2.2} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            );
+          }
+          // A button owns its own route by default, plus any slot-less ones
+          // listed in `owns` — so exactly one button is always highlighted.
+          const focused = (item.owns || [item.name]).includes(activeName);
+          const color = focused ? t.accent : t.textFaint;
           return (
-            <View key="fab" style={styles.item}>
-              <TouchableOpacity
-                style={styles.fab}
-                activeOpacity={0.85}
-                onPress={() => setComposeOpen(true)}
-              >
-                <Icon name="plus" size={20} color={t.accent} strokeWidth={2.6} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity key={item.name} style={styles.item} onPress={() => go(item.name)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10 }}>
+              <Icon name={item.icon} size={21} color={color} strokeWidth={focused ? 1.9 : 1.7} />
+              <Text style={[styles.label, { color }, focused && styles.labelOn]} numberOfLines={1}>{item.label}</Text>
+            </TouchableOpacity>
           );
-        }
-        // A button owns its own route by default, plus any slot-less ones
-        // listed in `owns` — so exactly one button is always highlighted.
-        const focused = (item.owns || [item.name]).includes(activeName);
+        })}
+      </View>
 
-        return (
-          <TouchableOpacity
-            key={item.name}
-            style={styles.item}
-            onPress={() => go(item.name)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10 }}
-          >
-            {/* The pill is always laid out, so labels stay on one baseline */}
-            <View style={[styles.slot, focused && styles.slotOn]}>
-              <Icon
-                name={item.icon}
-                size={21}
-                color={focused ? t.text : t.textMuted}
-                strokeWidth={focused ? 1.9 : 1.7}
-              />
-            </View>
-            <Text style={[styles.label, focused && styles.labelOn]} numberOfLines={1}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-
-      <Modal
-        visible={composeOpen}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setComposeOpen(false)}
-      >
+      <Modal visible={composeOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setComposeOpen(false)}>
         <View style={{ flex: 1 }}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: pop }]} pointerEvents="none">
             <BlurView intensity={26} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
@@ -142,7 +123,7 @@ function TabBar({ state, navigation }) {
             style={[
               styles.composeStack,
               {
-                bottom: Math.max(insets.bottom, 10) + 84,
+                bottom: bottom + 92,
                 opacity: pop,
                 transform: [
                   { translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }) },
@@ -152,13 +133,9 @@ function TabBar({ state, navigation }) {
             ]}
           >
             {COMPOSE.map((c) => (
-              <Pressable
-                key={c.key}
-                onPress={() => compose(c)}
-                style={({ pressed }) => [styles.composeItem, pressed && styles.composeItemOn]}
-              >
+              <Pressable key={c.key} onPress={() => compose(c)} style={({ pressed }) => [styles.composeItem, pressed && styles.composeItemOn]}>
                 <View style={styles.composeIcon}>
-                  <Icon name={c.icon} size={17} color={t.primary} strokeWidth={1.8} />
+                  <Icon name={c.icon} size={17} color={t.accent} strokeWidth={1.8} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.composeLabel}>{c.label}</Text>
@@ -175,7 +152,7 @@ function TabBar({ state, navigation }) {
 
 export default function AppTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+    <Tab.Navigator screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }} tabBar={(props) => <TabBar {...props} />}>
       {/* Post is first, so the app opens on the feed. */}
       <Tab.Screen name="Post" component={PostStack} />
       <Tab.Screen name="Club" component={ClubStack} />
@@ -188,51 +165,29 @@ export default function AppTabs() {
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
+    wrap: { position: 'absolute', left: 16, right: 16 },
     bar: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(15,19,21,0.97)' : 'rgba(252,253,253,0.97)',
-      // Curved shoulders, then flush down to the bottom edge of the screen
-      borderTopLeftRadius: 26,
-      borderTopRightRadius: 26,
-      borderTopWidth: 1,
-      borderTopColor: t.hairline,
-      paddingTop: 10,
-      paddingHorizontal: 14,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -6 },
-      shadowOpacity: isDark ? 0.4 : 0.07,
-      shadowRadius: 18,
-      elevation: 14,
+      justifyContent: 'space-between',
+      borderRadius: 30,
+      borderWidth: 1,
+      borderColor: t.borderSoft,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      overflow: 'hidden',
+      ...shadow.card,
     },
+    barTint: { backgroundColor: t.barGlass, borderRadius: 30 },
     item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+    label: { fontSize: 10.5, fontWeight: '600' },
+    labelOn: { fontWeight: '700' },
 
-    // Icon well. Only the active tab paints it, which is what lifts it forward.
-    slot: {
-      width: 48,
-      height: 36,
-      borderRadius: 18, // exactly half the height — semicircular ends
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    slotOn: {
-      backgroundColor: t.surface,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: t.hairline,
-      shadowColor: '#171B1D',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0 : 0.1,
-      shadowRadius: 12,
-      elevation: isDark ? 0 : 3,
-    },
-    label: { fontSize: 11.5, fontWeight: '500', letterSpacing: -0.1, color: t.textMuted },
-    labelOn: { fontWeight: '600', color: t.text },
+    // Coral disc lifted out of the bar.
+    fabWrap: { marginTop: -26, borderRadius: 24, ...shadow.glow },
+    fab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
 
-    composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.42)' : 'rgba(23,27,29,0.24)' },
+    composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,20,26,0.28)' },
     composeStack: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },
     composeItem: {
       width: 262,
@@ -241,42 +196,15 @@ function makeStyles(t, isDark) {
       gap: 12,
       paddingHorizontal: 14,
       paddingVertical: 11,
-      borderRadius: 18,
-      backgroundColor: t.surface,
+      borderRadius: 20,
+      backgroundColor: isDark ? '#17171B' : '#FFFFFF',
       borderWidth: 1,
       borderColor: t.borderSoft,
-      shadowColor: '#171B1D',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: isDark ? 0 : 0.12,
-      shadowRadius: 16,
-      elevation: 6,
+      ...shadow.card,
     },
     composeItemOn: { backgroundColor: t.field },
-    composeIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: t.primarySoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    composeLabel: { fontSize: 14, fontWeight: '600', letterSpacing: -0.2, color: t.text },
-    composeHint: { fontSize: 11.5, color: t.textMuted, marginTop: 2 },
-
-    // Ink disc with the copper +, sitting a touch above its neighbours.
-    fab: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      marginTop: -8,
-      backgroundColor: isDark ? t.surfaceHi : t.ink,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#171B1D',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.5 : 0.24,
-      shadowRadius: 18,
-      elevation: 8,
-    },
-    });
-  }
+    composeIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' },
+    composeLabel: { fontSize: 14, fontWeight: '800', color: t.text },
+    composeHint: { fontSize: 11.5, fontWeight: '600', color: t.textMuted, marginTop: 2 },
+  });
+}

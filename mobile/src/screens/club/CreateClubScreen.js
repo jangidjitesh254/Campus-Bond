@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from '../../components/Icon';
@@ -8,6 +9,7 @@ import { ClubApi, CLUB_CATEGORIES } from '../../api/clubs';
 import { useTheme } from '../../context/ThemeContext';
 import { useKeyboardHeight } from '../../hooks/useKeyboardOpen';
 import { spacing, font, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function CreateClubScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -37,6 +39,7 @@ export default function CreateClubScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
           <TouchableOpacity style={styles.logoWrap} onPress={pickLogo} activeOpacity={0.85}>

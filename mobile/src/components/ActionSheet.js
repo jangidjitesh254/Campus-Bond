@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { Modal, View, Pressable, StyleSheet, Animated } from 'react-native';
+import { Text } from './Text';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';

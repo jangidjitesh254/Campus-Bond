@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
@@ -9,6 +10,7 @@ import { ChatApi } from '../../api/chat';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function ChatListScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -32,6 +34,7 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
+      <AmbientGlow />
       <FlatList
         data={convos}
         keyExtractor={(c) => c._id}

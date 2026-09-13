@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Alert, Share, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Alert, Share, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '../../components/Avatar';
@@ -10,6 +11,7 @@ import { MarketApi, imageUrl } from '../../api/market';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 const CONDITION = { new: 'New', 'like-new': 'Like new', good: 'Good', fair: 'Fair' };
 const CAT = { books: 'Books', notes: 'Notes', kit: 'Drawing Kit', electronics: 'Electronics', instruments: 'Instruments', furniture: 'Furniture', other: 'Other' };
@@ -69,6 +71,7 @@ export default function SellDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <ScrollView contentContainerStyle={{ paddingBottom: layout.tabBarSpace }}>
         {uri ? (
           <Image source={{ uri }} style={styles.hero} resizeMode="cover" />

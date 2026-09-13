@@ -7,6 +7,7 @@ import { Loading, EmptyState } from '../../components/ui';
 import { MarketApi } from '../../api/market';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function MySellScreen({ navigation }) {
   const { t, isDark } = useTheme();
@@ -23,6 +24,7 @@ export default function MySellScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(i) => i._id}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert, Keyboard } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Keyboard } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Icon from '../components/Icon';
@@ -12,6 +13,7 @@ import { SearchApi } from '../api/search';
 import { openResource } from '../api/resources';
 import { imageUrl } from '../api/lostfound';
 import { layout, monoFamily } from '../theme';
+import AmbientGlow from '../components/AmbientGlow';
 
 // The library and score live in the More (profile) stack.
 const QUICK = [
@@ -64,6 +66,7 @@ export default function SearchScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <AmbientGlow />
       <View style={styles.header}>
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="back" size={20} color={t.text} strokeWidth={2} />

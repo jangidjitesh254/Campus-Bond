@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Alert, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Alert, Linking } from 'react-native';
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +9,7 @@ import { LostApi, imageUrl } from '../../api/lostfound';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, font, radius, layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 export default function LostDetailScreen({ route, navigation }) {
   const { t, isDark } = useTheme();
@@ -38,6 +40,7 @@ export default function LostDetailScreen({ route, navigation }) {
   if (!item)
     return (
       <SafeAreaView style={styles.safe}>
+        <AmbientGlow />
         <Text style={[font.bodyMuted, { color: t.textMuted }, { padding: spacing.xl }]}>Item not found.</Text>
       </SafeAreaView>
     );

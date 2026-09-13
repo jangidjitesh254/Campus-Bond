@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/ui';
 import { MarketApi } from '../../api/market';
 import { useTheme } from '../../context/ThemeContext';
 import { layout } from '../../theme';
+import AmbientGlow from '../../components/AmbientGlow';
 
 /** How the buyer's request currently stands with the seller. */
 const STATUS = {
@@ -40,6 +41,7 @@ export default function MyOrdersScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(i) => i._id}
