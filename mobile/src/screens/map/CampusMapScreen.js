@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Icon from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
 import { CampusApi, campusUrl, campusThumb, campusPhoto, CATEGORY_ION, walkMinutes, DEFAULT_CAMPUS } from '../../api/campus';
+import { ScoreApi } from '../../api/score';
 import { layout, monoFamily, shadow } from '../../theme';
 
 const START_DEFAULT = 'main-gate';
@@ -35,9 +36,11 @@ export default function CampusMapScreen({ navigation, route }) {
   const [routeInfo, setRouteInfo] = useState(null); // { from, to, metres }
   const [photos, setPhotos] = useState(null); // [names] open in the viewer
   const [reloadKey, setReloadKey] = useState(0);
+  const [score, setScore] = useState(null);
 
   useEffect(() => {
     CampusApi.layout(campusId).then(setData).catch((e) => setError(e.message));
+    ScoreApi.me().then((s) => setScore(s.total)).catch(() => setScore(0));
   }, [campusId, reloadKey]);
 
   // The scene repaints itself when the app theme flips.
@@ -186,6 +189,11 @@ export default function CampusMapScreen({ navigation, route }) {
               <Text style={[styles.chipText, { color: t.accent }]}>Campus walks</Text>
             </TouchableOpacity>
           ) : null}
+          {/* Your Campus Score, one tap from the map */}
+          <TouchableOpacity style={[styles.chip, styles.chipAccent]} onPress={() => navigation.getParent()?.navigate('More', { screen: 'CampusScore' })} activeOpacity={0.85}>
+            <Ionicons name="trophy" size={12} color={t.accent} />
+            <Text style={[styles.chipText, { color: t.accent }]}>{score == null ? '…' : `${score} pts`}</Text>
+          </TouchableOpacity>
         </ScrollView>
 
         {showList ? (

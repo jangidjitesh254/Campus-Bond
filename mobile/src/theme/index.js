@@ -2,7 +2,7 @@
  * Campus Bond design system — "Ember".
  *
  * From the Claude Design handoff: near-black or warm-white grounds lit by a
- * violet and a coral glow, translucent glass cards, a violet gradient for the
+ * red brand glow, translucent glass cards, the Zomato-red primary for the
  * one action that matters on a screen, and Manrope everywhere.
  *
  * Both palettes share every key, so a screen reads `t.x` and repaints when
@@ -23,15 +23,16 @@ export const FONT = {
 
 // Shared accent ramps — identical in both modes (they sit on their own fills).
 export const gradients = {
-  accent: ['#6C4DFF', '#8C7CF0'],
-  avatar: ['#8C7CF0', '#5F4FCF'],
-  hero: ['#2B1F4A', '#4A3470'],
+  accent: ['#E23744', '#F25A66'],
+  avatar: ['#F0475A', '#B8202E'],
+  hero: ['#3A151B', '#7A1F2B'],
 };
 
 /** Light — "Home feed (Light)" and friends. */
 export const ink = {
-  primary: '#14141A', // solid pill buttons, active chips
+  primary: '#E23744', // Zomato red — pill buttons, active chips, the +
   onPrimary: '#FFFFFF',
+  ink: '#14141A', // the old solid ink, for things that must stay neutral
   text: '#14141A',
   textMuted: 'rgba(20,20,26,0.6)',
   textFaint: 'rgba(20,20,26,0.5)',
@@ -43,15 +44,15 @@ export const ink = {
   hairlineAlt: 'rgba(20,20,26,0.06)',
   borderSoft: 'rgba(20,20,26,0.12)', // chips, outlined pills
   field: '#EDEAE4',
-  accent: '#5B46D9', // violet as text: active tab, TODAY, See All
-  accentFill: '#6C4DFF', // violet as a fill (dots, tags, +)
-  accentSoft: 'rgba(108,77,255,0.14)',
+  accent: '#CB2A38', // red as text: active tab, TODAY, See All
+  accentFill: '#E23744', // red as a fill (dots, tags)
+  accentSoft: 'rgba(226,55,68,0.12)',
 
-  // glow blobs — violet top-right, cool blue bottom-left
-  glowA: '#6C4DFF',
-  glowB: '#4F7BFF',
-  glowAOpacity: 0.16,
-  glowBOpacity: 0.11,
+  // glow blobs — red top-right, soft rose bottom-left
+  glowA: '#E23744',
+  glowB: '#FF8A80',
+  glowAOpacity: 0.13,
+  glowBOpacity: 0.1,
   glass: 'rgba(255,255,255,0.75)',
   glassBorder: 'rgba(20,20,26,0.08)',
   barGlass: 'rgba(252,251,249,0.96)',
@@ -67,7 +68,7 @@ export const ink = {
   primaryDark: '#0A0A0D',
   primaryLight: 'rgba(20,20,26,0.55)',
   primarySoft: 'rgba(20,20,26,0.06)',
-  link: '#5B46D9',
+  link: '#CB2A38',
   danger: '#C1461E',
   dangerSoft: 'rgba(193,70,30,0.12)',
   success: '#1F7A5A',
@@ -75,9 +76,9 @@ export const ink = {
   warning: '#A85D14',
   amber: '#A85D14',
   amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#E0507D',
-  avatarBg: 'rgba(108,77,255,0.16)',
-  avatarText: '#5B46D9',
+  like: '#E23744',
+  avatarBg: 'rgba(226,55,68,0.13)',
+  avatarText: '#CB2A38',
   avatarNeutral: '#E8E5DF',
   chatBg: '#F5F4F1',
   bubbleOut: '#14141A',
@@ -89,12 +90,11 @@ export const ink = {
   badgeEventFg: '#5B46D9',
   badgeNoticeBg: 'rgba(255,107,140,0.16)',
   badgeNoticeFg: '#C43C68',
-  ink: '#14141A',
   inkSoft: 'rgba(20,20,26,0.55)',
   sky: '#5B46D9',
   sun: '#A85D14',
   grape: '#5B46D9',
-  coral: '#5B46D9',
+  coral: '#CB2A38',
 };
 
 /** Per-kind colours for feed cards: foreground / text-on-fill / soft background / ring. */
@@ -106,8 +106,9 @@ export const kinds = {
 
 /** Dark — the primary artboards. */
 export const inkDark = {
-  primary: '#F6F5F3',
-  onPrimary: '#0A0A0D',
+  primary: '#E23744',
+  onPrimary: '#FFFFFF',
+  ink: '#F6F5F3',
   text: '#F6F5F3',
   textMuted: 'rgba(246,245,243,0.5)',
   textFaint: 'rgba(246,245,243,0.4)',
@@ -119,14 +120,14 @@ export const inkDark = {
   hairlineAlt: 'rgba(255,255,255,0.08)',
   borderSoft: 'rgba(255,255,255,0.1)',
   field: '#1E1E23',
-  accent: '#A99BFF',
-  accentFill: '#6C4DFF',
-  accentSoft: 'rgba(140,124,240,0.22)',
+  accent: '#FF6B75',
+  accentFill: '#E23744',
+  accentSoft: 'rgba(226,55,68,0.2)',
 
-  glowA: '#6C4DFF',
-  glowB: '#4F7BFF',
-  glowAOpacity: 0.4,
-  glowBOpacity: 0.26,
+  glowA: '#E23744',
+  glowB: '#FF8A80',
+  glowAOpacity: 0.32,
+  glowBOpacity: 0.16,
   glass: 'rgba(255,255,255,0.045)',
   glassBorder: 'rgba(255,255,255,0.09)',
   barGlass: 'rgba(22,21,27,0.96)',
@@ -142,7 +143,7 @@ export const inkDark = {
   primaryDark: '#F6F5F3',
   primaryLight: 'rgba(246,245,243,0.55)',
   primarySoft: 'rgba(255,255,255,0.08)',
-  link: '#A99BFF',
+  link: '#FF6B75',
   danger: '#FF7A5C',
   dangerSoft: 'rgba(255,122,92,0.16)',
   success: '#5FD3A0',
@@ -150,9 +151,9 @@ export const inkDark = {
   warning: '#FFB25C',
   amber: '#FFB25C',
   amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#FF7FA0',
-  avatarBg: 'rgba(140,124,240,0.22)',
-  avatarText: '#A99BFF',
+  like: '#FF6B75',
+  avatarBg: 'rgba(226,55,68,0.22)',
+  avatarText: '#FF8A93',
   avatarNeutral: '#232028',
   chatBg: '#0A0A0D',
   bubbleOut: '#F6F5F3',
@@ -164,12 +165,11 @@ export const inkDark = {
   badgeEventFg: '#A99BFF',
   badgeNoticeBg: 'rgba(255,107,140,0.16)',
   badgeNoticeFg: '#FF7FA0',
-  ink: '#F6F5F3',
   inkSoft: 'rgba(246,245,243,0.55)',
   sky: '#A99BFF',
   sun: '#FFB25C',
   grape: '#A99BFF',
-  coral: '#A99BFF',
+  coral: '#FF6B75',
 };
 
 export const kindsDark = {
@@ -226,5 +226,5 @@ export const font = {
 export const shadow = {
   card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 0 },
   soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 0 },
-  glow: { shadowColor: '#6C4DFF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
+  glow: { shadowColor: '#E23744', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
 };
