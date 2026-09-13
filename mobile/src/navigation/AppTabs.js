@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
@@ -82,7 +82,9 @@ function TabBar({ state, navigation }) {
   return (
     <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
       <View style={styles.bar}>
-        <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        {/* Real blur only exists on iOS; on Android the bar is simply near-opaque
+            so the feed never shows through the labels. */}
+        {Platform.OS === 'ios' ? <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} /> : null}
         <View style={[StyleSheet.absoluteFill, styles.barTint]} />
 
         {BAR.map((item) => {
@@ -91,7 +93,7 @@ function TabBar({ state, navigation }) {
               <View key="fab" style={styles.item}>
                 <TouchableOpacity activeOpacity={0.85} onPress={() => setComposeOpen(true)} style={styles.fabWrap}>
                   <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fab}>
-                    <Icon name="plus" size={22} color="#FFFFFF" strokeWidth={2.2} />
+                    <Icon name="plus" size={20} color="#FFFFFF" strokeWidth={2.2} />
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -170,22 +172,22 @@ function makeStyles(t, isDark) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderRadius: 30,
+      borderRadius: 28,
       borderWidth: 1,
       borderColor: t.borderSoft,
-      paddingVertical: 12,
-      paddingHorizontal: 18,
+      paddingTop: 10,
+      paddingBottom: 10,
+      paddingHorizontal: 14,
       overflow: 'hidden',
-      ...shadow.card,
     },
-    barTint: { backgroundColor: t.barGlass, borderRadius: 30 },
-    item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-    label: { fontSize: 10.5, fontWeight: '600' },
-    labelOn: { fontWeight: '700' },
+    barTint: { backgroundColor: t.barGlass, borderRadius: 28 },
+    item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+    label: { fontSize: 10.5, fontWeight: '500' },
+    labelOn: { fontWeight: '600' },
 
-    // Coral disc lifted out of the bar.
-    fabWrap: { marginTop: -26, borderRadius: 24 },
-    fab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', ...shadow.glow },
+    // Violet disc sitting level with the icons, not bursting out of the bar.
+    fabWrap: { marginTop: -4, borderRadius: 22 },
+    fab: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', ...shadow.glow },
 
     composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,20,26,0.28)' },
     composeStack: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },

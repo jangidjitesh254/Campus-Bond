@@ -6,7 +6,7 @@ import { spacing, radius, shadow } from '../theme';
 
 const { width } = Dimensions.get('window');
 // Literals only — this runs at module load, before any theme exists.
-const CONFETTI_COLORS = ['#FF6B45', '#FF9153', '#6C4DFF', '#A99BFF', '#FF7FA0', '#FFB25C'];
+const CONFETTI_COLORS = ['#6C4DFF', '#8C7CF0', '#A99BFF', '#4F7BFF', '#FF7FA0', '#5FD3A0'];
 
 /**
  * A one-second celebration burst shown after a delightful action

@@ -117,11 +117,11 @@ function makeStyles(t, isDark) {
     buy: {
       position: 'absolute', bottom: 10, alignSelf: 'center',
       paddingHorizontal: 20, paddingVertical: 6, borderRadius: 16,
-      borderWidth: 1.4, borderColor: '#FF9153', backgroundColor: 'rgba(10,10,13,0.45)',
+      borderWidth: 1.4, borderColor: '#A99BFF', backgroundColor: 'rgba(10,10,13,0.45)',
     },
-    buyFilled: { backgroundColor: '#FF6B45', borderColor: '#FF6B45' },
+    buyFilled: { backgroundColor: '#6C4DFF', borderColor: '#6C4DFF' },
     buyMuted: { borderColor: 'rgba(255,255,255,0.25)' },
-    buyText: { fontSize: 12, fontWeight: '800', color: '#FF9153' },
+    buyText: { fontSize: 12, fontWeight: '800', color: '#A99BFF' },
 
     priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     price: { fontSize: 16, fontWeight: '800', color: t.text },

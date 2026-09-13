@@ -115,7 +115,7 @@ function makeStyles(t, c, isDark) {
     age: { fontSize: 12, fontWeight: '600', color: t.textDim },
     pending: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: t.accentSoft },
     pendingText: { fontSize: 10.5, fontWeight: '800', color: t.accent },
-    title: { fontSize: 19, fontWeight: '800', color: t.text },
+    title: { fontSize: 18, fontWeight: '600', color: t.text },
     desc: { fontSize: 14, lineHeight: 19.5, fontWeight: '600', color: t.textMuted, marginTop: -4 },
     divider: { height: 1, backgroundColor: t.hairline },
     author: { flexDirection: 'row', alignItems: 'center', gap: 10 },

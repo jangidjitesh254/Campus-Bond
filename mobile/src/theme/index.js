@@ -2,7 +2,7 @@
  * Campus Bond design system — "Ember".
  *
  * From the Claude Design handoff: near-black or warm-white grounds lit by a
- * violet and a coral glow, translucent glass cards, a coral gradient for the
+ * violet and a coral glow, translucent glass cards, a violet gradient for the
  * one action that matters on a screen, and Manrope everywhere.
  *
  * Both palettes share every key, so a screen reads `t.x` and repaints when
@@ -23,7 +23,7 @@ export const FONT = {
 
 // Shared accent ramps — identical in both modes (they sit on their own fills).
 export const gradients = {
-  accent: ['#FF6B45', '#FF9153'],
+  accent: ['#6C4DFF', '#8C7CF0'],
   avatar: ['#8C7CF0', '#5F4FCF'],
   hero: ['#2B1F4A', '#4A3470'],
 };
@@ -43,18 +43,18 @@ export const ink = {
   hairlineAlt: 'rgba(20,20,26,0.06)',
   borderSoft: 'rgba(20,20,26,0.12)', // chips, outlined pills
   field: '#EDEAE4',
-  accent: '#D2491F', // coral as text: active tab, TODAY, See All
-  accentFill: '#FF6B45', // coral as a fill (dots, tags)
-  accentSoft: 'rgba(255,107,69,0.14)',
+  accent: '#5B46D9', // violet as text: active tab, TODAY, See All
+  accentFill: '#6C4DFF', // violet as a fill (dots, tags, +)
+  accentSoft: 'rgba(108,77,255,0.14)',
 
-  // glow blobs
+  // glow blobs — violet top-right, cool blue bottom-left
   glowA: '#6C4DFF',
-  glowB: '#FF6B45',
+  glowB: '#4F7BFF',
   glowAOpacity: 0.16,
-  glowBOpacity: 0.13,
+  glowBOpacity: 0.11,
   glass: 'rgba(255,255,255,0.75)',
   glassBorder: 'rgba(20,20,26,0.08)',
-  barGlass: 'rgba(255,255,255,0.78)',
+  barGlass: 'rgba(252,251,249,0.96)',
 
   // --- parity aliases used across screens ---
   bg: '#F5F4F1',
@@ -67,15 +67,15 @@ export const ink = {
   primaryDark: '#0A0A0D',
   primaryLight: 'rgba(20,20,26,0.55)',
   primarySoft: 'rgba(20,20,26,0.06)',
-  link: '#D2491F',
+  link: '#5B46D9',
   danger: '#C1461E',
-  dangerSoft: 'rgba(255,107,69,0.14)',
+  dangerSoft: 'rgba(193,70,30,0.12)',
   success: '#1F7A5A',
   successSoft: 'rgba(40,170,120,0.14)',
   warning: '#A85D14',
   amber: '#A85D14',
   amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#FF6B45',
+  like: '#E0507D',
   avatarBg: 'rgba(108,77,255,0.16)',
   avatarText: '#5B46D9',
   avatarNeutral: '#E8E5DF',
@@ -87,20 +87,20 @@ export const ink = {
   badgeTeamFg: 'rgba(20,20,26,0.72)',
   badgeEventBg: 'rgba(108,77,255,0.16)',
   badgeEventFg: '#5B46D9',
-  badgeNoticeBg: 'rgba(255,169,69,0.16)',
-  badgeNoticeFg: '#A85D14',
+  badgeNoticeBg: 'rgba(255,107,140,0.16)',
+  badgeNoticeFg: '#C43C68',
   ink: '#14141A',
   inkSoft: 'rgba(20,20,26,0.55)',
   sky: '#5B46D9',
   sun: '#A85D14',
   grape: '#5B46D9',
-  coral: '#D2491F',
+  coral: '#5B46D9',
 };
 
 /** Per-kind colours for feed cards: foreground / text-on-fill / soft background / ring. */
 export const kinds = {
   team: { fg: 'rgba(20,20,26,0.72)', on: '#FFFFFF', bg: 'rgba(20,20,26,0.06)', ring: 'rgba(20,20,26,0.12)' },
-  lost: { fg: '#A85D14', on: '#FFFFFF', bg: 'rgba(255,169,69,0.16)', ring: 'rgba(255,169,69,0.35)' },
+  lost: { fg: '#C43C68', on: '#FFFFFF', bg: 'rgba(255,107,140,0.16)', ring: 'rgba(255,107,140,0.35)' },
   notice: { fg: '#5B46D9', on: '#FFFFFF', bg: 'rgba(108,77,255,0.16)', ring: 'rgba(108,77,255,0.3)' },
 };
 
@@ -119,17 +119,17 @@ export const inkDark = {
   hairlineAlt: 'rgba(255,255,255,0.08)',
   borderSoft: 'rgba(255,255,255,0.1)',
   field: '#1E1E23',
-  accent: '#FF6B45',
-  accentFill: '#FF6B45',
-  accentSoft: 'rgba(255,107,69,0.16)',
+  accent: '#A99BFF',
+  accentFill: '#6C4DFF',
+  accentSoft: 'rgba(140,124,240,0.22)',
 
   glowA: '#6C4DFF',
-  glowB: '#FF6B45',
+  glowB: '#4F7BFF',
   glowAOpacity: 0.4,
-  glowBOpacity: 0.32,
+  glowBOpacity: 0.26,
   glass: 'rgba(255,255,255,0.045)',
   glassBorder: 'rgba(255,255,255,0.09)',
-  barGlass: 'rgba(24,22,29,0.72)',
+  barGlass: 'rgba(22,21,27,0.96)',
 
   // --- parity aliases ---
   bg: '#0A0A0D',
@@ -142,15 +142,15 @@ export const inkDark = {
   primaryDark: '#F6F5F3',
   primaryLight: 'rgba(246,245,243,0.55)',
   primarySoft: 'rgba(255,255,255,0.08)',
-  link: '#FF6B45',
+  link: '#A99BFF',
   danger: '#FF7A5C',
-  dangerSoft: 'rgba(255,107,69,0.16)',
+  dangerSoft: 'rgba(255,122,92,0.16)',
   success: '#5FD3A0',
   successSoft: 'rgba(60,200,140,0.16)',
   warning: '#FFB25C',
   amber: '#FFB25C',
   amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#FF6B45',
+  like: '#FF7FA0',
   avatarBg: 'rgba(140,124,240,0.22)',
   avatarText: '#A99BFF',
   avatarNeutral: '#232028',
@@ -162,19 +162,19 @@ export const inkDark = {
   badgeTeamFg: 'rgba(246,245,243,0.7)',
   badgeEventBg: 'rgba(140,124,240,0.22)',
   badgeEventFg: '#A99BFF',
-  badgeNoticeBg: 'rgba(255,169,69,0.16)',
-  badgeNoticeFg: '#FFB25C',
+  badgeNoticeBg: 'rgba(255,107,140,0.16)',
+  badgeNoticeFg: '#FF7FA0',
   ink: '#F6F5F3',
   inkSoft: 'rgba(246,245,243,0.55)',
   sky: '#A99BFF',
   sun: '#FFB25C',
   grape: '#A99BFF',
-  coral: '#FF6B45',
+  coral: '#A99BFF',
 };
 
 export const kindsDark = {
   team: { fg: 'rgba(246,245,243,0.7)', on: '#0A0A0D', bg: 'rgba(255,255,255,0.08)', ring: 'rgba(255,255,255,0.16)' },
-  lost: { fg: '#FFB25C', on: '#0A0A0D', bg: 'rgba(255,169,69,0.16)', ring: 'rgba(255,169,69,0.35)' },
+  lost: { fg: '#FF7FA0', on: '#0A0A0D', bg: 'rgba(255,107,140,0.16)', ring: 'rgba(255,107,140,0.35)' },
   notice: { fg: '#A99BFF', on: '#0A0A0D', bg: 'rgba(140,124,240,0.22)', ring: 'rgba(140,124,240,0.4)' },
 };
 
@@ -226,5 +226,5 @@ export const font = {
 export const shadow = {
   card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 0 },
   soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 0 },
-  glow: { shadowColor: '#FF6B45', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
+  glow: { shadowColor: '#6C4DFF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
 };

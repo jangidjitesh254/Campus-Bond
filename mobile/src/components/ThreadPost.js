@@ -4,7 +4,6 @@ import { Text } from './Text';
 import Icon from './Icon';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { shadow } from '../theme';
 
 export function handleOf(name) {
   return (name || 'student').toLowerCase().replace(/\s+/g, '');
@@ -124,10 +123,9 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.96} onPress={onOpen} onLongPress={onLongPress} delayLongPress={280}>
+      {/* kind · age, as plain tracked text — no pill */}
       <View style={styles.meta}>
-        <View style={[styles.badge, { backgroundColor: k.bg }]}>
-          <Text style={[styles.badgeText, { color: k.fg }]}>{meta.label}</Text>
-        </View>
+        <Text style={[styles.kind, { color: k.fg }]}>{meta.label}</Text>
         <Text style={styles.age}>{timeAgo(post.createdAt)}</Text>
       </View>
 
@@ -135,12 +133,10 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
 
       {due ? (
         <View style={styles.due}>
-          <Icon name="calendar" size={14} color={due.past ? t.textDim : due.soon ? t.accent : t.textFaint} strokeWidth={1.6} />
+          <Icon name="calendar" size={13} color={due.past ? t.textDim : due.soon ? t.accent : t.textFaint} strokeWidth={1.6} />
           <Text style={[styles.dueText, due.past && styles.duePast, due.soon && !due.past && styles.dueSoon]}>{due.text}</Text>
         </View>
       ) : null}
-
-      <View style={styles.divider} />
 
       <View style={styles.author}>
         <View style={[styles.ava, { backgroundColor: avaBg }]}>
@@ -175,40 +171,40 @@ export default function ThreadPost({ post, onOpen, onLongPress, onInterested, on
   );
 }
 
+/** Minimal: one quiet surface, a hairline edge, no pills except the action. */
 function makeStyles(t, kinds, isDark) {
   return StyleSheet.create({
     card: {
       backgroundColor: t.glass,
-      borderRadius: 26,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: t.glassBorder,
-      padding: 18,
-      marginBottom: 14,
-      gap: 12,
-      ...shadow.card,
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 12,
+      marginBottom: 12,
+      gap: 10,
     },
     meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    badge: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10 },
-    badgeText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
-    age: { fontSize: 12, fontWeight: '600', color: t.textDim },
-    title: { fontSize: 17, lineHeight: 22, fontWeight: '800', color: t.text },
-    due: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    dueText: { fontSize: 13, fontWeight: '600', color: t.textFaint },
-    dueSoon: { color: t.accent },
+    kind: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1 },
+    age: { fontSize: 12, fontWeight: '500', color: t.textDim },
+    title: { fontSize: 16, lineHeight: 22, fontWeight: '600', color: t.text },
+    due: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -2 },
+    dueText: { fontSize: 12.5, fontWeight: '500', color: t.textFaint },
+    dueSoon: { color: t.accent, fontWeight: '600' },
     duePast: { color: t.textDim },
-    divider: { height: 1, backgroundColor: t.hairline },
-    author: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    ava: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    avaText: { fontSize: 12, fontWeight: '800' },
-    name: { fontSize: 14, fontWeight: '700', color: t.text },
-    sub: { fontSize: 12, fontWeight: '600', color: t.textDim, marginTop: 1 },
+    author: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 2 },
+    ava: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    avaText: { fontSize: 11, fontWeight: '700' },
+    name: { fontSize: 13, fontWeight: '600', color: t.text },
+    sub: { fontSize: 11.5, fontWeight: '500', color: t.textDim, marginTop: 1 },
     actions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 2 },
-    pill: { borderRadius: 20, paddingVertical: 9, paddingHorizontal: 20, borderWidth: 1.5 },
-    pillSolid: { backgroundColor: t.primary, borderColor: t.primary, ...(isDark ? {} : shadow.soft) },
+    pill: { borderRadius: 999, paddingVertical: 7, paddingHorizontal: 16, borderWidth: 1 },
+    pillSolid: { backgroundColor: t.primary, borderColor: t.primary },
     pillOutline: { backgroundColor: 'transparent', borderColor: t.borderSoft },
-    pillText: { fontSize: 13, fontWeight: '800' },
-    count: { fontSize: 13, fontWeight: '600', color: t.textFaint },
+    pillText: { fontSize: 12.5, fontWeight: '700' },
+    count: { fontSize: 12.5, fontWeight: '500', color: t.textFaint },
     shareBtn: { marginLeft: 'auto' },
-    share: { fontSize: 13, fontWeight: '700', color: t.textMuted },
+    share: { fontSize: 12.5, fontWeight: '600', color: t.textMuted },
   });
 }
