@@ -73,47 +73,69 @@ function toPost(kind, d) {
 /*  Post row                                                           */
 /* ------------------------------------------------------------------ */
 
-/** Square club tile — logo on top, name + members, Join button. Used in the rail and the Clubs grid. */
+const CLUB_TINT = {
+  tech: { fg: '#6A4BC4', bg: '#EEE8FA' },
+  cultural: { fg: '#C6552E', bg: '#FBEAE2' },
+  sports: { fg: '#1E7A43', bg: '#E4F3E9' },
+  academic: { fg: '#2F6FE0', bg: '#E6EEFC' },
+  arts: { fg: '#C6892E', bg: '#FBEFD5' },
+  social: { fg: '#C6552E', bg: '#FBEAE2' },
+  other: { fg: '#6B7B72', bg: '#EAF1E6' },
+};
+
+/**
+ * Club card — a category-tinted band with the logo hanging off its bottom
+ * edge, then name, members and a Join pill. Used in the rail and the Clubs grid.
+ */
 function ClubTile({ post, onOpen, onJoin, busy, width }) {
-  const k = KIND.club;
+  const tint = CLUB_TINT[post.raw.category] || CLUB_TINT.other;
   const uri = imageUrl(post.image);
+  const done = post.joined || post.requested;
   return (
     <TouchableOpacity style={[styles.tile, { width }]} activeOpacity={0.9} onPress={onOpen}>
-      <View style={[styles.tileMedia, { height: width, backgroundColor: k.bg }]}>
-        {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Avatar name={post.text} size={Math.round(width * 0.42)} bg={colors.surface} textColor={k.fg} />}
-        <View style={[styles.tileTag, { backgroundColor: k.fg }]}>
-          <Text style={styles.tileTagText}>{post.label}</Text>
+      <View style={[styles.tileBand, { backgroundColor: tint.bg }]}>
+        <View style={[styles.tileBlob, { backgroundColor: tint.fg }]} />
+        <View style={[styles.tileTag, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tileTagText, { color: tint.fg }]}>{post.label}</Text>
         </View>
       </View>
-      <Text style={styles.tileName} numberOfLines={1}>{post.text}</Text>
-      <Text style={styles.tileMeta} numberOfLines={1}>{post.meta}</Text>
-      <TouchableOpacity
-        style={[styles.joinBtn, post.joined || post.requested ? styles.joinBtnDone : styles.joinBtnGo]}
-        onPress={onJoin}
-        disabled={busy}
-        activeOpacity={0.85}
-      >
-        <Text style={[styles.joinText, { color: post.joined || post.requested ? colors.text : colors.onPrimary }]}>{post.joined ? 'Joined' : post.requested ? 'Requested' : 'Join'}</Text>
-      </TouchableOpacity>
+      <View style={styles.tileLogo}>
+        {uri ? <Image source={{ uri }} style={styles.tileLogoImg} resizeMode="cover" /> : <Avatar name={post.text} size={44} bg={tint.bg} textColor={tint.fg} />}
+      </View>
+      <View style={styles.tileBody}>
+        <Text style={styles.tileName} numberOfLines={1}>{post.text}</Text>
+        <View style={styles.tileMetaRow}>
+          <Ionicons name="people-outline" size={12} color={colors.textMuted} />
+          <Text style={styles.tileMeta} numberOfLines={1}>{post.meta}</Text>
+        </View>
+        <TouchableOpacity style={[styles.joinBtn, done ? styles.joinBtnDone : styles.joinBtnGo]} onPress={onJoin} disabled={busy} activeOpacity={0.85}>
+          {post.joined ? <Ionicons name="checkmark" size={13} color={colors.text} /> : null}
+          <Text style={[styles.joinText, { color: done ? colors.text : colors.onPrimary }]}>{post.joined ? 'Joined' : post.requested ? 'Requested' : 'Join'}</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
 
-const TILE = 148;
+const TILE = 156;
 const GRID_GAP = 12;
 const gridTile = Math.floor((Dimensions.get('window').width - 16 * 2 - GRID_GAP) / 2);
 
-/** Horizontal rail with a titled header — used for clubs and market picks. */
-function Rail({ icon, tint, title, onSeeAll, children }) {
+/** Horizontal rail in its own card — tinted icon, title, subtitle and a "See all" pill. */
+function Rail({ icon, tint, bg, title, subtitle, onSeeAll, children }) {
   return (
     <View style={styles.rail}>
       <View style={styles.railHead}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Ionicons name={icon} size={15} color={tint} />
-          <Text style={styles.railTitle}>{title}</Text>
+        <View style={[styles.railIcon, { backgroundColor: bg }]}>
+          <Ionicons name={icon} size={16} color={tint} />
         </View>
-        <TouchableOpacity onPress={onSeeAll} hitSlop={8}>
-          <Text style={styles.railLink}>See all</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.railTitle}>{title}</Text>
+          {subtitle ? <Text style={styles.railSub} numberOfLines={1}>{subtitle}</Text> : null}
+        </View>
+        <TouchableOpacity style={styles.railLink} onPress={onSeeAll} hitSlop={8} activeOpacity={0.7}>
+          <Text style={styles.railLinkText}>See all</Text>
+          <Ionicons name="chevron-forward" size={13} color={colors.text} />
         </TouchableOpacity>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railScroll}>
@@ -123,35 +145,40 @@ function Rail({ icon, tint, title, onSeeAll, children }) {
   );
 }
 
-/** E-commerce product card: square photo, price, title, condition, seller, Ask button. */
-function ProductCard({ post, width, onOpen, onShare }) {
-  const k = KIND.market;
+/** Product card: photo with a price tag and a heart, then title, condition and seller. */
+function ProductCard({ post, width, onOpen, onLike }) {
   const r = post.raw;
   const uri = imageUrl(post.image);
+  const liked = !!r.isLiked;
   return (
     <TouchableOpacity style={[styles.product, { width }]} activeOpacity={0.9} onPress={onOpen}>
-      <View style={[styles.productMedia, { height: width }, post.sold && { opacity: 0.5 }]}>
-        {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <GhostMark width={Math.round(width * 0.3)} color={colors.surfaceHi} bg={colors.surfaceMuted} variant="cool" />}
-        <TouchableOpacity style={styles.productShare} onPress={onShare} hitSlop={8}>
-          <Ionicons name="paper-plane-outline" size={15} color={colors.text} />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.productPriceRow}>
-        <Text style={[styles.productPrice, { color: k.fg }]}>₹{r.price}</Text>
-        <Text style={styles.productCond}>{CONDITION[r.condition] || 'Good'}</Text>
-      </View>
-      <Text style={styles.productTitle} numberOfLines={2}>{post.text}</Text>
-      <Text style={styles.productSeller} numberOfLines={1}>by {handleOf(post.owner.name)} · {timeAgo(post.at)}</Text>
-      {post.sold ? (
-        <View style={[styles.askBtn, { borderColor: colors.border }]}>
-          <Text style={[styles.askText, { color: colors.textMuted }]}>Sold out</Text>
+      <View style={[styles.productMedia, { height: Math.round(width * 0.92) }]}>
+        {uri ? (
+          <Image source={{ uri }} style={[StyleSheet.absoluteFill, post.sold && { opacity: 0.45 }]} resizeMode="cover" />
+        ) : (
+          <GhostMark width={Math.round(width * 0.3)} color={colors.surfaceHi} bg={colors.surfaceMuted} variant="cool" />
+        )}
+        <View style={styles.productPrice}>
+          <Text style={styles.productPriceText}>₹{r.price}</Text>
         </View>
-      ) : (
-        <TouchableOpacity style={[styles.askBtn, { borderColor: k.fg }]} onPress={onOpen} activeOpacity={0.8}>
-          <Ionicons name="chatbubble-outline" size={14} color={k.fg} />
-          <Text style={[styles.askText, { color: k.fg }]}>Ask seller</Text>
+        <TouchableOpacity style={styles.productHeart} onPress={onLike} hitSlop={8} activeOpacity={0.8}>
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={16} color={liked ? colors.like : colors.text} />
         </TouchableOpacity>
-      )}
+        {post.sold ? (
+          <View style={styles.soldTag}>
+            <Text style={styles.soldText}>SOLD</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.productBody}>
+        <Text style={styles.productTitle} numberOfLines={2}>{post.text}</Text>
+        <View style={styles.productMetaRow}>
+          <View style={styles.condChip}>
+            <Text style={styles.condText}>{CONDITION[r.condition] || 'Good'}</Text>
+          </View>
+          <Text style={styles.productSeller} numberOfLines={1}>{handleOf(post.owner.name)}</Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -421,6 +448,17 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
+  // Heart a listing straight from the rail; the wishlist picks it up.
+  async function heart(post) {
+    buzz(() => Haptics.selectionAsync());
+    try {
+      const res = await MarketApi.like(post.id);
+      setFeed((prev) => prev.map((p) => (p.id === post.id ? { ...p, raw: { ...p.raw, isLiked: res.isLiked, likeCount: res.likeCount } } : p)));
+    } catch (e) {
+      Alert.alert('Oops', e.message);
+    }
+  }
+
   async function share(post) {
     try {
       await Share.share({ message: `${post.text}${post.body ? `\n\n${post.body}` : ''}\n\n— shared from Campus Bond` });
@@ -518,7 +556,7 @@ export default function HomeScreen({ navigation }) {
   const renderItem = ({ item }) => {
     if (item.kind === 'rail' && item.id === 'clubs') {
       return (
-        <Rail icon={KIND.club.icon} tint={KIND.club.fg} title="Clubs for you" onSeeAll={() => pickTab('club')}>
+        <Rail icon={KIND.club.icon} tint={KIND.club.fg} bg={KIND.club.bg} title="Clubs for you" subtitle={`${clubs.length} clubs on campus`} onSeeAll={() => pickTab('club')}>
           {clubs.map((c) => (
             <ClubTile key={c.id} post={c} width={TILE} busy={busy === c.id} onOpen={() => open(c)} onJoin={() => join(c)} />
           ))}
@@ -527,9 +565,9 @@ export default function HomeScreen({ navigation }) {
     }
     if (item.kind === 'rail') {
       return (
-        <Rail icon={KIND.market.icon} tint={KIND.market.fg} title="Fresh on Market" onSeeAll={() => pickTab('market')}>
+        <Rail icon={KIND.market.icon} tint={KIND.market.fg} bg={KIND.market.bg} title="Fresh on Market" subtitle="Second-hand, from students" onSeeAll={() => pickTab('market')}>
           {market.map((m) => (
-            <ProductCard key={m.id} post={m} width={TILE} onOpen={() => open(m)} onShare={() => share(m)} />
+            <ProductCard key={m.id} post={m} width={TILE} onOpen={() => open(m)} onLike={() => heart(m)} />
           ))}
         </Rail>
       );
@@ -539,7 +577,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.gridRow}>
           {item.items.map((c) =>
             c.kind === 'market' ? (
-              <ProductCard key={c.id} post={c} width={gridTile} onOpen={() => open(c)} onShare={() => share(c)} />
+              <ProductCard key={c.id} post={c} width={gridTile} onOpen={() => open(c)} onLike={() => heart(c)} />
             ) : (
               <ClubTile key={c.id} post={c} width={gridTile} busy={busy === c.id} onOpen={() => open(c)} onJoin={() => join(c)} />
             )
@@ -570,7 +608,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   const Compose = (
-    <TouchableOpacity style={styles.compose} activeOpacity={0.8} onPress={() => navigation.getParent()?.getParent()?.navigate('Compose')}>
+    <TouchableOpacity style={[styles.card, styles.compose]} activeOpacity={0.8} onPress={() => navigation.getParent()?.getParent()?.navigate('Compose')}>
       <Avatar name={user?.name} size={40} />
       <Text style={styles.composeText}>What's happening on campus?</Text>
       <View style={styles.composeBtn}>
@@ -633,12 +671,11 @@ export default function HomeScreen({ navigation }) {
           data={visible}
           keyExtractor={(p) => `${p.kind}:${p.id}`}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => (tab === 'club' || tab === 'market' ? null : <View style={styles.hairline} />)}
+          ItemSeparatorComponent={() => (tab === 'club' || tab === 'market' ? null : <View style={styles.gap} />)}
           ListHeaderComponent={
             <View>
               {tab === 'all' ? <AnnouncementBanner items={news} onPress={openAnnouncement} /> : null}
               {Compose}
-              <View style={styles.hairline} />
             </View>
           }
           ListEmptyComponent={Empty}
@@ -718,45 +755,60 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
   tabLine: { height: 2, borderRadius: 1, backgroundColor: 'transparent' },
 
-  list: { paddingBottom: layout.tabBarSpace + 16 },
+  list: { paddingBottom: layout.tabBarSpace + 16, backgroundColor: colors.bg, flexGrow: 1 },
   hairline: { height: HAIRLINE, backgroundColor: colors.border },
+  gap: { height: 10 },
+  // Every feed block is a white card on the pale canvas.
+  card: { marginHorizontal: 12, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
 
-  compose: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
+  compose: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, marginTop: 8, marginBottom: 10 },
   composeText: { flex: 1, fontSize: 15, color: colors.textMuted },
   composeBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.border },
   composeBtnText: { fontSize: 13.5, fontWeight: '700', color: colors.text },
 
-  post: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  post: { flexDirection: 'row', paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12, marginHorizontal: 12, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
   gutter: { width: 40, alignItems: 'center', marginRight: 12 },
-  rail: { paddingVertical: 14 },
-  railHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
-  railTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  railLink: { fontSize: 13.5, fontWeight: '600', color: colors.link },
-  railScroll: { paddingHorizontal: 16, gap: GRID_GAP },
-  gridRow: { flexDirection: 'row', gap: GRID_GAP, paddingHorizontal: 16, paddingTop: GRID_GAP },
+  rail: { marginHorizontal: 12, paddingVertical: 14, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
+  railHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, marginBottom: 12 },
+  railIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  railTitle: { fontSize: 15.5, fontWeight: '700', color: colors.text },
+  railSub: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  railLink: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingLeft: 10, paddingRight: 7, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.surfaceMuted },
+  railLinkText: { fontSize: 12.5, fontWeight: '700', color: colors.text },
+  railScroll: { paddingHorizontal: 14, gap: GRID_GAP },
+  gridRow: { flexDirection: 'row', gap: GRID_GAP, paddingHorizontal: 12, paddingTop: GRID_GAP },
 
-  // Product card (e-commerce)
-  product: { gap: 3 },
-  productMedia: { width: '100%', borderRadius: 14, overflow: 'hidden', backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  productShare: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
-  productPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  productPrice: { fontSize: 17, fontWeight: '800' },
-  productCond: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
+  // Product card
+  product: { borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  productMedia: { width: '100%', backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  productPrice: { position: 'absolute', left: 8, bottom: 8, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.surface, ...shadow.soft },
+  productPriceText: { fontSize: 13.5, fontWeight: '800', color: colors.text },
+  productHeart: { position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
+  soldTag: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.text },
+  soldText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: colors.surface },
+  productBody: { padding: 10, gap: 6 },
   productTitle: { fontSize: 13.5, fontWeight: '600', color: colors.text, lineHeight: 18, height: 36 },
-  productSeller: { fontSize: 12, color: colors.textMuted },
-  askBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1.2, borderRadius: 999, paddingVertical: 7, marginTop: 6 },
-  askText: { fontSize: 13, fontWeight: '700' },
+  productMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  condChip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: colors.surfaceMuted },
+  condText: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
+  productSeller: { flex: 1, fontSize: 11.5, color: colors.textMuted },
 
-  tile: { gap: 4 },
-  tileMedia: { width: '100%', borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  tileTag: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-  tileTagText: { fontSize: 10.5, fontWeight: '700', color: colors.onPrimary, letterSpacing: 0.3 },
+  // Club tile
+  tile: { borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  tileBand: { height: 58, overflow: 'hidden' },
+  tileBlob: { position: 'absolute', width: 90, height: 90, borderRadius: 45, right: -30, top: -45, opacity: 0.16 },
+  tileTag: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
+  tileTagText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.3 },
+  tileLogo: { marginTop: -24, marginLeft: 10, width: 50, height: 50, borderRadius: 25, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.surface, ...shadow.soft },
+  tileLogoImg: { width: 44, height: 44, borderRadius: 22 },
+  tileBody: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 10, gap: 4 },
   tileName: { fontSize: 14, fontWeight: '700', color: colors.text },
-  tileMeta: { fontSize: 12.5, color: colors.textMuted, marginBottom: 4 },
-  joinBtn: { alignItems: 'center', borderRadius: 999, paddingVertical: 7 },
+  tileMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  tileMeta: { fontSize: 12, color: colors.textMuted },
+  joinBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 999, paddingVertical: 7 },
   joinBtnGo: { backgroundColor: colors.primary },
   joinBtnDone: { backgroundColor: colors.surfaceMuted, borderWidth: HAIRLINE, borderColor: colors.border },
-  joinText: { fontSize: 13.5, fontWeight: '700' },
+  joinText: { fontSize: 13, fontWeight: '700' },
   kindDot: { position: 'absolute', right: -3, bottom: -3, width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   thread: { flex: 1, width: 2, borderRadius: 1, backgroundColor: colors.border, marginTop: 8, marginBottom: -4 },
   content: { flex: 1, minWidth: 0 },
@@ -787,7 +839,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   // Lost & Found (plain post, photo detached from the text)
-  plain: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  plain: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12, marginHorizontal: 12, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
   plainHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   plainTitle: { fontSize: 16.5, fontWeight: '700', color: colors.text, lineHeight: 22 },
   statusLine: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
