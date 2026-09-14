@@ -3,6 +3,16 @@ import { View, StyleSheet, Animated } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { colors } from '../theme';
 
+/** Faint one-colour ghost used as a watermark on empty media slots. `bg` is the colour behind it. */
+export function GhostMark({ width = 56, color = PALE, bg = '#fff', variant = 'smile' }) {
+  return (
+    <Svg width={width} height={(width * 120) / 100} viewBox="0 0 100 120">
+      <Path d={GHOST_PATH} fill={color} />
+      <Face variant={variant} ink={color} eye={bg} mouth={bg} />
+    </Svg>
+  );
+}
+
 /**
  * Campus Bond's ghost mascot — drawn entirely with SVG so it can be any size
  * and any expression. Used on onboarding and the auth screens.
@@ -17,7 +27,7 @@ export const GHOST_PATH =
   'M10 50 A40 40 0 0 1 90 50 V100 A13.34 13.34 0 0 1 63.33 100 A13.34 13.34 0 0 1 36.66 100 A13.34 13.34 0 0 1 10 100 Z';
 
 /** The ghost's face. `variant` picks an expression. */
-export function Face({ variant = 'smile', cx = 50, cy = 60, s = 1, ink = INK, mouth = '#fff' }) {
+export function Face({ variant = 'smile', cx = 50, cy = 60, s = 1, ink = INK, mouth = '#fff', eye = '#fff' }) {
   const ex = 14 * s; // eye offset from centre
   const er = 11 * s; // eye white radius
   const pr = 5.5 * s; // pupil radius
@@ -27,7 +37,7 @@ export function Face({ variant = 'smile', cx = 50, cy = 60, s = 1, ink = INK, mo
   const smile = `M${cx - 8 * s} ${cy + 14 * s} Q${cx} ${cy + 22 * s} ${cx + 8 * s} ${cy + 14 * s}`;
   const openEye = (p) => (
     <>
-      <Circle cx={p.x} cy={p.y} r={er} fill="#fff" />
+      <Circle cx={p.x} cy={p.y} r={er} fill={eye} />
       <Circle cx={p.x} cy={p.y} r={pr} fill={ink} />
     </>
   );

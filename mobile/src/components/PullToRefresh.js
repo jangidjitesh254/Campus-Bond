@@ -1,12 +1,23 @@
 import React, { useRef, useState, useEffect, useCallback, cloneElement } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { View, Animated, StyleSheet, Platform } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { Ghost } from './Mascot';
 
 const TRIGGER = 72; // pull distance (px) that starts a refresh
 const MAX = 150; // how far the pull can go
 const HOLD = 76; // where the list sits while refreshing
-const SLOP = 8; // finger travel before a pull starts
+const SLOP = 6; // finger travel before a pull starts
+const SOFT = 140; // rubber-band constant — bigger = softer
+const STRETCH = 2.4; // mascot is drawn this many times larger and scaled *down*, so it never blurs
+
+/** Rubber-band: finger travel → list offset. */
+const ease = (dy) => MAX * (1 - Math.exp(-Math.max(0, dy - SLOP) / SOFT));
+/** Inverse: which finger travel gives this offset (used to spring to HOLD). */
+const unease = (y) => SLOP - SOFT * Math.log(1 - y / MAX);
+
+// Sample the curve so the native driver can interpolate it (no JS per frame).
+const CURVE_IN = [-1, 0, SLOP, 20, 40, 60, 90, 120, 160, 220, 300, 450, 700];
+const CURVE_OUT = CURVE_IN.map(ease);
 
 /**
  * Pull-to-refresh with the ghost mascot as the indicator.
@@ -14,22 +25,26 @@ const SLOP = 8; // finger travel before a pull starts
  * Wrap a FlatList/ScrollView and pass its "at top" state. Pulling down while
  * at the top stretches the mascot like elastic; release past the threshold to
  * run `onRefresh` (the mascot winks while it waits), then everything springs
- * back. Uses gesture-handler so the pan runs *alongside* the native scroll
- * (a plain PanResponder loses to Android's ScrollView).
+ * back.
  *
- *   <PullToRefresh top={<Header/>} atTop={atTop} onRefresh={load}>
+ * The finger drives an Animated value on the *native* thread (Animated.event
+ * + useNativeDriver), so the pull stays smooth even when JS is busy laying
+ * out the feed. The pan runs alongside the list's native scroll and is only
+ * enabled while the list is at the top. The child must be gesture-handler's
+ * FlatList/ScrollView (it receives `simultaneousHandlers` so both can run).
+ *
+ *   import { FlatList } from 'react-native-gesture-handler';
+ *   <PullToRefresh header={<Header/>} top={<Tabs/>} atTop={atTop} onRefresh={load}>
  *     <FlatList bounces={false} overScrollMode="never" onScroll={…setAtTop} />
  *   </PullToRefresh>
+ *
+ * On web (preview only) the gesture is skipped and the list renders plainly.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, top, ghostSize = 30, ghostTop = 9 }) {
-  const pull = useRef(new Animated.Value(0)).current;
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9 }) {
+  const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
-  const [pulling, setPulling] = useState(false);
-  const refreshingRef = useRef(false);
-  const pullingRef = useRef(false);
-  const atTopRef = useRef(atTop);
-  atTopRef.current = atTop;
+  const pan = useRef(null);
 
   // Wink loop while refreshing.
   useEffect(() => {
@@ -49,88 +64,84 @@ export default function PullToRefresh({ onRefresh, atTop, children, top, ghostSi
     };
   }, [refreshing, lid]);
 
-  const settle = useCallback((to) => Animated.spring(pull, { toValue: to, friction: 6, tension: 60, useNativeDriver: true }), [pull]);
+  const settle = useCallback((to) => Animated.spring(drag, { toValue: to, friction: 9, tension: 40, useNativeDriver: true }), [drag]);
 
   const runRefresh = useCallback(async () => {
-    refreshingRef.current = true;
     setRefreshing(true);
-    settle(HOLD).start();
+    settle(unease(HOLD)).start();
     try {
       await onRefresh?.();
     } finally {
       // Let the wink land, then bounce back.
       setTimeout(() => {
-        refreshingRef.current = false;
         setRefreshing(false);
         settle(0).start();
       }, 250);
     }
   }, [onRefresh, settle]);
 
-  // Rubber-band: the further you pull, the less it moves.
-  const eased = (dy) => MAX * (1 - Math.exp(-Math.max(0, dy) / 110));
+  const onGestureEvent = useRef(Animated.event([{ nativeEvent: { translationY: drag } }], { useNativeDriver: true })).current;
 
-  const setPull = (on) => {
-    pullingRef.current = on;
-    setPulling(on); // freezes the list while pulling so it can't scroll underneath
-  };
+  function onHandlerStateChange({ nativeEvent }) {
+    const { state, translationY } = nativeEvent;
+    if (state !== State.END && state !== State.CANCELLED && state !== State.FAILED) return;
+    if (state === State.END && ease(translationY) >= TRIGGER) runRefresh();
+    else settle(0).start();
+  }
 
-  // The pan runs simultaneously with the list's native scroll. It only "does"
-  // anything when the list is at the top and the finger is moving down.
-  const native = useRef(Gesture.Native()).current;
-  const pan = useRef(
-    Gesture.Pan()
-      .simultaneousWithExternalGesture(native)
-      .activeOffsetY([-SLOP, SLOP])
-      .runOnJS(true)
-      .onUpdate((e) => {
-        if (refreshingRef.current) return;
-        if (!pullingRef.current) {
-          if (!atTopRef.current || e.translationY <= SLOP) return;
-          setPull(true);
-        }
-        pull.setValue(eased(e.translationY - SLOP));
-      })
-      .onEnd((e) => {
-        if (!pullingRef.current) return;
-        setPull(false);
-        if (eased(e.translationY - SLOP) >= TRIGGER) runRefresh();
-        else settle(0).start();
-      })
-      .onFinalize(() => {
-        // Gesture cancelled mid-pull (e.g. system took over): snap back.
-        if (pullingRef.current) {
-          setPull(false);
-          settle(0).start();
-        }
-      })
-  ).current;
-
-  // Mascot: hangs down with the pull and stretches like elastic (taller than wide).
+  // List offset and mascot motion all derive from the finger, natively.
+  const pull = drag.interpolate({ inputRange: CURVE_IN, outputRange: CURVE_OUT, extrapolate: 'clamp' });
   const ghostY = pull.interpolate({ inputRange: [0, MAX], outputRange: [0, MAX * 0.55] });
-  const scaleX = pull.interpolate({ inputRange: [0, TRIGGER, MAX], outputRange: [1, 1.55, 1.9] });
-  const scaleY = pull.interpolate({ inputRange: [0, TRIGGER, MAX], outputRange: [1, 1.9, 2.5] });
+  const scaleX = pull.interpolate({ inputRange: [0, TRIGGER, MAX], outputRange: [1 / STRETCH, 1.5 / STRETCH, 1.8 / STRETCH] });
+  const scaleY = pull.interpolate({ inputRange: [0, TRIGGER, MAX], outputRange: [1 / STRETCH, 1.8 / STRETCH, 1] });
+  // The big ghost is scaled about its centre, so shift it up to keep the small one's position.
+  const bigW = ghostSize * STRETCH;
+  const bigH = (bigW * 120) / 100;
+  const smallH = (ghostSize * 120) / 100;
+  const ghostOffset = ghostTop - (bigH - smallH) / 2;
 
-  const list = React.isValidElement(children) ? cloneElement(children, { scrollEnabled: !pulling && !refreshing }) : children;
+  const list = React.isValidElement(children) ? cloneElement(children, { scrollEnabled: !refreshing, simultaneousHandlers: pan }) : children;
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.root}>
+        {header}
+        {top}
+        <View style={styles.listWrap}>{children}</View>
+        <View pointerEvents="none" style={[styles.ghost, { top: ghostTop }]}>
+          <Ghost width={ghostSize} />
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <GestureDetector gesture={pan}>
-      <View style={styles.root}>
-        {/* Fixed header/tabs (leave an empty slot where the mascot goes) */}
-        {top}
+    <PanGestureHandler
+      ref={pan}
+      enabled={atTop && !refreshing}
+      activeOffsetY={[-SLOP, SLOP]}
+      shouldCancelWhenOutside={false}
+      onGestureEvent={onGestureEvent}
+      onHandlerStateChange={onHandlerStateChange}
+    >
+      {/* Must be an Animated.View — that is what lets Animated.event receive the native gesture events */}
+      <Animated.View style={styles.root} collapsable={false}>
+        {/* Fixed header (leave an empty slot where the mascot goes) */}
+        {header}
 
-        {/* The list moves down with the pull; the mascot stretches into the gap */}
+        {/* Tabs + list move down together with the pull; the mascot stretches into the gap */}
         <View style={styles.listWrap}>
           <Animated.View style={[styles.list, { transform: [{ translateY: pull }] }]}>
-            <GestureDetector gesture={native}>{list}</GestureDetector>
+            {top}
+            {list}
           </Animated.View>
         </View>
 
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateY: ghostY }, { scaleX }, { scaleY }] }]}>
-          <Ghost width={ghostSize} lid={lid} />
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: ghostY }, { scaleX }, { scaleY }] }]}>
+          <Ghost width={bigW} lid={lid} />
         </Animated.View>
-      </View>
-    </GestureDetector>
+      </Animated.View>
+    </PanGestureHandler>
   );
 }
 

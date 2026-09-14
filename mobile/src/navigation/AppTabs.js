@@ -1,64 +1,170 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
-import Icon from '../components/Icon';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import * as Haptics from 'expo-haptics';
+import Avatar from '../components/Avatar';
 import HomeStack from './HomeStack';
 import PostStack from './PostStack';
 import LostStack from './LostStack';
 import ClubStack from './ClubStack';
 import SellStack from './SellStack';
+import SearchStack from './SearchStack';
+import ActivityStack from './ActivityStack';
 import ProfileStack from './ProfileStack';
-import { colors, shadow } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-const TABS = {
-  Home: { label: 'Home', icon: 'home', fill: true },
-  Post: { label: 'Post', icon: 'megaphone', fill: false },
-  Club: { label: 'Club', icon: 'users', fill: false },
-  Lost: { label: 'Lost', icon: 'search', fill: false },
-  Sell: { label: 'Sell', icon: 'tag', fill: false },
-  More: { label: 'More', icon: 'grid', fill: false },
-};
+/** Two little ghost eyes + a smile, drawn inside a filled icon so the mascot "lives" in it. */
+function Face({ cx = 12, cy = 12, s = 1 }) {
+  const eye = colors.surface;
+  return (
+    <>
+      <Circle cx={cx - 2.4 * s} cy={cy - 0.6 * s} r={1.55 * s} fill={eye} />
+      <Circle cx={cx + 2.4 * s} cy={cy - 0.6 * s} r={1.55 * s} fill={eye} />
+      <Circle cx={cx - 2.4 * s} cy={cy - 0.6 * s} r={0.7 * s} fill={colors.text} />
+      <Circle cx={cx + 2.4 * s} cy={cy - 0.6 * s} r={0.7 * s} fill={colors.text} />
+      <Path d={`M${cx - 1.6 * s} ${cy + 2.2 * s}q${1.6 * s} ${1.6 * s} ${3.2 * s} 0`} stroke={eye} strokeWidth={0.9 * s} strokeLinecap="round" fill="none" />
+    </>
+  );
+}
 
-/** Floating, rounded, frosted-glass tab bar (iOS-style). */
+/** Soft, rounded tab icons (Instagram-like). When active they fill in and the ghost peeks out. */
+function TabIcon({ name, on, size = 27 }) {
+  const c = on ? colors.text : colors.textMuted;
+  const stroke = { stroke: c, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  // Filled state keeps the same stroke so the silhouette stays the same size as the outline
+  const solid = { ...stroke, fill: c };
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {name === 'home' ? (
+        <>
+          {/* Pitched roof with a soft peak, no door — the ghost is the resident */}
+          <Path
+            d="M4.2 11.6c0-.6.3-1.2.8-1.6l5.9-4.8c.6-.5 1.6-.5 2.2 0l5.9 4.8c.5.4.8 1 .8 1.6v6.2c0 1.5-1.2 2.7-2.7 2.7H6.9c-1.5 0-2.7-1.2-2.7-2.7v-6.2Z"
+            {...(on ? solid : stroke)}
+          />
+          {on ? <Face cx={12} cy={13} s={0.95} /> : null}
+        </>
+      ) : name === 'search' ? (
+        <>
+          <Circle cx={10.8} cy={10.8} r={6.6} {...stroke} strokeWidth={on ? 2.4 : 1.9} />
+          <Path d="m16 16 4.4 4.4" {...stroke} strokeWidth={on ? 2.6 : 1.9} />
+          {on ? (
+            <>
+              <Circle cx={8.6} cy={10.6} r={1.2} fill={c} />
+              <Circle cx={13} cy={10.6} r={1.2} fill={c} />
+              <Path d="M9.4 13.3q1.4 1.2 2.8 0" stroke={c} strokeWidth={1} strokeLinecap="round" fill="none" />
+            </>
+          ) : null}
+        </>
+      ) : name === 'plus' ? (
+        <>
+          <Rect x={3.2} y={3.2} width={17.6} height={17.6} rx={5.5} {...stroke} stroke={colors.text} />
+          <Path d="M12 8.4v7.2M8.4 12h7.2" {...stroke} stroke={colors.text} strokeWidth={2} />
+        </>
+      ) : (
+        <>
+          <Path
+            d="M12 20.4c-.3 0-.6-.1-.8-.3C7.5 17.1 3 13.7 3 9.3 3 6.5 5.2 4.4 7.9 4.4c1.7 0 3.1.8 4.1 2.1 1-1.3 2.4-2.1 4.1-2.1 2.7 0 4.9 2.1 4.9 4.9 0 4.4-4.5 7.8-8.2 10.8-.2.2-.5.3-.8.3Z"
+            {...(on ? solid : stroke)}
+          />
+          {on ? <Face cx={12} cy={10.2} s={0.85} /> : null}
+        </>
+      )}
+    </Svg>
+  );
+}
+
+/** Jelly tap: squash → stretch → settle, like the mascot. The plus also does a quarter spin. */
+function useJelly() {
+  const t = useRef(new Animated.Value(0)).current;
+  const play = () => {
+    t.setValue(0);
+    Animated.sequence([
+      Animated.timing(t, { toValue: 1, duration: 90, useNativeDriver: true }),
+      Animated.spring(t, { toValue: 2, friction: 4, tension: 160, useNativeDriver: true }),
+    ]).start();
+  };
+  const scaleX = t.interpolate({ inputRange: [0, 1, 2], outputRange: [1, 1.25, 1] });
+  const scaleY = t.interpolate({ inputRange: [0, 1, 2], outputRange: [1, 0.75, 1] });
+  const translateY = t.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 3, 0] });
+  const rotate = t.interpolate({ inputRange: [0, 2], outputRange: ['0deg', '90deg'] });
+  return { play, scaleX, scaleY, translateY, rotate };
+}
+
+function TabButton({ onPress, spin, children }) {
+  const j = useJelly();
+  return (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() => {
+        j.play();
+        onPress();
+      }}
+      activeOpacity={0.7}
+      hitSlop={6}
+    >
+      <Animated.View style={{ transform: [{ translateY: j.translateY }, { scaleX: j.scaleX }, { scaleY: j.scaleY }, ...(spin ? [{ rotate: j.rotate }] : [])] }}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+/** What the bar shows, in order. `compose` is a button, not a route. */
+const BAR = [
+  { route: 'Home', icon: 'home' },
+  { route: 'Search', icon: 'search' },
+  { compose: true },
+  { route: 'Activity', icon: 'heart' },
+  { route: 'More', profile: true },
+];
+
+/** Flat, edge-to-edge bar with icon-only tabs — Instagram / Threads style. */
 function TabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const current = state.routes[state.index]?.name;
+
+  function go(name) {
+    const route = state.routes.find((r) => r.name === name);
+    if (!route) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (current !== name && !event.defaultPrevented) navigation.navigate(name);
+  }
+
+  function compose() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    navigation.getParent()?.navigate('Compose');
+  }
 
   return (
-    <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
-      <View style={styles.shadowWrap}>
-        <BlurView
-          intensity={38}
-          tint="light"
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-          style={styles.bar}
-        >
-          {state.routes.map((route, index) => {
-            const focused = state.index === index;
-            const meta = TABS[route.name] || { label: route.name, icon: 'home' };
-            const color = focused ? colors.primary : colors.textMuted;
-
-            function onPress() {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-            }
-
-            return (
-              <TouchableOpacity key={route.key} style={styles.item} onPress={onPress} activeOpacity={0.8}>
-                <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-                  <Icon name={meta.icon} size={21} color={color} filled={focused && meta.fill} strokeWidth={1.8} />
-                </View>
-                <Text style={[styles.label, { color, fontWeight: focused ? '700' : '500' }]} numberOfLines={1}>
-                  {meta.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </BlurView>
-      </View>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {BAR.map((item) => {
+        if (item.compose) {
+          return (
+            <TabButton key="compose" onPress={compose} spin>
+              <TabIcon name="plus" size={28} />
+            </TabButton>
+          );
+        }
+        const focused = current === item.route;
+        return (
+          <TabButton key={item.route} onPress={() => go(item.route)}>
+            {item.profile ? (
+              <View style={[styles.avatarRing, focused && styles.avatarRingOn]}>
+                <Avatar name={user?.name} size={24} />
+              </View>
+            ) : (
+              <TabIcon name={item.icon} on={focused} />
+            )}
+          </TabButton>
+        );
+      })}
     </View>
   );
 }
@@ -67,37 +173,29 @@ export default function AppTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="Search" component={SearchStack} />
+      <Tab.Screen name="Activity" component={ActivityStack} />
+      <Tab.Screen name="More" component={ProfileStack} />
+      {/* Not in the bar — reachable via navigate('Post' | 'Club' | 'Lost' | 'Sell', …) from the feed */}
       <Tab.Screen name="Post" component={PostStack} />
       <Tab.Screen name="Club" component={ClubStack} />
       <Tab.Screen name="Lost" component={LostStack} />
       <Tab.Screen name="Sell" component={SellStack} />
-      <Tab.Screen name="More" component={ProfileStack} />
     </Tab.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: 12, right: 12, alignItems: 'center' },
-  shadowWrap: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    ...shadow.card,
-    shadowOpacity: 0.14,
-  },
   bar: {
     flexDirection: 'row',
-    height: 64,
-    borderRadius: 28,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    paddingHorizontal: 4,
     alignItems: 'center',
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  iconWrap: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  iconWrapActive: { backgroundColor: 'rgba(21,83,46,0.16)' },
-  label: { fontSize: 9.5 },
+  item: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center' },
+  avatarRing: { padding: 2, borderRadius: 999, borderWidth: 1.5, borderColor: 'transparent' },
+  avatarRingOn: { borderColor: colors.text },
 });

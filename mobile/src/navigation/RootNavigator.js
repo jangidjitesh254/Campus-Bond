@@ -9,6 +9,7 @@ import OtpScreen from '../screens/auth/OtpScreen';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import SuccessOverlay from '../components/SuccessOverlay';
 import AppTabs from './AppTabs';
+import ComposeScreen from '../screens/ComposeScreen';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 
@@ -48,6 +49,16 @@ function AuthStack({ showIntro }) {
   );
 }
 
+/** Tabs plus full-screen sheets (composer) that must cover the floating tab bar. */
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack.Screen name="Tabs" component={AppTabs} />
+      <Stack.Screen name="Compose" component={ComposeScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+    </Stack.Navigator>
+  );
+}
+
 export default function RootNavigator() {
   const { isLoggedIn, booting, onboarded, celebration, endCelebration } = useAuth();
 
@@ -63,7 +74,7 @@ export default function RootNavigator() {
     <View style={{ flex: 1 }}>
       <NavigationContainer theme={navTheme}>
         {/* First launch: the intro screen sits in front of the login flow. */}
-        {isLoggedIn ? <AppTabs /> : <AuthStack showIntro={!onboarded} />}
+        {isLoggedIn ? <MainStack /> : <AuthStack showIntro={!onboarded} />}
       </NavigationContainer>
 
       {/* Login / signup success: plays above the auth→app switch, then fades out over Home. */}
