@@ -23,8 +23,8 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
-  const progress = useRef(new Animated.Value(0)).current; // native: position + fades
-  const widthAnim = useRef(new Animated.Value(0)).current; // JS: the bar's width
+  const progress = useRef(new Animated.Value(0)).current; // native: the bar's position
+  const widthAnim = useRef(new Animated.Value(0)).current; // JS: the bar's width, the sheet and result fades
   const [mounted, setMounted] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,15 +69,18 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
 
   const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [startY - topY, 0] });
   const barWidth = widthAnim.interpolate({ inputRange: [0, 1], outputRange: [startW, endW] });
-  const fade = progress.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
+  // Fades run on the JS value: a native-only opacity on a plain View can be
+  // flattened away on Android, which left the feed showing through the sheet.
+  const sheetOpacity = widthAnim;
+  const fade = widthAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Sheet that covers the feed */}
-      <Animated.View style={[styles.sheet, { opacity: progress }]} />
+      <Animated.View style={[styles.sheet, { opacity: sheetOpacity }]} collapsable={false} />
 
       {/* Results, under the bar */}
-      <Animated.View style={[styles.body, { opacity: fade }]} pointerEvents={open ? 'auto' : 'none'}>
+      <Animated.View style={[styles.body, { opacity: fade }]} collapsable={false} pointerEvents={open ? 'auto' : 'none'}>
         <SearchBody q={q} goTab={(tab, params) => { onClose(); goTab(tab, params); }} onLoading={setLoading} />
       </Animated.View>
 
@@ -114,7 +117,7 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
 const makeStyles = (colors) =>
   StyleSheet.create({
     sheet: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surface },
-    body: { ...StyleSheet.absoluteFillObject, paddingTop: 8 + BAR_H + 8 },
+    body: { ...StyleSheet.absoluteFillObject, paddingTop: 8 + BAR_H + 8, backgroundColor: colors.surface },
     barRow: { position: 'absolute', top: 8, left: SIDE, right: SIDE, flexDirection: 'row', alignItems: 'center' },
     bar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, height: BAR_H, borderRadius: 999, backgroundColor: colors.surfaceMuted },
     input: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: 0 },
