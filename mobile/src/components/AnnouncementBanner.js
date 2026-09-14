@@ -185,7 +185,7 @@ export default function AnnouncementBanner({ items, onPress }) {
 
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
-  wrap: { paddingTop: 12, paddingBottom: 6 },
+  wrap: { paddingTop: 10, paddingBottom: 6 },
   card: { height: HEIGHT, borderRadius: 20, overflow: 'hidden' },
   inner: { flex: 1, paddingHorizontal: 18, paddingVertical: 18, justifyContent: 'space-between' },
   blob: { position: 'absolute', width: 200, height: 200, borderRadius: 100, right: -80, top: -100 },

@@ -56,6 +56,11 @@ export default function SearchScreen({ navigation, route }) {
     return () => clearTimeout(timer);
   }, [q]);
 
+  // Home's search pill sends a fresh `focus` stamp so the keyboard comes up.
+  useEffect(() => {
+    if (route.params?.focus) setTimeout(() => inputRef.current?.focus(), 250);
+  }, [route.params?.focus]);
+
   const tabs = navigation.getParent();
   const goTab = (tab, params) => { Keyboard.dismiss(); tabs?.navigate(tab, params); };
 
