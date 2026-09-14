@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -14,6 +14,7 @@ import PullToRefresh from '../components/PullToRefresh';
 import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
 import SideMenu from '../components/SideMenu';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +22,7 @@ import { EventsApi } from '../api/events';
 import { LostApi, imageUrl } from '../api/lostfound';
 import { MarketApi } from '../api/market';
 import { ClubApi } from '../api/clubs';
+import { AnnouncementsApi } from '../api/announcements';
 import { colors, layout, shadow } from '../theme';
 
 /* ------------------------------------------------------------------ */
@@ -357,6 +359,7 @@ const Post = React.memo(
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const [feed, setFeed] = useState([]);
+  const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [atTop, setAtTop] = useState(true);
   const [tab, setTab] = useState('all');
@@ -365,12 +368,17 @@ export default function HomeScreen({ navigation }) {
   const feedSig = useRef('');
 
   const load = useCallback(async () => {
-    const [ev, lost, market, clubs] = await Promise.allSettled([
+    const [ev, lost, market, clubs, ann] = await Promise.allSettled([
       EventsApi.list({ limit: 30 }),
       LostApi.list({ limit: 20 }),
       MarketApi.list({ limit: 20 }),
       ClubApi.list(),
+      AnnouncementsApi.list(),
     ]);
+    if (ann.status === 'fulfilled') {
+      const list = ann.value || [];
+      setNews((prev) => (prev.map((a) => a._id + a.updatedAt).join() === list.map((a) => a._id + a.updatedAt).join() ? prev : list));
+    }
     const items = [];
     if (ev.status === 'fulfilled') items.push(...(ev.value.events || []).map((d) => toPost('event', d)));
     if (lost.status === 'fulfilled') items.push(...(lost.value.items || []).map((d) => toPost('lost', d)));
@@ -552,6 +560,15 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  // Banner taps: exams → past papers, hackathon → the Teams tab, else the link.
+  function openAnnouncement(a) {
+    if (a.tag === 'Exams') return goTab('More', { screen: 'Resources' });
+    if (a.tag === 'Hackathon' && !a.link) return pickTab('event');
+    if (a.link) return Linking.openURL(a.link).catch(() => {});
+    if (a.tag === 'Fest') return goTab('Club');
+    return pickTab('all');
+  }
+
   const Compose = (
     <TouchableOpacity style={styles.compose} activeOpacity={0.8} onPress={() => navigation.getParent()?.getParent()?.navigate('Compose')}>
       <Avatar name={user?.name} size={40} />
@@ -619,6 +636,7 @@ export default function HomeScreen({ navigation }) {
           ItemSeparatorComponent={() => (tab === 'club' || tab === 'market' ? null : <View style={styles.hairline} />)}
           ListHeaderComponent={
             <View>
+              {tab === 'all' ? <AnnouncementBanner items={news} onPress={openAnnouncement} /> : null}
               {Compose}
               <View style={styles.hairline} />
             </View>

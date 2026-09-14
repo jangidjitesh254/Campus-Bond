@@ -15,6 +15,7 @@ import clubRoutes from './routes/clubRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import scoreRoutes from './routes/scoreRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
 import { UPLOAD_DIR, USE_BLOB } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -70,6 +71,7 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/score', scoreRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);
