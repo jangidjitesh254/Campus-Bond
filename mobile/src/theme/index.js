@@ -53,22 +53,22 @@ export const ink = {
   inkSoft: '#6B7B72',
 
   // Surfaces
-  page: '#EFF5EC', // pale green canvas
-  bg: '#EFF5EC',
+  page: '#F6F6F6', // neutral off-white canvas
+  bg: '#F6F6F6',
   surface: '#FFFFFF', // cards
   card: '#FFFFFF',
   white: '#FFFFFF',
   surfaceAlt: '#E4F3E9', // light-green tint (avatars, soft pills)
-  surfaceMuted: '#EAF1E6', // neutral-ish light (search, inputs)
-  surfaceHi: '#DCEBDF',
+  surfaceMuted: '#F0F1F0', // neutral light (search, inputs, chips)
+  surfaceHi: '#E4E5E4',
   field: '#FFFFFF',
-  border: '#E6ECE3',
-  borderSoft: '#E6ECE3',
-  hairline: '#E6ECE3',
-  hairlineAlt: '#DCEBDF',
-  mediaStroke: '#B9C6B7',
+  border: '#E7E8E7',
+  borderSoft: '#E7E8E7',
+  hairline: '#E7E8E7',
+  hairlineAlt: '#DFE0DF',
+  mediaStroke: '#C2C4C2',
   glass: '#FFFFFF',
-  glassBorder: '#E6ECE3',
+  glassBorder: '#E7E8E7',
   barGlass: '#FFFFFF',
 
   // Ambient glow blobs (kept very faint so the canvas stays flat)
@@ -93,17 +93,17 @@ export const ink = {
   // Avatars (default)
   avatarBg: '#E4F3E9',
   avatarText: '#1E7A43',
-  avatarNeutral: '#DCEBDF',
+  avatarNeutral: '#E4E5E4',
 
   // Lost / Found labels
   amber: '#C6892E',
   amberSoft: '#FBEFD5',
 
   // Chat
-  chatBg: '#EFF4EC',
+  chatBg: '#F6F6F6',
   bubbleOut: '#15532E',
   bubbleIn: '#FFFFFF',
-  datePill: '#E6ECE3',
+  datePill: '#E7E8E7',
 
   // Semantic
   success: '#1E7A43',
@@ -150,23 +150,23 @@ export const inkDark = {
   textDim: 'rgba(232,241,234,0.36)',
   inkSoft: 'rgba(232,241,234,0.55)',
 
-  page: '#0E1611',
-  bg: '#0E1611',
-  surface: '#16211A',
-  card: '#16211A',
-  white: '#16211A',
-  surfaceAlt: '#1E2C23',
-  surfaceMuted: '#1B2620',
-  surfaceHi: '#243328',
-  field: '#1B2620',
+  page: '#0B0B0B',
+  bg: '#0B0B0B',
+  surface: '#161616',
+  card: '#161616',
+  white: '#161616',
+  surfaceAlt: '#1F2A23',
+  surfaceMuted: '#202020',
+  surfaceHi: '#2A2A2A',
+  field: '#202020',
   border: 'rgba(255,255,255,0.08)',
   borderSoft: 'rgba(255,255,255,0.1)',
   hairline: 'rgba(255,255,255,0.07)',
   hairlineAlt: 'rgba(255,255,255,0.09)',
   mediaStroke: 'rgba(232,241,234,0.3)',
-  glass: '#16211A',
+  glass: '#161616',
   glassBorder: 'rgba(255,255,255,0.08)',
-  barGlass: '#16211A',
+  barGlass: '#161616',
 
   glowA: '#3E8A5A',
   glowB: '#EBD5AB',
@@ -187,15 +187,15 @@ export const inkDark = {
 
   avatarBg: 'rgba(62,138,90,0.22)',
   avatarText: '#7FC79A',
-  avatarNeutral: '#243328',
+  avatarNeutral: '#2A2A2A',
 
   amber: '#E0A85A',
   amberSoft: 'rgba(224,168,90,0.18)',
 
-  chatBg: '#0E1611',
+  chatBg: '#0B0B0B',
   bubbleOut: '#3E8A5A',
-  bubbleIn: '#1B2620',
-  datePill: '#1B2620',
+  bubbleIn: '#202020',
+  datePill: '#202020',
 
   success: '#7FC79A',
   successSoft: 'rgba(62,138,90,0.2)',

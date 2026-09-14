@@ -46,15 +46,15 @@ const tonesFor = (colors, isDark) => ({
     mark: 'rgba(47,111,224,0.16)',
   },
   neutral: {
-    gradient: isDark ? ['#16211A', '#1E2C23'] : ['#F1F6EE', '#DFEBE1'],
+    gradient: isDark ? ['#1A1A1A', '#242424'] : ['#F4F4F4', '#E6E7E6'],
     fg: colors.text,
     muted: colors.textMuted,
     pill: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)',
     pillFg: colors.textMuted,
     btn: colors.text,
     btnFg: colors.surface,
-    blob: 'rgba(21,83,46,0.07)',
-    mark: 'rgba(21,83,46,0.12)',
+    blob: 'rgba(0,0,0,0.04)',
+    mark: 'rgba(0,0,0,0.08)',
   },
 });
 
