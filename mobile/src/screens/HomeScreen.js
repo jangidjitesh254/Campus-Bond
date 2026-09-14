@@ -668,8 +668,8 @@ export default function HomeScreen({ navigation, route }) {
   // Search pill above the banner — jumps to the Search tab with the keyboard up.
   const Search = (
     <TouchableOpacity style={styles.search} activeOpacity={0.8} onPress={() => goTab('Search', { screen: 'SearchHome', params: { focus: Date.now() } })}>
-      <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-      <Text style={styles.searchText}>Search people, posts, clubs, papers…</Text>
+      <Ionicons name="search" size={17} color={colors.textFaint} />
+      <Text style={styles.searchText}>Search</Text>
     </TouchableOpacity>
   );
 
@@ -832,8 +832,9 @@ const makeStyles = (colors, isDark) => {
   // Every feed block is a white card on the pale canvas.
   card: { marginHorizontal: 12, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
 
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginTop: 12, paddingHorizontal: 14, height: 44, borderRadius: 14, backgroundColor: colors.surfaceMuted },
-  searchText: { flex: 1, fontSize: 14.5, color: colors.textMuted },
+  // Threads-style: a plain rounded pill, no border, quiet placeholder.
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 12, paddingHorizontal: 14, height: 40, borderRadius: 999, backgroundColor: colors.surfaceMuted },
+  searchText: { flex: 1, fontSize: 15, color: colors.textFaint },
   compose: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, marginTop: 8, marginBottom: 10 },
   composeText: { flex: 1, fontSize: 15, color: colors.textMuted },
   composeBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.border },
