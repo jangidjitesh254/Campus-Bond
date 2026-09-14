@@ -15,6 +15,7 @@ import ActivityStack from './ActivityStack';
 import ProfileStack from './ProfileStack';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, useStyles } from '../context/ThemeContext';
+import { MenuHost } from '../context/MenuContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -173,8 +174,9 @@ function TabBar({ state, navigation }) {
   );
 }
 
-export default function AppTabs() {
+export default function AppTabs({ navigation }) {
   return (
+    <MenuHost navigation={navigation}>
     <Tab.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }} tabBar={(props) => <TabBar {...props} />}>
       {/* The four bar tabs mount up front so switching between them is instant;
           screens that are not on screen are frozen so they cost nothing. */}
@@ -188,6 +190,7 @@ export default function AppTabs() {
       <Tab.Screen name="Sell" component={SellStack} />
       <Tab.Screen name="Map" component={MapStack} />
     </Tab.Navigator>
+    </MenuHost>
   );
 }
 

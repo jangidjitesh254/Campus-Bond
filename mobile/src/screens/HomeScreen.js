@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, BackHandler, useWindowDimensions, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -13,7 +13,7 @@ import Avatar from '../components/Avatar';
 import PullToRefresh from '../components/PullToRefresh';
 import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
-import SideMenu from '../components/SideMenu';
+import { useMenu } from '../context/MenuContext';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
@@ -511,31 +511,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   const [toDelete, setToDelete] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { width: screenW } = useWindowDimensions();
-  const slide = useRef(new Animated.Value(0)).current; // 0 = in place, 1 = pushed right
-
-  // The whole screen glides 90% to the right and the menu shows beneath it.
-  function setMenu(open) {
-    buzz(() => Haptics.impactAsync(open ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light));
-    setMenuOpen(open);
-    Animated.timing(slide, {
-      toValue: open ? 1 : 0,
-      duration: open ? 320 : 260,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }
-
-  // Android back closes the menu instead of leaving the screen.
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setMenu(false);
-      return true;
-    });
-    return () => sub.remove();
-  }, [menuOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  const menu = useMenu(); // the side menu lives under the whole tab UI (see MenuHost)
   const remove = (post) => setToDelete(post);
 
   async function confirmDelete() {
@@ -667,7 +643,7 @@ export default function HomeScreen({ navigation }) {
   // Header stays put: the mascot (drawn by PullToRefresh) sits in the middle, messages on the right
   const Header = (
     <View style={styles.header}>
-      <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={() => setMenu(true)} hitSlop={8}>
+      <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={menu.open} hitSlop={8}>
         <Ionicons name="menu-outline" size={28} color={colors.text} />
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
@@ -699,20 +675,7 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 
-  const pushed = {
-    transform: [
-      { translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [0, screenW * 0.9] }) },
-      { scale: slide.interpolate({ inputRange: [0, 1], outputRange: [1, 0.96] }) },
-    ],
-    borderRadius: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 24] }),
-  };
-
   return (
-    <View style={styles.root}>
-      {/* Lives under the screen; revealed when the screen slides away */}
-      <SideMenu visible={menuOpen} width={screenW * 0.9} onClose={() => setMenu(false)} onNavigate={goTab} />
-
-      <Animated.View style={[styles.sheet, pushed]}>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={30} ghostTop={6}>
       {loading ? (
@@ -745,9 +708,6 @@ export default function HomeScreen({ navigation }) {
       )}
       </PullToRefresh>
 
-      {/* While pushed aside, any tap on the visible sliver brings the screen back */}
-      {menuOpen ? <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenu(false)} /> : null}
-
       <Confirm
         visible={!!toDelete}
         title="Delete post?"
@@ -758,8 +718,6 @@ export default function HomeScreen({ navigation }) {
         onConfirm={confirmDelete}
       />
     </SafeAreaView>
-      </Animated.View>
-    </View>
   );
 }
 
@@ -801,8 +759,6 @@ const HAIRLINE = StyleSheet.hairlineWidth;
 
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  sheet: { flex: 1, overflow: 'hidden', backgroundColor: colors.surface, ...shadow.card, shadowOpacity: 0.18, shadowRadius: 20 },
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
