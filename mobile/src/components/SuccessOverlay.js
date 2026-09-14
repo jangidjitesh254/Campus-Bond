@@ -3,7 +3,8 @@ import { StyleSheet, Animated, Easing } from 'react-native';
 import { Text } from './Text';
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
-import { colors, spacing, font } from '../theme';
+import { spacing, fontFor } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 /**
  * Full-screen check-mark celebration shown after login / signup succeeds.
@@ -14,6 +15,7 @@ import { colors, spacing, font } from '../theme';
  *   3. fade + zoom out over the new screen, then `onHidden()`
  */
 export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bond 🎓', onDone, onHidden }) {
+  const styles = useStyles(makeStyles);
   const fade = useRef(new Animated.Value(0)).current;
   const zoom = useRef(new Animated.Value(1)).current;
   const finished = useRef(false);
@@ -65,7 +67,9 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  const font = fontFor(colors);
+  return StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bg,
@@ -79,3 +83,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '800', color: colors.text, marginTop: spacing.sm, textAlign: 'center' },
   subtitle: { ...font.bodyMuted, marginTop: 6, textAlign: 'center' },
 });
+};

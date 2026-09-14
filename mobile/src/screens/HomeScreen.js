@@ -23,7 +23,8 @@ import { LostApi, imageUrl } from '../api/lostfound';
 import { MarketApi } from '../api/market';
 import { ClubApi } from '../api/clubs';
 import { AnnouncementsApi } from '../api/announcements';
-import { colors, layout, shadow } from '../theme';
+import { layout, shadow } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                             */
@@ -31,11 +32,19 @@ import { colors, layout, shadow } from '../theme';
 
 /** Per-type identity: section name, icon and accent — so every row reads at a glance. */
 const KIND = {
-  event: { name: 'Team', icon: 'people', fg: colors.badgeTeamFg, bg: colors.badgeTeamBg },
-  lost: { name: 'Lost & Found', icon: 'search', fg: colors.amber, bg: colors.amberSoft },
-  market: { name: 'Market', icon: 'pricetag', fg: colors.badgeEventFg, bg: colors.badgeEventBg },
-  club: { name: 'Club', icon: 'flag', fg: colors.badgeClubFg, bg: colors.badgeClubBg },
+  event: { name: 'Team', icon: 'people' },
+  lost: { name: 'Lost & Found', icon: 'search' },
+  market: { name: 'Market', icon: 'pricetag' },
+  club: { name: 'Club', icon: 'flag' },
 };
+
+/** Accent per kind, from the active palette. */
+const kindTint = (colors) => ({
+  event: { fg: colors.badgeTeamFg, bg: colors.badgeTeamBg },
+  lost: { fg: colors.amber, bg: colors.amberSoft },
+  market: { fg: colors.badgeEventFg, bg: colors.badgeEventBg },
+  club: { fg: colors.badgeClubFg, bg: colors.badgeClubBg },
+});
 
 const TABS = [
   { key: 'all', label: 'For you', icon: 'sparkles' },
@@ -73,22 +82,15 @@ function toPost(kind, d) {
 /*  Post row                                                           */
 /* ------------------------------------------------------------------ */
 
-const CLUB_TINT = {
-  tech: { fg: '#6A4BC4', bg: '#EEE8FA' },
-  cultural: { fg: '#C6552E', bg: '#FBEAE2' },
-  sports: { fg: '#1E7A43', bg: '#E4F3E9' },
-  academic: { fg: '#2F6FE0', bg: '#E6EEFC' },
-  arts: { fg: '#C6892E', bg: '#FBEFD5' },
-  social: { fg: '#C6552E', bg: '#FBEAE2' },
-  other: { fg: '#6B7B72', bg: '#EAF1E6' },
-};
-
 /**
  * Club card — a category-tinted band with the logo hanging off its bottom
  * edge, then name, members and a Join pill. Used in the rail and the Clubs grid.
  */
 function ClubTile({ post, onOpen, onJoin, busy, width }) {
-  const tint = CLUB_TINT[post.raw.category] || CLUB_TINT.other;
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
+  const { clubs } = useTheme();
+  const tint = clubs[post.raw.category] || clubs.other;
   const uri = imageUrl(post.image);
   const done = post.joined || post.requested;
   return (
@@ -123,6 +125,8 @@ const gridTile = Math.floor((Dimensions.get('window').width - 16 * 2 - GRID_GAP)
 
 /** Horizontal rail in its own card — tinted icon, title, subtitle and a "See all" pill. */
 function Rail({ icon, tint, bg, title, subtitle, onSeeAll, children }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   return (
     <View style={styles.rail}>
       <View style={styles.railHead}>
@@ -147,6 +151,8 @@ function Rail({ icon, tint, bg, title, subtitle, onSeeAll, children }) {
 
 /** Product card: photo with a price tag and a heart, then title, condition and seller. */
 function ProductCard({ post, width, onOpen, onLike }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const r = post.raw;
   const uri = imageUrl(post.image);
   const liked = !!r.isLiked;
@@ -198,6 +204,8 @@ function daysLeft(d) {
  * the card reveals the description and the skills wanted.
  */
 function TeamBody({ post, expanded }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const r = post.raw;
   const skills = (r.skillsNeeded || []).filter(Boolean).slice(0, 6);
   const approved = (r.applicants || []).filter((a) => a.status === 'approved');
@@ -250,9 +258,9 @@ function TeamBody({ post, expanded }) {
   );
 }
 
-
 /** Post header shared by the card layouts — same 40px avatar as the Team row. */
 function PostHead({ post, menu, right }) {
+  const styles = useStyles(makeStyles);
   const o = post.owner;
   return (
     <View style={styles.plainHead}>
@@ -269,6 +277,8 @@ function PostHead({ post, menu, right }) {
 
 /** Lost & Found — photo first (or a faint mascot placeholder), then who / what / where. */
 function LostPost({ post, uri, menu, onOpen, onShare }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const r = post.raw;
   const lost = r.type === 'lost';
   const tone = lost ? colors.badgeNoticeFg : colors.success;
@@ -317,6 +327,8 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
 
 /** Team — Threads-style row: avatar gutter, handle, title; tap to unfold the details. */
 function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const [expanded, setExpanded] = useState(false);
   const isMine = String(post.owner._id || post.owner) === String(me?._id);
   const liked = (post.raw.applicants || []).some((a) => String(a.user?._id || a.user) === String(me?._id));
@@ -384,6 +396,9 @@ const Post = React.memo(
 /* ------------------------------------------------------------------ */
 
 export default function HomeScreen({ navigation }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
+  const TINT = kindTint(colors);
   const { user } = useAuth();
   const [feed, setFeed] = useState([]);
   const [news, setNews] = useState([]);
@@ -556,7 +571,7 @@ export default function HomeScreen({ navigation }) {
   const renderItem = ({ item }) => {
     if (item.kind === 'rail' && item.id === 'clubs') {
       return (
-        <Rail icon={KIND.club.icon} tint={KIND.club.fg} bg={KIND.club.bg} title="Clubs for you" subtitle={`${clubs.length} clubs on campus`} onSeeAll={() => pickTab('club')}>
+        <Rail icon={KIND.club.icon} tint={TINT.club.fg} bg={TINT.club.bg} title="Clubs for you" subtitle={`${clubs.length} clubs on campus`} onSeeAll={() => pickTab('club')}>
           {clubs.map((c) => (
             <ClubTile key={c.id} post={c} width={TILE} busy={busy === c.id} onOpen={() => open(c)} onJoin={() => join(c)} />
           ))}
@@ -565,7 +580,7 @@ export default function HomeScreen({ navigation }) {
     }
     if (item.kind === 'rail') {
       return (
-        <Rail icon={KIND.market.icon} tint={KIND.market.fg} bg={KIND.market.bg} title="Fresh on Market" subtitle="Second-hand, from students" onSeeAll={() => pickTab('market')}>
+        <Rail icon={KIND.market.icon} tint={TINT.market.fg} bg={TINT.market.bg} title="Fresh on Market" subtitle="Second-hand, from students" onSeeAll={() => pickTab('market')}>
           {market.map((m) => (
             <ProductCard key={m.id} post={m} width={TILE} onOpen={() => open(m)} onLike={() => heart(m)} />
           ))}
@@ -645,7 +660,7 @@ export default function HomeScreen({ navigation }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
         {TABS.map((t) => {
           const active = tab === t.key;
-          const tint = KIND[t.key]?.fg || colors.text;
+          const tint = TINT[t.key]?.fg || colors.text;
           return (
             <TouchableOpacity key={t.key} style={styles.tab} onPress={() => pickTab(t.key)} activeOpacity={0.7}>
               <View style={styles.tabInner}>
@@ -710,6 +725,7 @@ export default function HomeScreen({ navigation }) {
 
 /** Quiet placeholder rows while loading. */
 function Skeleton() {
+  const styles = useStyles(makeStyles);
   const pulse = useRef(new Animated.Value(0.35)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -743,7 +759,8 @@ function Skeleton() {
 
 const HAIRLINE = StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
@@ -848,7 +865,6 @@ const styles = StyleSheet.create({
   photo: { width: '100%', height: 220, borderRadius: 14, marginBottom: 12, backgroundColor: colors.surfaceMuted },
   photoEmpty: { width: '100%', height: 100, borderRadius: 14, marginBottom: 12, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
 
-
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 12 },
   ctaLink: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 3 },
   ctaLinkText: { fontSize: 14, fontWeight: '700' },
@@ -863,3 +879,4 @@ const styles = StyleSheet.create({
   skAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceMuted, marginRight: 12 },
   skLine: { height: 12, borderRadius: 6, backgroundColor: colors.surfaceMuted },
 });
+};

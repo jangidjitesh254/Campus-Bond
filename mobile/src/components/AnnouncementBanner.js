@@ -4,30 +4,30 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './Text';
 import { GhostMark } from './Mascot';
-import { colors } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 const GAP = 12; // equal to SIDE, so the neighbouring card never peeks in
 const SIDE = 12;
 const HEIGHT = 150;
 
 /** Card colours per tone. `brand` is the one loud card; the rest stay quiet. */
-const TONES = {
+const tonesFor = (colors, isDark) => ({
   brand: {
     gradient: ['#123F25', '#1B6B3C'],
-    fg: colors.onPrimary,
+    fg: '#FFFFFF',
     muted: 'rgba(255,255,255,0.74)',
     pill: 'rgba(255,255,255,0.16)',
-    pillFg: colors.onPrimary,
-    btn: colors.onPrimary,
-    btnFg: colors.primary,
+    pillFg: '#FFFFFF',
+    btn: '#FFFFFF',
+    btnFg: '#15532E',
     blob: 'rgba(255,255,255,0.08)',
     mark: 'rgba(255,255,255,0.14)',
   },
   amber: {
-    gradient: ['#FFF4DF', '#FBE3B8'],
+    gradient: isDark ? ['#33260F', '#463314'] : ['#FFF4DF', '#FBE3B8'],
     fg: colors.text,
     muted: colors.textMuted,
-    pill: 'rgba(198,137,46,0.16)',
+    pill: 'rgba(198,137,46,0.18)',
     pillFg: colors.amber,
     btn: colors.text,
     btnFg: colors.surface,
@@ -35,10 +35,10 @@ const TONES = {
     mark: 'rgba(198,137,46,0.16)',
   },
   blue: {
-    gradient: ['#EAF1FE', '#D4E2FA'],
+    gradient: isDark ? ['#14213A', '#1A2D4D'] : ['#EAF1FE', '#D4E2FA'],
     fg: colors.text,
     muted: colors.textMuted,
-    pill: 'rgba(47,111,224,0.14)',
+    pill: 'rgba(47,111,224,0.16)',
     pillFg: colors.badgeEventFg,
     btn: colors.text,
     btnFg: colors.surface,
@@ -46,17 +46,17 @@ const TONES = {
     mark: 'rgba(47,111,224,0.16)',
   },
   neutral: {
-    gradient: ['#F1F6EE', '#DFEBE1'],
+    gradient: isDark ? ['#16211A', '#1E2C23'] : ['#F1F6EE', '#DFEBE1'],
     fg: colors.text,
     muted: colors.textMuted,
-    pill: 'rgba(255,255,255,0.7)',
+    pill: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)',
     pillFg: colors.textMuted,
     btn: colors.text,
     btnFg: colors.surface,
     blob: 'rgba(21,83,46,0.07)',
     mark: 'rgba(21,83,46,0.12)',
   },
-};
+});
 
 const TAG_ICON = { Hackathon: 'code-slash', Fest: 'sparkles', Exams: 'school', Placements: 'briefcase', Notice: 'megaphone' };
 
@@ -78,6 +78,9 @@ function endsIn(a) {
  * a dot per card underneath.
  */
 export default function AnnouncementBanner({ items, onPress }) {
+  const { t: colors, isDark } = useTheme();
+  const styles = useStyles(makeStyles);
+  const TONES = tonesFor(colors, isDark);
   const { width } = useWindowDimensions();
   const cardW = width - SIDE * 2;
   const step = cardW + GAP;
@@ -169,7 +172,7 @@ export default function AnnouncementBanner({ items, onPress }) {
                   )}
                   {a.tone === 'brand' ? (
                     <View style={styles.mascot}>
-                      <GhostMark width={46} color={colors.onPrimary} bg="#15532E" variant="happy" />
+                      <GhostMark width={46} color="#FFFFFF" bg="#15532E" variant="happy" />
                     </View>
                   ) : null}
                 </View>
@@ -190,7 +193,8 @@ export default function AnnouncementBanner({ items, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   wrap: { paddingTop: 12, paddingBottom: 4 },
   card: { height: HEIGHT, borderRadius: 20, overflow: 'hidden' },
   inner: { flex: 1, padding: 14, justifyContent: 'space-between' },
@@ -213,3 +217,4 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.surfaceHi },
   dotOn: { width: 16, backgroundColor: colors.text },
 });
+};

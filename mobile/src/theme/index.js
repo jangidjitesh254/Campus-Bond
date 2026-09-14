@@ -244,16 +244,18 @@ export const radius = { sm: 10, md: 14, lg: 18, xl: 22, pill: 999 };
 export const layout = { tabBarSpace: 24 };
 export const monoFamily = Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' });
 
-export const font = {
-  h1: { fontSize: 22, fontWeight: '700', color: colors.text },
-  h2: { fontSize: 20, fontWeight: '700', color: colors.text },
-  h3: { fontSize: 16, fontWeight: '600', color: colors.text },
-  body: { fontSize: 15, fontWeight: '400', color: colors.text },
-  bodyMuted: { fontSize: 15, fontWeight: '400', color: colors.textMuted },
-  small: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: colors.textMuted, textTransform: 'uppercase' },
-};
+/** Type ramp for a palette — screens that switch modes call `fontFor(t)`. */
+export const fontFor = (c) => ({
+  h1: { fontSize: 22, fontWeight: '700', color: c.text },
+  h2: { fontSize: 20, fontWeight: '700', color: c.text },
+  h3: { fontSize: 16, fontWeight: '600', color: c.text },
+  body: { fontSize: 15, fontWeight: '400', color: c.text },
+  bodyMuted: { fontSize: 15, fontWeight: '400', color: c.textMuted },
+  small: { fontSize: 13, fontWeight: '400', color: c.textMuted },
+  label: { fontSize: 14, fontWeight: '600', color: c.text },
+  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: c.textMuted, textTransform: 'uppercase' },
+});
+export const font = fontFor(colors);
 
 export const shadow = {
   card: { shadowColor: '#173A26', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },

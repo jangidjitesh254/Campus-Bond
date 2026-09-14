@@ -14,12 +14,13 @@ import SearchStack from './SearchStack';
 import ActivityStack from './ActivityStack';
 import ProfileStack from './ProfileStack';
 import { useAuth } from '../context/AuthContext';
-import { colors } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
 /** Two little ghost eyes + a smile, drawn inside a filled icon so the mascot "lives" in it. */
 function Face({ cx = 12, cy = 12, s = 1 }) {
+  const { t: colors } = useTheme();
   const eye = colors.surface;
   return (
     <>
@@ -34,6 +35,7 @@ function Face({ cx = 12, cy = 12, s = 1 }) {
 
 /** Soft, rounded tab icons (Instagram-like). When active they fill in and the ghost peeks out. */
 function TabIcon({ name, on, size = 27 }) {
+  const { t: colors } = useTheme();
   const c = on ? colors.text : colors.textMuted;
   const stroke = { stroke: c, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
   // Filled state keeps the same stroke so the silhouette stays the same size as the outline
@@ -97,6 +99,7 @@ function useJelly() {
 }
 
 function TabButton({ onPress, spin, children }) {
+  const styles = useStyles(makeStyles);
   const j = useJelly();
   return (
     <TouchableOpacity
@@ -126,6 +129,7 @@ const BAR = [
 
 /** Flat, edge-to-edge bar with icon-only tabs — Instagram / Threads style. */
 function TabBar({ state, navigation }) {
+  const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const current = state.routes[state.index]?.name;
@@ -187,7 +191,8 @@ export default function AppTabs() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,3 +206,4 @@ const styles = StyleSheet.create({
   avatarRing: { padding: 2, borderRadius: 999, borderWidth: 1.5, borderColor: 'transparent' },
   avatarRingOn: { borderColor: colors.text },
 });
+};

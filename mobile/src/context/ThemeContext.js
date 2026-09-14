@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as storage from '../utils/storage';
 import { ink, inkDark, kinds as kindsLight, kindsDark, clubAccents, clubAccentsDark } from '../theme';
 
 const KEY = 'campusbond_theme';
@@ -15,7 +15,7 @@ export function ThemeProvider({ children }) {
   const [mode, setModeState] = useState('light');
 
   useEffect(() => {
-    SecureStore.getItemAsync(KEY)
+    storage.getItem(KEY)
       .then((saved) => {
         if (saved === 'dark' || saved === 'light') setModeState(saved);
       })
@@ -26,7 +26,7 @@ export function ThemeProvider({ children }) {
     const isDark = mode === 'dark';
     function setMode(next) {
       setModeState(next);
-      SecureStore.setItemAsync(KEY, next).catch(() => {});
+      storage.setItem(KEY, next);
     }
     return {
       mode,
@@ -46,4 +46,13 @@ export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>');
   return ctx;
+}
+
+/**
+ * StyleSheet for the active palette: `factory(t, isDark)` is a module-level
+ * function, so the sheet is built once per mode and shared by every instance.
+ */
+export function useStyles(factory) {
+  const { t, isDark } = useTheme();
+  return useMemo(() => factory(t, isDark), [factory, t, isDark]);
 }

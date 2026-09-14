@@ -9,7 +9,8 @@ import { Ghost } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
 import { EventsApi } from '../api/events';
 import { markActivitySeen } from '../utils/activitySeen';
-import { colors, layout } from '../theme';
+import { layout } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 const TABS = [
   { key: 'all', label: 'All', icon: 'notifications' },
@@ -19,11 +20,11 @@ const TABS = [
 ];
 
 /** What each kind of note looks like: icon on the avatar badge and the row's accent. */
-const KIND = {
+const kindFor = (colors) => ({
   request: { icon: 'hand-left', tint: colors.amber },
   accepted: { icon: 'checkmark', tint: colors.success },
   comment: { icon: 'chatbubble', tint: colors.badgeEventFg },
-};
+});
 
 /**
  * Everything that happened to the student's posts — interest requests and
@@ -31,6 +32,8 @@ const KIND = {
  * accepted. Flat, edge-to-edge rows like the Home feed.
  */
 export default function ActivityScreen({ navigation }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
@@ -137,6 +140,7 @@ export default function ActivityScreen({ navigation }) {
   );
 
   const renderItem = ({ item }) => {
+    const KIND = kindFor(colors);
     const k = KIND[item.kind] || KIND.request;
     return (
       <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => navigation.navigate('Thread', { id: item.eventId })}>
@@ -180,7 +184,8 @@ export default function ActivityScreen({ navigation }) {
 
 const HAIRLINE = StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   title: { fontSize: 22, fontWeight: '700', color: colors.text },
@@ -209,3 +214,4 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginTop: 12 },
   emptyText: { fontSize: 14, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
 });
+};

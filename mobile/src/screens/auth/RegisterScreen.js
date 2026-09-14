@@ -16,7 +16,8 @@ import { Button, Field, ProgressBar } from '../../components/ui';
 import { Ghost } from '../../components/Mascot';
 import { useAuth } from '../../context/AuthContext';
 import useKeyboard, { scrollInputAboveKeyboard } from '../../hooks/useKeyboard';
-import { colors, spacing, font, radius } from '../../theme';
+import { spacing, radius, fontFor } from '../../theme';
+import { useTheme, useStyles } from '../../context/ThemeContext';
 
 const BRANCHES = ['CSE', 'IT', 'ECE', 'EE', 'ME', 'CE', 'AI/ML', 'Other'];
 const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -29,6 +30,7 @@ const STEPS = [
 
 /** Selectable pill used for branch / semester. */
 function Option({ label, selected, onPress, style }) {
+  const styles = useStyles(makeStyles);
   return (
     <TouchableOpacity
       style={[styles.option, selected && styles.optionSelected, style]}
@@ -41,6 +43,8 @@ function Option({ label, selected, onPress, style }) {
 }
 
 export default function RegisterScreen({ navigation }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const { register } = useAuth();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ name: '', email: '', password: '', branch: '', branchOther: '', semester: null });
@@ -273,7 +277,9 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  const font = fontFor(colors);
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.md, flexGrow: 1 },
   // Keyboard up: anchor the form to the bottom so the fields hug the button / keyboard.
@@ -305,3 +311,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   link: { color: colors.accent, fontWeight: '700' },
 });
+};

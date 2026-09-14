@@ -6,7 +6,8 @@ import Svg, { Path, Polygon } from 'react-native-svg';
 import { Ghost, GhostSticker, BODY } from '../../components/Mascot';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font } from '../../theme';
+import { spacing, fontFor } from '../../theme';
+import { useTheme, useStyles } from '../../context/ThemeContext';
 
 const MASCOT_W = 150;
 
@@ -44,6 +45,7 @@ function Bits({ stage }) {
 /* ------------------------------------------------------------------ */
 
 export default function OnboardingScreen({ navigation }) {
+  const styles = useStyles(makeStyles);
   const { completeOnboarding } = useAuth();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -153,7 +155,9 @@ export default function OnboardingScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  const font = fontFor(colors);
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: BODY },
   circle: { position: 'absolute', backgroundColor: colors.bg },
   head: { paddingHorizontal: spacing.xl, alignItems: 'center' },
@@ -165,4 +169,5 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   link: { color: colors.accent, fontWeight: '700' },
 });
+};
 

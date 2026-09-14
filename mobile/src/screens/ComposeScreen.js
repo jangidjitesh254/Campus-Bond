@@ -10,7 +10,8 @@ import Confirm from '../components/Confirm';
 import { handleOf } from '../components/ThreadPost';
 import { useAuth } from '../context/AuthContext';
 import { EventsApi, CATEGORIES } from '../api/events';
-import { colors, layout } from '../theme';
+import { layout } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 /**
  * Threads-style composer. One big text box: the first line becomes the title,
@@ -18,6 +19,8 @@ import { colors, layout } from '../theme';
  * text as light inline rows — no form labels.
  */
 export default function ComposeScreen({ navigation }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const { user } = useAuth();
   const [text, setText] = useState('');
   const [category, setCategory] = useState('hackathon');
@@ -207,7 +210,8 @@ export default function ComposeScreen({ navigation }) {
 
 const HAIRLINE = StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
   bar: { height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   barSide: { width: 64 },
@@ -238,3 +242,4 @@ const styles = StyleSheet.create({
   postBtnOff: { backgroundColor: colors.surfaceMuted },
   postText: { fontSize: 14.5, fontWeight: '700', color: colors.onPrimary },
 });
+};

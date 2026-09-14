@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { ScoreApi } from '../api/score';
 import { ClubApi } from '../api/clubs';
 import { MarketApi } from '../api/market';
-import { colors } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 /**
  * Drawer that slides in from the left edge of Home: the student's shortcuts
@@ -17,6 +17,8 @@ import { colors } from '../theme';
  * live count so the menu is useful at a glance.
  */
 export default function SideMenu({ visible, onClose, onNavigate }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -104,7 +106,8 @@ export default function SideMenu({ visible, onClose, onNavigate }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(22,36,28,0.35)' },
   panel: {
     position: 'absolute',
@@ -132,3 +135,4 @@ const styles = StyleSheet.create({
   foot: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 10 },
   footText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
 });
+};

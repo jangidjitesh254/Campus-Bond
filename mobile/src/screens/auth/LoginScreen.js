@@ -15,9 +15,11 @@ import { Button, Field } from '../../components/ui';
 import { Ghost } from '../../components/Mascot';
 import useKeyboard, { scrollInputAboveKeyboard } from '../../hooks/useKeyboard';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font } from '../../theme';
+import { spacing, fontFor } from '../../theme';
+import { useTheme, useStyles } from '../../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
+  const styles = useStyles(makeStyles);
   const { login, celebrate } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -142,7 +144,9 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  const font = fontFor(colors);
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.xl, paddingBottom: spacing.md, flexGrow: 1, justifyContent: 'center' },
   // Keyboard up: anchor the form to the bottom so the fields hug the button / keyboard.
@@ -155,3 +159,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   link: { color: colors.accent, fontWeight: '700' },
 });
+};

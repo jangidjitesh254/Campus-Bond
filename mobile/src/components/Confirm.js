@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, Animated, Easing, TouchableOpacity } from 'react-native';
 import { Text } from './Text';
 import { Ghost } from './Mascot';
-import { colors, shadow } from '../theme';
+import { shadow } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 /**
  * Themed confirm dialog (replaces Alert.alert for yes/no questions).
@@ -20,6 +21,7 @@ import { colors, shadow } from '../theme';
  * Pops in with a spring, the ghost pulls a face to match (`mood`).
  */
 export default function Confirm({ visible, title, message, confirmText = 'OK', cancelText = 'Cancel', destructive, mood, onConfirm, onCancel }) {
+  const styles = useStyles(makeStyles);
   const [mounted, setMounted] = useState(visible);
   const t = useRef(new Animated.Value(0)).current;
 
@@ -65,7 +67,8 @@ export default function Confirm({ visible, title, message, confirmText = 'OK', c
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(22,36,28,0.32)' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   card: { width: '100%', maxWidth: 320, borderRadius: 24, backgroundColor: colors.surface, paddingTop: 22, paddingBottom: 16, paddingHorizontal: 18, alignItems: 'center', ...shadow.card, shadowOpacity: 0.18, shadowRadius: 24, elevation: 10 },
@@ -80,3 +83,4 @@ const styles = StyleSheet.create({
   btnDanger: { backgroundColor: colors.danger },
   btnText: { fontSize: 15, fontWeight: '700', color: colors.onPrimary },
 });
+};

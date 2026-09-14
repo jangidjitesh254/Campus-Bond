@@ -8,13 +8,13 @@ import ScoreRing from '../components/ScoreRing';
 import Confirm from '../components/Confirm';
 import { handleOf } from '../components/ThreadPost';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useStyles } from '../context/ThemeContext';
 import { imageUrl } from '../api/market';
 import { EventsApi } from '../api/events';
 import { MarketApi } from '../api/market';
 import { ClubApi } from '../api/clubs';
 import { ScoreApi, nextMilestone } from '../api/score';
-import { colors, layout } from '../theme';
+import { layout } from '../theme';
 
 /**
  * Profile, Instagram-style: the avatar (wrapped in the Campus Score ring)
@@ -22,7 +22,8 @@ import { colors, layout } from '../theme';
  * hairline rows for everything else.
  */
 export default function ProfileScreen({ navigation }) {
-  const { isDark, toggle } = useTheme();
+  const { t: colors, isDark, toggle } = useTheme();
+  const styles = useStyles(makeStyles);
   const { user, logout } = useAuth();
   const [counts, setCounts] = useState({ posts: 0, listings: 0, clubs: 0 });
   const [score, setScore] = useState(null); // { total, rank, students }
@@ -164,6 +165,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 function Stat({ num, label, onPress }) {
+  const styles = useStyles(makeStyles);
   return (
     <TouchableOpacity style={styles.stat} onPress={onPress} activeOpacity={0.7}>
       <Text style={styles.statNum}>{num}</Text>
@@ -174,7 +176,8 @@ function Stat({ num, label, onPress }) {
 
 const HAIRLINE = StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 48, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16 },
   handle: { fontSize: 20, fontWeight: '700', color: colors.text, flexShrink: 1 },
@@ -209,3 +212,4 @@ const styles = StyleSheet.create({
 
   version: { textAlign: 'center', fontSize: 11.5, color: colors.textFaint, marginTop: 20 },
 });
+};

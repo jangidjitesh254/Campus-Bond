@@ -3,7 +3,8 @@ import { View, StyleSheet, Modal, Pressable, Animated, Easing, TouchableOpacity,
 import { Text } from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, shadow } from '../theme';
+import { shadow } from '../theme';
+import { useTheme, useStyles } from '../context/ThemeContext';
 
 const WIDTH = 220;
 
@@ -15,7 +16,10 @@ const WIDTH = 220;
  *
  * Items: { label, icon, onPress, destructive?, disabled? }. Falsy entries are skipped.
  */
-export default function DotsMenu({ items, size = 20, color = colors.textMuted, style, children, align = 'right' }) {
+export default function DotsMenu({ items, size = 20, color, style, children, align = 'right' }) {
+  const { t: colors } = useTheme();
+  const tint = color || colors.textMuted;
+  const styles = useStyles(makeStyles);
   const btn = useRef(null);
   const [anchor, setAnchor] = useState(null); // { x, y, w, h } in window coords
   const [mounted, setMounted] = useState(false);
@@ -59,7 +63,7 @@ export default function DotsMenu({ items, size = 20, color = colors.textMuted, s
   return (
     <>
       <TouchableOpacity ref={btn} onPress={open} hitSlop={10} style={style} activeOpacity={0.6}>
-        {children || <Ionicons name="ellipsis-horizontal" size={size} color={color} />}
+        {children || <Ionicons name="ellipsis-horizontal" size={size} color={tint} />}
       </TouchableOpacity>
 
       <Modal visible={mounted} transparent animationType="none" onRequestClose={() => close()} statusBarTranslucent>
@@ -86,10 +90,12 @@ export default function DotsMenu({ items, size = 20, color = colors.textMuted, s
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  return StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(22,36,28,0.18)' },
   menu: { position: 'absolute', width: WIDTH, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card, shadowOpacity: 0.16, shadowRadius: 18, elevation: 8 },
   item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 46 },
   itemBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   itemText: { fontSize: 15.5, color: colors.text, fontWeight: '500' },
 });
+};

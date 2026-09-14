@@ -6,7 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { Button } from '../../components/ui';
 import { Ghost } from '../../components/Mascot';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, font, radius } from '../../theme';
+import { spacing, radius, fontFor } from '../../theme';
+import { useTheme, useStyles } from '../../context/ThemeContext';
 
 const CELLS = 6;
 
@@ -19,6 +20,8 @@ const haptic = {
 };
 
 export default function OtpScreen({ route }) {
+  const { t: colors } = useTheme();
+  const styles = useStyles(makeStyles);
   const { email } = route.params;
   const { verifyOtp, resendOtp, celebrate } = useAuth();
   const [digits, setDigits] = useState(Array(CELLS).fill(''));
@@ -186,7 +189,9 @@ export default function OtpScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors, isDark) => {
+  const font = fontFor(colors);
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   container: { flex: 1, padding: spacing.xl, paddingTop: spacing.xl },
   header: { alignItems: 'center', marginBottom: spacing.xxl },
@@ -214,3 +219,4 @@ const styles = StyleSheet.create({
   resend: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   link: { color: colors.accent, fontWeight: '700' },
 });
+};
