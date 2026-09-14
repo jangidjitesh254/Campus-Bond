@@ -8,7 +8,7 @@ import { useTheme, useStyles } from '../context/ThemeContext';
 
 const GAP = 12; // equal to SIDE, so the neighbouring card never peeks in
 const SIDE = 12;
-const HEIGHT = 200;
+const HEIGHT = 180;
 
 /** Card colours per tone. `brand` is the one loud card; the rest stay quiet. */
 const tonesFor = (colors, isDark) => ({
@@ -137,28 +137,24 @@ export default function AnnouncementBanner({ items, onPress }) {
               <LinearGradient colors={tone.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
 
               {/* Decoration: two soft circles and a big faint icon behind the text */}
-              <View style={[styles.blob, styles.blobA, { backgroundColor: tone.blob }]} />
-              <View style={[styles.blob, styles.blobB, { backgroundColor: tone.blob }]} />
-              <Ionicons name={icon} size={120} color={tone.mark} style={styles.mark} />
+              <View style={[styles.blob, { backgroundColor: tone.blob }]} />
+              {a.tone === 'brand' ? (
+                <View style={styles.mascot}>
+                  <GhostMark width={44} color="rgba(255,255,255,0.9)" bg="#15532E" variant="happy" />
+                </View>
+              ) : (
+                <Ionicons name={icon} size={96} color={tone.mark} style={styles.mark} />
+              )}
 
               <View style={styles.inner}>
-                <View style={styles.topRow}>
-                  <View style={[styles.pill, { backgroundColor: tone.pill }]}>
-                    <Ionicons name={`${icon}-outline`} size={11} color={tone.pillFg} />
-                    <Text style={[styles.pillText, { color: tone.pillFg }]}>{a.tag || 'Notice'}</Text>
-                  </View>
-                  {left ? (
-                    <View style={[styles.pill, { backgroundColor: tone.pill }]}>
-                      <Ionicons name="time-outline" size={11} color={tone.pillFg} />
-                      <Text style={[styles.pillText, { color: tone.pillFg }]}>{left}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={[styles.counter, { color: tone.muted }]}>{i + 1}/{items.length}</Text>
+                <View style={[styles.pill, { backgroundColor: tone.pill }]}>
+                  <Ionicons name={`${icon}-outline`} size={11} color={tone.pillFg} />
+                  <Text style={[styles.pillText, { color: tone.pillFg }]}>{a.tag || 'Notice'}</Text>
                 </View>
 
                 <View style={styles.textCol}>
                   <Text style={[styles.title, { color: tone.fg }]} numberOfLines={2}>{a.title}</Text>
-                  {a.body ? <Text style={[styles.body, { color: tone.muted }]} numberOfLines={2}>{a.body}</Text> : null}
+                  {a.body ? <Text style={[styles.body, { color: tone.muted }]} numberOfLines={1}>{a.body}</Text> : null}
                 </View>
 
                 <View style={styles.bottomRow}>
@@ -167,14 +163,8 @@ export default function AnnouncementBanner({ items, onPress }) {
                       <Text style={[styles.btnText, { color: tone.btnFg }]}>{a.cta}</Text>
                       <Ionicons name="arrow-forward" size={13} color={tone.btnFg} />
                     </View>
-                  ) : (
-                    <View />
-                  )}
-                  {a.tone === 'brand' ? (
-                    <View style={styles.mascot}>
-                      <GhostMark width={40} color="#FFFFFF" bg="#15532E" variant="happy" />
-                    </View>
                   ) : null}
+                  {left ? <Text style={[styles.left, { color: tone.muted }]}>{left}</Text> : null}
                 </View>
               </View>
             </TouchableOpacity>
@@ -197,22 +187,19 @@ const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
   wrap: { paddingTop: 12, paddingBottom: 6 },
   card: { height: HEIGHT, borderRadius: 20, overflow: 'hidden' },
-  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, justifyContent: 'space-between', gap: 10 },
-  blob: { position: 'absolute', borderRadius: 999 },
-  blobA: { width: 190, height: 190, right: -70, top: -90 },
-  blobB: { width: 120, height: 120, left: -50, bottom: -60 },
-  mark: { position: 'absolute', right: 8, bottom: -18, transform: [{ rotate: '-12deg' }] },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  inner: { flex: 1, paddingHorizontal: 18, paddingVertical: 18, justifyContent: 'space-between' },
+  blob: { position: 'absolute', width: 200, height: 200, borderRadius: 100, right: -80, top: -100 },
+  mark: { position: 'absolute', right: 14, bottom: 14, transform: [{ rotate: '-10deg' }] },
+  mascot: { position: 'absolute', right: 16, bottom: 14 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 },
   pillText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
-  counter: { marginLeft: 'auto', fontSize: 11.5, fontWeight: '700' },
-  textCol: { paddingRight: 56, gap: 5 },
-  title: { fontSize: 17, fontWeight: '800', lineHeight: 22 },
-  body: { fontSize: 12.5, lineHeight: 18 },
-  bottomRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  btn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
-  btnText: { fontSize: 12.5, fontWeight: '700' },
-  mascot: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  textCol: { paddingRight: 70, gap: 6 },
+  title: { fontSize: 18, fontWeight: '800', lineHeight: 23 },
+  body: { fontSize: 13, lineHeight: 18 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  btn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
+  btnText: { fontSize: 13, fontWeight: '700' },
+  left: { fontSize: 12, fontWeight: '600' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: 10 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.surfaceHi },
   dotOn: { width: 16, backgroundColor: colors.text },
