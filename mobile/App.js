@@ -3,6 +3,7 @@ import React from 'react';
 import { StatusBar, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
+import Constants from 'expo-constants';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -20,7 +21,11 @@ import { colors } from './src/theme';
 // Keep the native splash visible until the fonts and the saved session have
 // been restored (RootNavigator hides it), so the user never sees a blank flash.
 SplashScreen.preventAutoHideAsync().catch(() => {});
-SplashScreen.setOptions({ duration: 400, fade: true });
+// The fade is a native option that only exists in a real build — Expo Go
+// logs a warning (and shows LogBox) if it is called there.
+if (Constants.executionEnvironment !== 'storeClient') {
+  SplashScreen.setOptions({ duration: 400, fade: true });
+}
 
 /**
  * Status bar icons follow the active palette.
