@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
 // Gesture-handler's list lets the pull-to-refresh pan run alongside native scroll (native only).
-const FlatList = Platform.OS === 'web' ? RNFlatList : GHFlatList;
+// Animated so the scroll offset can drive the header on the native side.
+const FlatList = Animated.createAnimatedComponent(Platform.OS === 'web' ? RNFlatList : GHFlatList);
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -527,11 +528,11 @@ export default function HomeScreen({ navigation, route }) {
     if (isHidden.current === next) return;
     isHidden.current = next;
     menu.setChrome(next);
-    Animated.timing(hidden, { toValue: next ? 1 : 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    Animated.spring(hidden, { toValue: next ? 1 : 0, damping: 22, stiffness: 220, mass: 0.7, useNativeDriver: true }).start();
   }
 
   const onScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-    useNativeDriver: false,
+    useNativeDriver: true,
     listener: (e) => {
       const y = e.nativeEvent.contentOffset.y;
       const dy = y - lastY.current;
@@ -543,11 +544,10 @@ export default function HomeScreen({ navigation, route }) {
     },
   });
 
-  // Header: mascot and icons are a touch bigger at the top and settle as you scroll.
-  const headerH = scrollY.interpolate({ inputRange: [0, 80], outputRange: [58, 46], extrapolate: 'clamp' });
+  // Header: mascot and icons are a touch bigger at the top and settle as you
+  // scroll (transforms only, so it all runs on the native side).
   const iconScale = scrollY.interpolate({ inputRange: [0, 80], outputRange: [1, 0.86], extrapolate: 'clamp' });
-  const tabsH = hidden.interpolate({ inputRange: [0, 1], outputRange: [TABS_H, 0] });
-  const tabsOpacity = hidden.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+  const tabsOpacity = hidden.interpolate({ inputRange: [0, 0.6], outputRange: [1, 0], extrapolate: 'clamp' });
   const remove = (post) => setToDelete(post);
 
   async function confirmDelete() {
@@ -585,7 +585,8 @@ export default function HomeScreen({ navigation, route }) {
     if (key === tab) return;
     buzz(() => Haptics.selectionAsync());
     setTab(key);
-    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
+    node?.scrollToOffset({ offset: 0, animated: false });
   }
 
   const clubs = useMemo(() => feed.filter((p) => p.kind === 'club'), [feed]);
@@ -684,7 +685,7 @@ export default function HomeScreen({ navigation, route }) {
 
   // Header stays put: the mascot (drawn by PullToRefresh) sits in the middle, messages on the right
   const Header = (
-    <Animated.View style={[styles.header, { height: headerH }]}>
+    <View style={styles.header}>
       <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={menu.open} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
           <Ionicons name="menu-outline" size={30} color={colors.text} />
@@ -696,12 +697,12 @@ export default function HomeScreen({ navigation, route }) {
           <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
         </Animated.View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 
   // Tabs move down with the list when you pull, and fold away on a downward scroll
   const Tabs = (
-    <Animated.View style={{ backgroundColor: colors.surface, height: tabsH, opacity: tabsOpacity, overflow: 'hidden' }}>
+    <Animated.View style={{ backgroundColor: colors.surface, height: TABS_H, opacity: tabsOpacity }}>
       {/* Thin underline tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
         {TABS.map((t) => {
@@ -723,7 +724,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={10} ghostScale={iconScale}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H}>
       {loading ? (
         <Skeleton />
       ) : (
@@ -806,7 +807,7 @@ const HAIRLINE = StyleSheet.hairlineWidth;
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
 
   tabsWrap: { flexGrow: 0, height: TABS_H, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },

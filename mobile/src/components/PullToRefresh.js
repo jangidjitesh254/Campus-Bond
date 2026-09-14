@@ -40,7 +40,12 @@ const CURVE_OUT = CURVE_IN.map(ease);
  *
  * On web (preview only) the gesture is skipped and the list renders plainly.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1 }) {
+/**
+ * `topHidden` (Animated 0→1, native-driven) folds the `top` row away: the
+ * tabs+list block slides up by `topHeight` and is made that much taller so
+ * no gap appears underneath.
+ */
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0 }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -102,12 +107,20 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
 
   const list = React.isValidElement(children) ? cloneElement(children, { scrollEnabled: !refreshing, simultaneousHandlers: pan }) : children;
 
+  // Folding the top row: shift up by its height and extend the block by the same amount.
+  const fold = topHidden ? topHidden.interpolate({ inputRange: [0, 1], outputRange: [0, -topHeight] }) : 0;
+  const foldStyle = topHidden ? { marginBottom: -topHeight } : null;
+
   if (Platform.OS === 'web') {
     return (
       <View style={styles.root}>
         {header}
-        {top}
-        <View style={styles.listWrap}>{children}</View>
+        <View style={styles.listWrap}>
+          <Animated.View style={[styles.list, foldStyle, { transform: [{ translateY: fold }] }]}>
+            {top}
+            {children}
+          </Animated.View>
+        </View>
         <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ scale: ghostScale }] }]}>
           <Ghost width={ghostSize} />
         </Animated.View>
@@ -131,7 +144,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
 
         {/* Tabs + list move down together with the pull; the mascot stretches into the gap */}
         <View style={styles.listWrap}>
-          <Animated.View style={[styles.list, { transform: [{ translateY: pull }] }]}>
+          <Animated.View style={[styles.list, foldStyle, { transform: [{ translateY: topHidden ? Animated.add(pull, fold) : pull }] }]}>
             {top}
             {list}
           </Animated.View>

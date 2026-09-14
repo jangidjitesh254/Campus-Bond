@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, Easing, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Animated, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './Text';
 import { GhostMark } from './Mascot';
+import Avatar from './Avatar';
+import { imageUrl } from '../api/lostfound';
 import { useAuth } from '../context/AuthContext';
 import { ScoreApi } from '../api/score';
 import { ClubApi } from '../api/clubs';
@@ -24,23 +26,22 @@ export default function SideMenu({ visible, width, onClose, onNavigate }) {
   const { user } = useAuth();
   const reveal = useRef(new Animated.Value(0)).current;
   const [counts, setCounts] = useState({ score: null, clubs: null, wishlist: null, orders: null });
+  const [myClubs, setMyClubs] = useState([]);
 
   useEffect(() => {
-    Animated.timing(reveal, {
-      toValue: visible ? 1 : 0,
-      duration: visible ? 320 : 200,
-      easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(reveal, { toValue: visible ? 1 : 0, damping: 24, stiffness: 190, mass: 0.9, overshootClamping: true, useNativeDriver: true }).start();
     if (!visible) return;
     // Refresh the little numbers every time the menu opens.
     Promise.allSettled([ScoreApi.me(), ClubApi.mine(), MarketApi.myWishlist(), MarketApi.myOrders()]).then(([s, c, w, o]) =>
-      setCounts({
-        score: s.status === 'fulfilled' ? s.value.total : null,
-        clubs: c.status === 'fulfilled' ? c.value.length : null,
-        wishlist: w.status === 'fulfilled' ? w.value.length : null,
-        orders: o.status === 'fulfilled' ? o.value.length : null,
-      })
+      {
+        setCounts({
+          score: s.status === 'fulfilled' ? s.value.total : null,
+          clubs: c.status === 'fulfilled' ? c.value.length : null,
+          wishlist: w.status === 'fulfilled' ? w.value.length : null,
+          orders: o.status === 'fulfilled' ? o.value.length : null,
+        });
+        if (c.status === 'fulfilled') setMyClubs(c.value);
+      }
     );
   }, [visible, reveal]);
 
@@ -51,7 +52,6 @@ export default function SideMenu({ visible, width, onClose, onNavigate }) {
       seeAll: { tab: 'More' },
       rows: [
         { key: 'score', icon: 'trophy-outline', label: 'Campus score', hint: counts.score == null ? '' : `${counts.score} pts`, tab: 'More', to: { screen: 'CampusScore' } },
-        { key: 'clubs', icon: 'people-outline', label: 'Enrolled clubs', hint: n(counts.clubs, 'club', 'clubs'), tab: 'Club' },
         { key: 'wishlist', icon: 'heart-outline', label: 'My wishlist', hint: n(counts.wishlist, 'item', 'items'), tab: 'Sell', to: { screen: 'Wishlist' } },
         { key: 'orders', icon: 'bag-handle-outline', label: 'My orders', hint: n(counts.orders, 'order', 'orders'), tab: 'Sell', to: { screen: 'MyOrders' } },
       ],
@@ -91,6 +91,32 @@ export default function SideMenu({ visible, width, onClose, onNavigate }) {
           {user?.name}{user?.branch ? ` · ${user.branch}` : ''}{user?.semester ? ` · Sem ${user.semester}` : ''}
         </Text>
 
+        {/* Clubs the student has joined — like "Communities" in Threads */}
+        <View style={styles.section}>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Your clubs</Text>
+            <TouchableOpacity onPress={() => go({ tab: 'Club' })} hitSlop={8}>
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {myClubs.length ? (
+            myClubs.slice(0, 5).map((c) => {
+              const uri = imageUrl(c.image);
+              return (
+                <TouchableOpacity key={c._id} style={styles.row} onPress={() => go({ tab: 'Club', to: { screen: 'ClubDetail', params: { id: c._id } } })} activeOpacity={0.6}>
+                  {uri ? <Image source={{ uri }} style={styles.clubLogo} /> : <Avatar name={c.name} size={32} style={styles.rowIcon} />}
+                  <Text style={styles.rowLabel} numberOfLines={1}>{c.name}</Text>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <TouchableOpacity style={styles.row} onPress={() => go({ tab: 'Club' })} activeOpacity={0.6}>
+              <Ionicons name="add-circle-outline" size={28} color={colors.textMuted} style={styles.rowIcon} />
+              <Text style={[styles.rowLabel, { color: colors.textMuted }]}>Join a club</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {SECTIONS.map((sec) => (
           <View key={sec.title} style={styles.section}>
             <View style={styles.sectionHead}>
@@ -125,6 +151,7 @@ const makeStyles = (colors) =>
     seeAll: { fontSize: 14, color: colors.textFaint },
     row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 24, paddingVertical: 15 },
     rowIcon: { width: 32, textAlign: 'center' },
+    clubLogo: { width: 32, height: 32, borderRadius: 9, backgroundColor: colors.surfaceMuted },
     rowLabel: { flex: 1, fontSize: 18, fontWeight: '600', color: colors.text },
     rowHint: { fontSize: 13, color: colors.textFaint },
   });

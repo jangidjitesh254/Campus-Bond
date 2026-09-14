@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, Easing, Pressable, BackHandler, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Animated, Pressable, BackHandler, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import SideMenu from '../components/SideMenu';
 import { useTheme, useStyles } from './ThemeContext';
@@ -29,14 +29,17 @@ export function MenuHost({ navigation, children }) {
   function setChrome(hidden) {
     if (chromeHidden.current === hidden) return;
     chromeHidden.current = hidden;
-    Animated.timing(chrome, { toValue: hidden ? 1 : 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    Animated.spring(chrome, { toValue: hidden ? 1 : 0, damping: 22, stiffness: 220, mass: 0.7, useNativeDriver: true }).start();
   }
 
   function animate(open) {
-    Animated.timing(slide, {
+    // A gentle spring reads as a real drawer, not a slideshow.
+    Animated.spring(slide, {
       toValue: open ? 1 : 0,
-      duration: open ? 340 : 280,
-      easing: Easing.out(Easing.cubic),
+      damping: 24,
+      stiffness: 190,
+      mass: 0.9,
+      overshootClamping: true,
       useNativeDriver: true,
     }).start();
   }
