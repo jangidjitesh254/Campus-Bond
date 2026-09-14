@@ -6,6 +6,7 @@ import SellDetailScreen from '../screens/sell/SellDetailScreen';
 import MySellScreen from '../screens/sell/MySellScreen';
 import SellCategoryScreen from '../screens/sell/SellCategoryScreen';
 import MyOrdersScreen from '../screens/sell/MyOrdersScreen';
+import WishlistScreen from '../screens/sell/WishlistScreen';
 import { useStackOptions } from './stackOptions';
 
 const Stack = createNativeStackNavigator();
@@ -20,6 +21,7 @@ export default function SellStack() {
       <Stack.Screen name="MyListings" component={MySellScreen} options={{ title: 'My listings' }} />
       <Stack.Screen name="SellCategory" component={SellCategoryScreen} options={{ title: 'Category' }} />
       <Stack.Screen name="MyOrders" component={MyOrdersScreen} options={{ title: 'My orders' }} />
+      <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: 'My wishlist' }} />
     </Stack.Navigator>
   );
 }

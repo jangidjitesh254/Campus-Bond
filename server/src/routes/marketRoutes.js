@@ -7,6 +7,7 @@ import {
   deleteItem,
   myListings,
   myOrders,
+  myWishlist,
   expressInterest,
   reviewInterest,
   toggleLike,
@@ -19,6 +20,7 @@ router.use(protect);
 
 router.get('/me/listings', myListings);
 router.get('/me/orders', myOrders);
+router.get('/me/wishlist', myWishlist);
 router.route('/').get(getItems).post(uploadImage.single('image'), createItem);
 router.route('/:id').get(getItemById).delete(deleteItem);
 router.patch('/:id/status', updateStatus);

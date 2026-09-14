@@ -206,6 +206,17 @@ export async function myOrders(req, res) {
   res.status(200).json({ items: items.map((i) => decorate(i, req.user._id)) });
 }
 
+/**
+ * Listings the current user has hearted.
+ * GET /api/market/me/wishlist
+ */
+export async function myWishlist(req, res) {
+  const items = await MarketItem.find({ likes: req.user._id })
+    .sort({ updatedAt: -1 })
+    .populate('seller', 'name branch semester');
+  res.status(200).json({ items: items.map((i) => decorate(i, req.user._id)) });
+}
+
 /** GET /api/market/me/listings */
 export async function myListings(req, res) {
   const items = await MarketItem.find({ seller: req.user._id }).sort({ createdAt: -1 });

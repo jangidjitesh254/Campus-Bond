@@ -13,6 +13,7 @@ import Avatar from '../components/Avatar';
 import PullToRefresh from '../components/PullToRefresh';
 import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
+import SideMenu from '../components/SideMenu';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
 import { useAuth } from '../context/AuthContext';
@@ -163,36 +164,45 @@ function daysLeft(d) {
   return `${n}d left`;
 }
 
-/** Team post — title, skills wanted, and a spots/deadline strip. */
-function TeamBody({ post }) {
-  const k = KIND.event;
+/**
+ * Team post body. Collapsed it is just the title and the seats strip; tapping
+ * the card reveals the description and the skills wanted.
+ */
+function TeamBody({ post, expanded }) {
   const r = post.raw;
-  const skills = (r.skillsNeeded || []).filter(Boolean).slice(0, 4);
+  const skills = (r.skillsNeeded || []).filter(Boolean).slice(0, 6);
   const approved = (r.applicants || []).filter((a) => a.status === 'approved');
   const filled = approved.length;
   const size = r.teamSize || 1;
   const left = daysLeft(r.deadline);
   const closed = r.status === 'closed' || left === 'Closed';
+  const hasMore = !!post.body || skills.length > 0;
   return (
     <>
       <Text style={styles.text}>{post.text}</Text>
-      {post.body ? <Text style={styles.body} numberOfLines={3}>{post.body}</Text> : null}
-      {skills.length ? (
-        <View style={styles.chips}>
-          <Text style={styles.chipsLabel}>Looking for</Text>
-          {skills.map((sk) => (
-            <View key={sk} style={[styles.chip, { backgroundColor: k.bg }]}>
-              <Text style={[styles.chipText, { color: k.fg }]}>{sk}</Text>
+
+      {expanded ? (
+        <>
+          {post.body ? <Text style={styles.body}>{post.body}</Text> : null}
+          {skills.length ? (
+            <View style={styles.chips}>
+              <Text style={styles.chipsLabel}>Looking for</Text>
+              {skills.map((sk) => (
+                <View key={sk} style={styles.chip}>
+                  <Text style={styles.chipText}>{sk}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          ) : null}
+        </>
       ) : null}
+
       {/* Roster: owner + approved members, then a dashed "+" for every open seat */}
       <View style={styles.roster}>
         <View style={styles.seats}>
           {[{ user: r.createdBy }, ...approved].slice(0, 5).map((a, i) => (
             <View key={a.user?._id || i} style={[styles.seat, i > 0 && { marginLeft: -8 }]}>
-              {a.user?.name ? <Avatar name={a.user.name} size={28} /> : <View style={styles.seatFilled}><Ionicons name="person" size={13} color={k.fg} /></View>}
+              {a.user?.name ? <Avatar name={a.user.name} size={28} neutral /> : <View style={styles.seatFilled}><Ionicons name="person" size={13} color={colors.textMuted} /></View>}
             </View>
           ))}
           {Array.from({ length: Math.min(Math.max(size - filled, 0), 4) }).map((_, i) => (
@@ -205,6 +215,7 @@ function TeamBody({ post }) {
           {closed ? 'Team closed' : filled >= size ? 'Team full' : `${size - filled} ${size - filled === 1 ? 'seat' : 'seats'} open`}
           {left && !closed ? <Text style={{ color: colors.amber, fontWeight: '600' }}> · {left}</Text> : null}
         </Text>
+        {hasMore ? <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textFaint} /> : null}
       </View>
     </>
   );
@@ -275,23 +286,18 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
   );
 }
 
-/** Team — Threads-style row: avatar gutter, handle, skills, spots strip. */
+/** Team — Threads-style row: avatar gutter, handle, title; tap to unfold the details. */
 function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
+  const [expanded, setExpanded] = useState(false);
   const isMine = String(post.owner._id || post.owner) === String(me?._id);
   const liked = (post.raw.applicants || []).some((a) => String(a.user?._id || a.user) === String(me?._id));
-  const k = KIND.event;
   const who = post.owner.branch ? `${post.owner.branch}${post.owner.semester ? ` · Sem ${post.owner.semester}` : ''}` : '';
 
   return (
-    <TouchableOpacity style={styles.post} activeOpacity={0.9} onPress={onOpen}>
+    <TouchableOpacity style={styles.post} activeOpacity={0.9} onPress={() => setExpanded((v) => !v)}>
       <View style={styles.gutter}>
-        <View>
-          <Avatar name={post.owner.name} size={40} />
-          <View style={[styles.kindDot, { backgroundColor: k.fg }]}>
-            <Ionicons name={k.icon} size={9} color={colors.onPrimary} />
-          </View>
-        </View>
-        <View style={[styles.thread, { backgroundColor: k.bg }]} />
+        <Avatar name={post.owner.name} size={40} neutral />
+        <View style={styles.thread} />
       </View>
 
       <View style={styles.content}>
@@ -301,14 +307,14 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
           <DotsMenu items={menu} />
         </View>
         <View style={styles.labelRow}>
-          <View style={[styles.pill, { backgroundColor: k.bg }]}>
-            <Ionicons name={`${k.icon}-outline`} size={11} color={k.fg} />
-            <Text style={[styles.pillText, { color: k.fg }]}>{`${k.name} · ${post.label}`}</Text>
+          <View style={styles.pill}>
+            <Ionicons name="people-outline" size={11} color={colors.textMuted} />
+            <Text style={styles.pillText}>{post.label}</Text>
           </View>
           {who ? <Text style={styles.label} numberOfLines={1}>{who}</Text> : null}
         </View>
 
-        <TeamBody post={post} />
+        <TeamBody post={post} expanded={expanded} />
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.action} onPress={isMine ? undefined : onLike} hitSlop={8} disabled={isMine}>
@@ -321,6 +327,10 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.action} onPress={onShare} hitSlop={8}>
             <Ionicons name="paper-plane-outline" size={21} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ctaLink} onPress={onOpen} hitSlop={8}>
+            <Text style={styles.openText}>Open</Text>
+            <Ionicons name="arrow-forward" size={15} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -428,6 +438,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   const [toDelete, setToDelete] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const remove = (post) => setToDelete(post);
 
   async function confirmDelete() {
@@ -550,7 +561,9 @@ export default function HomeScreen({ navigation }) {
   // Header stays put: the mascot (drawn by PullToRefresh) sits in the middle, messages on the right
   const Header = (
     <View style={styles.header}>
-      <View style={styles.headerSide} />
+      <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={() => setMenuOpen(true)} hitSlop={8}>
+        <Ionicons name="menu-outline" size={28} color={colors.text} />
+      </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.text} />
@@ -608,6 +621,8 @@ export default function HomeScreen({ navigation }) {
         />
       )}
       </PullToRefresh>
+
+      <SideMenu visible={menuOpen} onClose={() => setMenuOpen(false)} onNavigate={goTab} />
 
       <Confirm
         visible={!!toDelete}
@@ -715,20 +730,20 @@ const styles = StyleSheet.create({
   name: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1, flex: 1 },
   time: { fontSize: 13, color: colors.textMuted },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  pillText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  pillText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2, color: colors.textMuted },
   label: { fontSize: 13, color: colors.textMuted, flexShrink: 1 },
-  text: { fontSize: 15.5, lineHeight: 22, color: colors.text, marginTop: 6 },
+  text: { fontSize: 16, lineHeight: 22, fontWeight: '700', color: colors.text, marginTop: 6 },
   body: { fontSize: 14.5, lineHeight: 20, color: colors.textMuted, marginTop: 3 },
   // Team
   chips: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 10 },
   chipsLabel: { fontSize: 12.5, color: colors.textMuted, marginRight: 2 },
-  chip: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 },
-  chipText: { fontSize: 12.5, fontWeight: '600' },
+  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.surfaceMuted, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  chipText: { fontSize: 12.5, fontWeight: '600', color: colors.text },
   roster: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   seats: { flexDirection: 'row', alignItems: 'center' },
   seat: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.surface, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  seatFilled: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.avatarBg, alignItems: 'center', justifyContent: 'center' },
+  seatFilled: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   seatOpen: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.mediaStroke },
   rosterText: { flex: 1, fontSize: 13, color: colors.textMuted },
   stripItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -751,6 +766,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 12 },
   ctaLink: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 3 },
   ctaLinkText: { fontSize: 14, fontWeight: '700' },
+  openText: { fontSize: 13.5, fontWeight: '600', color: colors.textMuted },
   action: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   count: { fontSize: 13.5, color: colors.textMuted, fontWeight: '500' },
 
