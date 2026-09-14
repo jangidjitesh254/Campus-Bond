@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { otpEmail } from '../utils/emailTemplates.js';
 import { generateToken } from '../utils/generateToken.js';
 
 /** Return the first validation error, if any. */
@@ -64,11 +65,7 @@ export async function register(req, res) {
     expiresAt,
   });
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'Your Campus Bond verification code',
-    text: `Welcome to Campus Bond! Your verification code is ${code}. It expires in ${minutes} minutes.`,
-  });
+  await sendEmail({ to: normalizedEmail, ...otpEmail({ name, code, minutes }) });
 
   res.status(200).json({
     message: `Verification code sent to ${normalizedEmail}. It expires in ${minutes} minutes.`,
@@ -143,11 +140,7 @@ export async function resendOtp(req, res) {
   otp.expiresAt = new Date(Date.now() + minutes * 60 * 1000);
   await otp.save();
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'Your new Campus Bond verification code',
-    text: `Your new verification code is ${code}. It expires in ${minutes} minutes.`,
-  });
+  await sendEmail({ to: normalizedEmail, ...otpEmail({ name: otp.payload?.name, code, minutes, resend: true }) });
 
   res.status(200).json({ message: `A new code was sent to ${normalizedEmail}.` });
 }

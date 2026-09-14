@@ -1,24 +1,33 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as storage from '../utils/storage';
 import api, { TOKEN_KEY } from '../api/client';
+
+const ONBOARDED_KEY = 'campusbond_onboarded';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true); // restoring session on app start
+  const [onboarded, setOnboarded] = useState(true); // has the intro been seen?
+  // Root-level success overlay: { title, subtitle, finish } while it's showing.
+  const [celebration, setCelebration] = useState(null);
 
   // On launch, restore any saved token and fetch the profile.
   useEffect(() => {
     (async () => {
       try {
-        const token = await SecureStore.getItemAsync(TOKEN_KEY);
+        const [token, seenIntro] = await Promise.all([
+          storage.getItem(TOKEN_KEY),
+          storage.getItem(ONBOARDED_KEY),
+        ]);
+        setOnboarded(seenIntro === '1');
         if (token) {
           const { data } = await api.get('/auth/me');
           setUser(data.user);
         }
       } catch {
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        await storage.deleteItem(TOKEN_KEY);
       } finally {
         setBooting(false);
       }
@@ -26,7 +35,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function saveSession(token, userData) {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await storage.setItem(TOKEN_KEY, token);
     setUser(userData);
   }
 
@@ -37,10 +46,14 @@ export function AuthProvider({ children }) {
   }
 
   // Step 2 of signup: verify the OTP and log in.
-  async function verifyOtp(email, code) {
+  // Pass { autoLogin: false } to keep the auth screens mounted (e.g. to play a
+  // success animation) — the returned `finish()` then activates the session.
+  async function verifyOtp(email, code, { autoLogin = true } = {}) {
     const { data } = await api.post('/auth/verify-otp', { email, code });
-    await saveSession(data.token, data.user);
-    return data.user;
+    await storage.setItem(TOKEN_KEY, data.token);
+    const finish = () => setUser(data.user);
+    if (autoLogin) finish();
+    return { user: data.user, finish };
   }
 
   async function resendOtp(email) {
@@ -48,16 +61,36 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  async function login(email, password) {
+  // Same `autoLogin` option as verifyOtp, so the login screen can play its
+  // success animation before the app switches to the main tabs.
+  async function login(email, password, { autoLogin = true } = {}) {
     const { data } = await api.post('/auth/login', { email, password });
-    await saveSession(data.token, data.user);
-    return data.user;
+    await storage.setItem(TOKEN_KEY, data.token);
+    const finish = () => setUser(data.user);
+    if (autoLogin) finish();
+    return { user: data.user, finish };
   }
 
   async function logout() {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await storage.deleteItem(TOKEN_KEY);
     setUser(null);
   }
+
+  // Mark the intro slides as seen so they don't show again.
+  async function completeOnboarding() {
+    setOnboarded(true);
+    await storage.setItem(ONBOARDED_KEY, '1').catch(() => {});
+  }
+
+  /**
+   * Show the check-mark celebration above everything, then activate the
+   * session. Auth screens call this with the `finish` returned by
+   * login()/verifyOtp({ autoLogin: false }).
+   */
+  function celebrate({ title, subtitle, finish }) {
+    setCelebration({ title, subtitle, finish });
+  }
+  const endCelebration = () => setCelebration(null);
 
   // Let screens refresh the cached user (e.g. after profile edits).
   async function refreshUser() {
@@ -69,7 +102,12 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     booting,
+    onboarded,
     isLoggedIn: !!user,
+    completeOnboarding,
+    celebration,
+    celebrate,
+    endCelebration,
     register,
     verifyOtp,
     resendOtp,

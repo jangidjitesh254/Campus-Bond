@@ -20,7 +20,7 @@ export function Card({ style, children, onPress }) {
 }
 
 /** Primary (green) / secondary / danger / ghost button. */
-export function Button({ title, onPress, loading, disabled, variant = 'primary', style, icon }) {
+export function Button({ title, onPress, loading, disabled, variant = 'primary', style, icon, iconRight }) {
   const isDisabled = disabled || loading;
   const variantStyle =
     variant === 'secondary'
@@ -46,18 +46,20 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary',
         <View style={styles.btnRow}>
           {icon ? <View style={{ marginRight: 8 }}>{icon}</View> : null}
           <Text style={[styles.btnText, { color: textColor }]}>{title}</Text>
+          {iconRight ? <View style={{ marginLeft: 8 }}>{iconRight}</View> : null}
         </View>
       )}
     </TouchableOpacity>
   );
 }
 
-/** Labeled text input. */
-export function Field({ label, error, style, inputStyle, ...props }) {
+/** Labeled text input. Forwards its ref to the TextInput so screens can chain focus. */
+export const Field = React.forwardRef(function Field({ label, error, style, inputStyle, ...props }, ref) {
   return (
     <View style={[{ marginBottom: spacing.lg }, style]}>
       {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
       <TextInput
+        ref={ref}
         style={[styles.input, error && styles.inputError, inputStyle]}
         placeholderTextColor={colors.textFaint}
         selectionColor={colors.primary}
@@ -66,7 +68,7 @@ export function Field({ label, error, style, inputStyle, ...props }) {
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
     </View>
   );
-}
+});
 
 /** Small pill tag. */
 export function Chip({ label, tone = 'default', style }) {
@@ -149,29 +151,30 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadow.soft,
   },
+  // Big, chunky tap targets (Swiggy / Zomato style).
   btn: {
-    height: 54,
-    borderRadius: radius.md,
+    height: 60,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
   },
   btnRow: { flexDirection: 'row', alignItems: 'center' },
-  btnPrimary: { backgroundColor: colors.primary },
-  btnSecondary: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
-  btnDanger: { backgroundColor: colors.danger },
+  btnPrimary: { backgroundColor: colors.primary, ...shadow.card, shadowColor: colors.primaryDark, shadowOpacity: 0.25 },
+  btnSecondary: { backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.border },
+  btnDanger: { backgroundColor: colors.danger, ...shadow.card, shadowColor: colors.danger, shadowOpacity: 0.25 },
   btnGhost: { backgroundColor: 'transparent' },
   btnDisabled: { opacity: 0.45 },
-  btnText: { fontSize: 16, fontWeight: '800' },
-  fieldLabel: { ...font.label, marginBottom: spacing.sm },
+  btnText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
+  fieldLabel: { ...font.label, fontSize: 14.5, marginBottom: spacing.sm },
   input: {
-    minHeight: 52,
+    minHeight: 58,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     fontSize: 16,
     color: colors.text,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   inputError: { borderColor: colors.danger },
