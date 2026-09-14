@@ -10,7 +10,7 @@ import lostRoutes from './routes/lostRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import marketRoutes from './routes/marketRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
-import { UPLOAD_DIR } from './middleware/upload.js';
+import { UPLOAD_DIR, USE_BLOB } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 // Safety net: log (don't crash) on unexpected async errors so one bad
@@ -29,13 +29,25 @@ app.use(cors()); // allow the mobile app to call the API
 app.use(express.json());
 app.use(morgan('dev')); // request logging in the console
 
-// Serve uploaded images (lost & found photos, etc.)
-app.use('/uploads', express.static(UPLOAD_DIR));
-
 // ---- Health check ----
 app.get('/', (req, res) => {
   res.json({ name: 'Campus Bond API', status: 'ok', time: new Date().toISOString() });
 });
+
+// Make sure the database is connected before handling any request. On Vercel
+// this runs lazily per function instance; locally it's a no-op after startup.
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+    res.status(503).json({ message: 'Database unavailable. Please try again in a moment.' });
+  }
+});
+
+// Serve uploaded images from disk in local development (Vercel uses Blob URLs).
+if (!USE_BLOB) app.use('/uploads', express.static(UPLOAD_DIR));
 
 // ---- Feature routes ----
 app.use('/api/auth', authRoutes);
@@ -49,11 +61,20 @@ app.use('/api/clubs', clubRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+export default app;
 
-// Connect to the database, then start listening.
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Campus Bond API running on http://localhost:${PORT}`);
-  });
-});
+// On Vercel the app is served through api/index.js; locally we listen ourselves.
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 Campus Bond API running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('❌', err.message);
+      console.error('   Is your local MongoDB server running?');
+      process.exit(1);
+    });
+}

@@ -36,6 +36,8 @@ export const colors = {
   badgeEventFg: '#2F6FE0',
   badgeNoticeBg: '#FBEAE2',
   badgeNoticeFg: '#C6552E',
+  badgeClubBg: '#EEE8FA',
+  badgeClubFg: '#6A4BC4',
 
   // Avatars (default)
   avatarBg: '#E4F3E9',
@@ -72,7 +74,7 @@ export const colors = {
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 export const radius = { sm: 10, md: 14, lg: 18, xl: 22, pill: 999 };
-export const layout = { tabBarSpace: 92 };
+export const layout = { tabBarSpace: 24 };
 export const monoFamily = Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' });
 
 export const font = {

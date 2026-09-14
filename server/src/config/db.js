@@ -2,22 +2,31 @@ import mongoose from 'mongoose';
 
 /**
  * Connect to MongoDB using the URI in the environment.
- * Exits the process if the connection fails, since the API is
- * useless without a database.
+ *
+ * The connection promise is cached so that on serverless (Vercel) every
+ * request reuses one connection per warm function instance instead of
+ * opening a new one.
  */
-export async function connectDB() {
+let pending = null;
+
+export function connectDB() {
+  if (mongoose.connection.readyState === 1) return Promise.resolve(mongoose.connection);
+  if (pending) return pending;
+
   const uri = process.env.MONGO_URI;
   if (!uri) {
-    console.error('❌ MONGO_URI is not set. Copy .env.example to .env and fill it in.');
-    process.exit(1);
+    return Promise.reject(new Error('MONGO_URI is not set. Copy .env.example to .env and fill it in.'));
   }
 
-  try {
-    const conn = await mongoose.connect(uri);
-    console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.error('   Is your local MongoDB server running?');
-    process.exit(1);
-  }
+  pending = mongoose
+    .connect(uri, { serverSelectionTimeoutMS: 8000 })
+    .then((conn) => {
+      console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
+      return conn.connection;
+    })
+    .catch((err) => {
+      pending = null; // allow a retry on the next request
+      throw err;
+    });
+  return pending;
 }

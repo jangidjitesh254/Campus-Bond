@@ -1,12 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import Club from '../models/Club.js';
-import { UPLOAD_DIR } from '../middleware/upload.js';
+import { storeImage, deleteImage, discardUpload } from '../middleware/upload.js';
 
-function removeImageFile(imagePath) {
-  if (!imagePath) return;
-  fs.promises.unlink(path.join(UPLOAD_DIR, path.basename(imagePath))).catch(() => {});
-}
 
 function isMember(club, userId) {
   return (club.members || []).some((m) => String(m._id || m) === String(userId));
@@ -20,7 +14,7 @@ function isMember(club, userId) {
 export async function createClub(req, res) {
   const { name, description, category } = req.body;
   if (!name || !name.trim()) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: 'A club name is required.' });
   }
 
@@ -28,7 +22,7 @@ export async function createClub(req, res) {
     name: name.trim(),
     description: description?.trim() || '',
     category: category || 'other',
-    image: req.file ? `/uploads/${req.file.filename}` : '',
+    image: await storeImage(req.file),
     createdBy: req.user._id,
     members: [req.user._id],
   });
@@ -98,7 +92,7 @@ export async function deleteClub(req, res) {
   if (String(club.createdBy) !== String(req.user._id)) {
     return res.status(403).json({ message: 'Only the club admin can delete it.' });
   }
-  removeImageFile(club.image);
+  deleteImage(club.image);
   await club.deleteOne();
   res.status(200).json({ message: 'Club deleted.' });
 }
