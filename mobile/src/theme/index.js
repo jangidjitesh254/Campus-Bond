@@ -240,8 +240,8 @@ export const clubAccentsDark = {
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 export const radius = { sm: 10, md: 14, lg: 18, xl: 22, pill: 999 };
-// The tab bar sits in the layout (not floating), so lists only need a little breathing room.
-export const layout = { tabBarSpace: 24 };
+// The bottom bar floats over the content (so it can slide away), so lists pad by its height.
+export const layout = { tabBarSpace: 84 };
 export const monoFamily = Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' });
 
 /** Type ramp for a palette — screens that switch modes call `fontFor(t)`. */

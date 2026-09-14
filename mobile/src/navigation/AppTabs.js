@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,7 +15,7 @@ import ActivityStack from './ActivityStack';
 import ProfileStack from './ProfileStack';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, useStyles } from '../context/ThemeContext';
-import { MenuHost } from '../context/MenuContext';
+import { MenuHost, useMenu } from '../context/MenuContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -133,9 +133,15 @@ function TabBar({ state, navigation }) {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { chrome, setChrome } = useMenu();
+  const [barH, setBarH] = useState(64);
   const current = state.routes[state.index]?.name;
 
+  // Slides down out of view while a feed is being scrolled down.
+  const hide = { transform: [{ translateY: chrome.interpolate({ inputRange: [0, 1], outputRange: [0, barH + 8] }) }] };
+
   function go(name) {
+    setChrome(false); // switching tabs always brings the bar back
     const route = state.routes.find((r) => r.name === name);
     if (!route) return;
     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -148,7 +154,7 @@ function TabBar({ state, navigation }) {
   }
 
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <Animated.View style={[styles.bar, hide, { paddingBottom: Math.max(insets.bottom, 8) }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
       {BAR.map((item) => {
         if (item.compose) {
           return (
@@ -170,7 +176,7 @@ function TabBar({ state, navigation }) {
           </TabButton>
         );
       })}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -196,7 +202,12 @@ export default function AppTabs({ navigation }) {
 
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
+  // Floats over the content so it can slide away without leaving a gap.
   bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: 8,

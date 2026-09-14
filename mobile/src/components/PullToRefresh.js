@@ -40,7 +40,7 @@ const CURVE_OUT = CURVE_IN.map(ease);
  *
  * On web (preview only) the gesture is skipped and the list renders plainly.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9 }) {
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1 }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -108,9 +108,9 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
         {header}
         {top}
         <View style={styles.listWrap}>{children}</View>
-        <View pointerEvents="none" style={[styles.ghost, { top: ghostTop }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ scale: ghostScale }] }]}>
           <Ghost width={ghostSize} />
-        </View>
+        </Animated.View>
       </View>
     );
   }
@@ -137,7 +137,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
           </Animated.View>
         </View>
 
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: ghostY }, { scaleX }, { scaleY }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: ghostY }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
           <Ghost width={bigW} lid={lid} />
         </Animated.View>
       </Animated.View>

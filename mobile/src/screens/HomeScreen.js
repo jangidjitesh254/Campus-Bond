@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -120,6 +120,7 @@ function ClubTile({ post, onOpen, onJoin, busy, width }) {
 }
 
 const TILE = 156;
+const TABS_H = 46; // category tabs row, collapsed to 0 while scrolling down
 const GRID_GAP = 12;
 const gridTile = Math.floor((Dimensions.get('window').width - 16 * 2 - GRID_GAP) / 2);
 
@@ -395,7 +396,7 @@ const Post = React.memo(
 /*  Screen                                                             */
 /* ------------------------------------------------------------------ */
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const TINT = kindTint(colors);
@@ -512,6 +513,41 @@ export default function HomeScreen({ navigation }) {
 
   const [toDelete, setToDelete] = useState(null);
   const menu = useMenu(); // the side menu lives under the whole tab UI (see MenuHost)
+
+  // Scroll chrome. `scrollY` shrinks the header a little as the feed moves;
+  // `hidden` (0 shown → 1 hidden) tucks the category tabs away on a downward
+  // scroll and brings them back on an upward one — the bottom bar follows
+  // through MenuHost's `chrome`.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const hidden = useRef(new Animated.Value(0)).current;
+  const lastY = useRef(0);
+  const isHidden = useRef(false);
+
+  function setHidden(next) {
+    if (isHidden.current === next) return;
+    isHidden.current = next;
+    menu.setChrome(next);
+    Animated.timing(hidden, { toValue: next ? 1 : 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }
+
+  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    useNativeDriver: false,
+    listener: (e) => {
+      const y = e.nativeEvent.contentOffset.y;
+      const dy = y - lastY.current;
+      lastY.current = y;
+      setAtTop(y <= 0);
+      if (y <= 8) setHidden(false);
+      else if (dy > 6) setHidden(true);
+      else if (dy < -6) setHidden(false);
+    },
+  });
+
+  // Header: mascot and icons are a touch bigger at the top and settle as you scroll.
+  const headerH = scrollY.interpolate({ inputRange: [0, 80], outputRange: [58, 46], extrapolate: 'clamp' });
+  const iconScale = scrollY.interpolate({ inputRange: [0, 80], outputRange: [1, 0.86], extrapolate: 'clamp' });
+  const tabsH = hidden.interpolate({ inputRange: [0, 1], outputRange: [TABS_H, 0] });
+  const tabsOpacity = hidden.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
   const remove = (post) => setToDelete(post);
 
   async function confirmDelete() {
@@ -538,6 +574,12 @@ export default function HomeScreen({ navigation }) {
       !mine && { label: 'Report', icon: 'flag-outline', destructive: true, onPress: () => Alert.alert('Reported', 'Thanks — we will take a look.') },
     ];
   }
+
+  // The side menu's "Other feeds" pick a category from outside.
+  useEffect(() => {
+    const wanted = route.params?.tab;
+    if (wanted && TABS.some((t) => t.key === wanted)) pickTab(wanted);
+  }, [route.params?.tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function pickTab(key) {
     if (key === tab) return;
@@ -642,20 +684,24 @@ export default function HomeScreen({ navigation }) {
 
   // Header stays put: the mascot (drawn by PullToRefresh) sits in the middle, messages on the right
   const Header = (
-    <View style={styles.header}>
+    <Animated.View style={[styles.header, { height: headerH }]}>
       <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={menu.open} hitSlop={8}>
-        <Ionicons name="menu-outline" size={28} color={colors.text} />
+        <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+          <Ionicons name="menu-outline" size={30} color={colors.text} />
+        </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.text} />
+        <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+          <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
+        </Animated.View>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 
-  // Tabs move down with the list when you pull
+  // Tabs move down with the list when you pull, and fold away on a downward scroll
   const Tabs = (
-    <View style={{ backgroundColor: colors.surface }}>
+    <Animated.View style={{ backgroundColor: colors.surface, height: tabsH, opacity: tabsOpacity, overflow: 'hidden' }}>
       {/* Thin underline tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
         {TABS.map((t) => {
@@ -672,12 +718,12 @@ export default function HomeScreen({ navigation }) {
           );
         })}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={30} ghostTop={6}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={10} ghostScale={iconScale}>
       {loading ? (
         <Skeleton />
       ) : (
@@ -698,8 +744,8 @@ export default function HomeScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
-          onScroll={(e) => setAtTop(e.nativeEvent.contentOffset.y <= 0)}
-          scrollEventThrottle={32}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           initialNumToRender={6}
           maxToRenderPerBatch={6}
           windowSize={7}
@@ -760,10 +806,10 @@ const HAIRLINE = StyleSheet.hairlineWidth;
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
-  header: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
 
-  tabsWrap: { flexGrow: 0, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },
+  tabsWrap: { flexGrow: 0, height: TABS_H, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },
   tabs: { paddingHorizontal: 8 },
   tab: { paddingHorizontal: 12, paddingTop: 10 },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingBottom: 10 },
