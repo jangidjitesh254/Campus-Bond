@@ -34,27 +34,9 @@ const EMPTY = { posts: [], resources: [], clubs: [], items: [], lost: [], people
 export default function SearchScreen({ navigation, route }) {
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
-  const { user } = useAuth();
   const [q, setQ] = useState(route.params?.q || '');
-  const [results, setResults] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
-  const seq = useRef(0);
-
-  // Debounced fetch; a stale response never overwrites a newer one.
-  useEffect(() => {
-    const term = q.trim();
-    if (term.length < 2) { setResults(EMPTY); setLoading(false); return; }
-    setLoading(true);
-    const id = ++seq.current;
-    const timer = setTimeout(() => {
-      SearchApi.query(term)
-        .then((d) => { if (id === seq.current) setResults(d); })
-        .catch(() => {})
-        .finally(() => { if (id === seq.current) setLoading(false); });
-    }, 280);
-    return () => clearTimeout(timer);
-  }, [q]);
 
   // Home's search pill sends a fresh `focus` stamp so the keyboard comes up.
   useEffect(() => {
@@ -63,11 +45,6 @@ export default function SearchScreen({ navigation, route }) {
 
   const tabs = navigation.getParent();
   const goTab = (tab, params) => { Keyboard.dismiss(); tabs?.navigate(tab, params); };
-
-  const openQuick = (item) => goTab(item.tab, item.to);
-
-  const total = Object.values(results).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
-  const typed = q.trim().length >= 2;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -97,7 +74,46 @@ export default function SearchScreen({ navigation, route }) {
           ) : null}
         </View>
       </View>
+      <SearchBody q={q} goTab={goTab} onLoading={setLoading} />
+    </SafeAreaView>
+  );
+}
 
+/**
+ * The results for a query — quick links while empty, grouped hits once
+ * typed. Owns the debounced fetch. `goTab(tab, params)` opens a hit.
+ * Reused by SearchScreen and by Home's in-place search overlay.
+ */
+export function SearchBody({ q, goTab, onLoading }) {
+  const { t, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
+  const { user } = useAuth();
+  const [results, setResults] = useState(EMPTY);
+  const [loading, setLoadingState] = useState(false);
+  const seq = useRef(0);
+  const setLoading = (v) => { setLoadingState(v); onLoading?.(v); };
+
+  // Debounced fetch; a stale response never overwrites a newer one.
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) { setResults(EMPTY); setLoading(false); return; }
+    setLoading(true);
+    const id = ++seq.current;
+    const timer = setTimeout(() => {
+      SearchApi.query(term)
+        .then((d) => { if (id === seq.current) setResults(d); })
+        .catch(() => {})
+        .finally(() => { if (id === seq.current) setLoading(false); });
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [q]);
+
+  const openQuick = (item) => goTab(item.tab, item.to);
+
+  const total = Object.values(results).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+  const typed = q.trim().length >= 2;
+
+  return (
       <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {!typed ? (
           <>
@@ -273,7 +289,6 @@ export default function SearchScreen({ navigation, route }) {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
   );
 }
 

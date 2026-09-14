@@ -15,6 +15,7 @@ import PullToRefresh from '../components/PullToRefresh';
 import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
 import { useMenu } from '../context/MenuContext';
+import SearchOverlay from '../components/SearchOverlay';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
@@ -515,6 +516,21 @@ export default function HomeScreen({ navigation, route }) {
   const [toDelete, setToDelete] = useState(null);
   const menu = useMenu(); // the side menu lives under the whole tab UI (see MenuHost)
 
+  // In-place search: the pill measures itself, then the overlay glides it to the top.
+  const rootRef = useRef(null);
+  const pillRef = useRef(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFrom, setSearchFrom] = useState(null);
+  function openSearch() {
+    buzz(() => Haptics.selectionAsync());
+    rootRef.current?.measureInWindow((rx, ry) => {
+      pillRef.current?.measureInWindow((x, y, w) => {
+        setSearchFrom({ y: y - ry, width: w });
+        setSearchOpen(true);
+      });
+    });
+  }
+
   // Scroll chrome. `scrollY` shrinks the header a little as the feed moves;
   // `hidden` (0 shown → 1 hidden) tucks the category tabs away on a downward
   // scroll and brings them back on an upward one — the bottom bar follows
@@ -667,7 +683,7 @@ export default function HomeScreen({ navigation, route }) {
 
   // Search pill above the banner — jumps to the Search tab with the keyboard up.
   const Search = (
-    <TouchableOpacity style={styles.search} activeOpacity={0.8} onPress={() => goTab('Search', { screen: 'SearchHome', params: { focus: Date.now() } })}>
+    <TouchableOpacity ref={pillRef} style={[styles.search, searchOpen && { opacity: 0 }]} activeOpacity={0.8} onPress={openSearch}>
       <Ionicons name="search" size={17} color={colors.textFaint} />
       <Text style={styles.searchText}>Search</Text>
     </TouchableOpacity>
@@ -731,7 +747,7 @@ export default function HomeScreen({ navigation, route }) {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView ref={rootRef} style={styles.safe} edges={['top']}>
       <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H}>
       {loading ? (
         <Skeleton />
@@ -763,6 +779,8 @@ export default function HomeScreen({ navigation, route }) {
         />
       )}
       </PullToRefresh>
+
+      <SearchOverlay open={searchOpen} from={searchFrom} onClose={() => setSearchOpen(false)} goTab={goTab} />
 
       <Confirm
         visible={!!toDelete}
