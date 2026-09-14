@@ -10,6 +10,13 @@ const conversationSchema = new mongoose.Schema(
     event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // the post it started from
     lastMessage: { type: String, default: '' },
     lastMessageAt: { type: Date, default: Date.now },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'declined'],
+      default: 'accepted',
+    },
+    requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    requestMessage: { type: String, default: '' },
   },
   { timestamps: true }
 );

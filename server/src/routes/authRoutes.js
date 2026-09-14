@@ -6,6 +6,7 @@ import {
   resendOtp,
   login,
   getMe,
+  updateProfile,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -42,5 +43,6 @@ router.post(
 );
 
 router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
 
 export default router;

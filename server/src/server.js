@@ -10,6 +10,8 @@ import lostRoutes from './routes/lostRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import marketRoutes from './routes/marketRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
+import assistantRoutes from './routes/assistantRoutes.js';
+import skillMatchRoutes from './routes/skillMatchRoutes.js';
 import { UPLOAD_DIR, USE_BLOB } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -56,6 +58,8 @@ app.use('/api/lostfound', lostRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/clubs', clubRoutes);
+app.use('/api/assistant', assistantRoutes);
+app.use('/api/skill-match', skillMatchRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);

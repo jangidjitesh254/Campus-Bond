@@ -3,7 +3,6 @@ import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { sendEmail } from '../utils/sendEmail.js';
-import { otpEmail } from '../utils/emailTemplates.js';
 import { generateToken } from '../utils/generateToken.js';
 
 /** Return the first validation error, if any. */
@@ -18,6 +17,20 @@ function isEmailDomainAllowed(email) {
   const domain = (process.env.ALLOWED_EMAIL_DOMAIN || '').trim().toLowerCase();
   if (!domain) return true; // no restriction during development
   return email.toLowerCase().endsWith(`@${domain}`) || email.toLowerCase().endsWith(domain);
+}
+
+/** Enforce the allowed college email pattern (local part before @), if configured. */
+function isEmailPatternAllowed(email) {
+  const pattern = (process.env.ALLOWED_EMAIL_PATTERN || '').trim();
+  if (!pattern) return true; // no restriction
+  const localPart = email.split('@')[0];
+  try {
+    const regex = new RegExp(pattern, 'i');
+    return regex.test(localPart);
+  } catch (err) {
+    console.error('Invalid ALLOWED_EMAIL_PATTERN regex:', err);
+    return true;
+  }
 }
 
 /** Generate a 6-digit numeric OTP. */
@@ -40,7 +53,13 @@ export async function register(req, res) {
 
   if (!isEmailDomainAllowed(normalizedEmail)) {
     return res.status(403).json({
-      message: `Only ${process.env.ALLOWED_EMAIL_DOMAIN} campus emails can register.`,
+      message: `Only @${process.env.ALLOWED_EMAIL_DOMAIN} campus emails can register.`,
+    });
+  }
+
+  if (!isEmailPatternAllowed(normalizedEmail)) {
+    return res.status(400).json({
+      message: `Invalid college email format. The email ID before @ must match the college enrollment pattern (e.g. 21bcon101@${process.env.ALLOWED_EMAIL_DOMAIN || 'vgu.ac.in'}).`,
     });
   }
 
@@ -65,11 +84,17 @@ export async function register(req, res) {
     expiresAt,
   });
 
-  await sendEmail({ to: normalizedEmail, ...otpEmail({ name, code, minutes }) });
+  await sendEmail({
+    to: normalizedEmail,
+    subject: 'Your Campus Bond verification code',
+    text: `Welcome to Campus Bond! Your verification code is ${code}. It expires in ${minutes} minutes.`,
+  });
 
+  const isDev = !process.env.SMTP_HOST;
   res.status(200).json({
     message: `Verification code sent to ${normalizedEmail}. It expires in ${minutes} minutes.`,
     email: normalizedEmail,
+    ...(isDev ? { devOtp: code } : {}),
   });
 }
 
@@ -140,9 +165,17 @@ export async function resendOtp(req, res) {
   otp.expiresAt = new Date(Date.now() + minutes * 60 * 1000);
   await otp.save();
 
-  await sendEmail({ to: normalizedEmail, ...otpEmail({ name: otp.payload?.name, code, minutes, resend: true }) });
+  await sendEmail({
+    to: normalizedEmail,
+    subject: 'Your new Campus Bond verification code',
+    text: `Your new verification code is ${code}. It expires in ${minutes} minutes.`,
+  });
 
-  res.status(200).json({ message: `A new code was sent to ${normalizedEmail}.` });
+  const isDev = !process.env.SMTP_HOST;
+  res.status(200).json({
+    message: `A new code was sent to ${normalizedEmail}.`,
+    ...(isDev ? { devOtp: code } : {}),
+  });
 }
 
 /**
@@ -178,4 +211,69 @@ export async function login(req, res) {
  */
 export async function getMe(req, res) {
   res.status(200).json({ user: req.user });
+}
+
+/**
+ * Update current user's profile details & skills.
+ * PUT /api/auth/profile
+ */
+export async function updateProfile(req, res) {
+  try {
+    const {
+      name,
+      branch,
+      semester,
+      skills,
+      bio,
+      interests,
+      githubUrl,
+      linkedinUrl,
+      portfolioUrl,
+      avatar,
+    } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name !== undefined) user.name = name.trim();
+    if (branch !== undefined) user.branch = branch.trim();
+    if (semester !== undefined) user.semester = Number(semester);
+    if (bio !== undefined) user.bio = bio.trim();
+    if (avatar !== undefined) user.avatar = avatar.trim();
+    if (githubUrl !== undefined) user.githubUrl = githubUrl.trim();
+    if (linkedinUrl !== undefined) user.linkedinUrl = linkedinUrl.trim();
+    if (portfolioUrl !== undefined) user.portfolioUrl = portfolioUrl.trim();
+
+    if (skills !== undefined) {
+      if (Array.isArray(skills)) {
+        user.skills = skills.map((s) => String(s).trim()).filter(Boolean);
+      } else if (typeof skills === 'string') {
+        user.skills = skills
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+
+    if (interests !== undefined) {
+      if (Array.isArray(interests)) {
+        user.interests = interests.map((i) => String(i).trim()).filter(Boolean);
+      } else if (typeof interests === 'string') {
+        user.interests = interests
+          .split(',')
+          .map((i) => i.trim())
+          .filter(Boolean);
+      }
+    }
+
+    await user.save();
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Failed to update profile' });
+  }
 }

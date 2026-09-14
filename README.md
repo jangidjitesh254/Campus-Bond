@@ -13,8 +13,9 @@ A verified campus app that connects students across all branches and semesters �
 
 ```
 Campus-Bond/
-  server/     # Express + MongoDB API   (Phase 0 ✅ done)
-  mobile/     # Expo React Native app    (Phase 1 ✅ done)
+  website/    # React 19 + Vite + Tailwind CSS Web App
+  mobile/     # Expo React Native Mobile App
+  server/     # Express + MongoDB API & AI Services
 ```
 
 ## Roadmap

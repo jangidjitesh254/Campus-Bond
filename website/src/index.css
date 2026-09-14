@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  font-family: 'Outfit', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #F6F8FA;
+  color: #0A0B0D;
+  font-family: 'Outfit', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.012em;
+}
+
+.font-display {
+  font-family: 'Outfit', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.font-handwriting {
+  font-family: 'Caveat', 'Patrick Hand', 'Comic Sans MS', cursive;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FBFBFA;
+}
+::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}
+
+/* ─── High-Contrast Premium Dark Theme System ─── */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body,
+html.dark #root,
+html.dark .bg-\[\#F6F8FA\],
+html.dark .bg-\[\#FBFBFA\],
+html.dark [class*="bg-[#F6F8FA]"],
+html.dark [class*="bg-[#FBFBFA]"] {
+  background-color: #070B14 !important;
+  color: #F1F5F9;
+}
+
+/* Cards & Canvas Surfaces */
+html.dark .bg-white {
+  background-color: #0E1626 !important;
+}
+
+html.dark .campus-sidebar .bg-white,
+html.dark .campus-sidebar [style*="background-color: #ffffff"],
+html.dark .campus-sidebar [style*="backgroundColor: #ffffff"] {
+  background-color: #ffffff !important;
+}
+
+html.dark .bg-white\/95 {
+  background-color: rgba(14, 22, 38, 0.95) !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50,
+html.dark .bg-gray-50\/80 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-gray-100\/80,
+html.dark .bg-gray-100\/70 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .bg-gray-200,
+html.dark .bg-gray-200\/70 {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Borders */
+html.dark .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-gray-200\/60,
+html.dark .border-gray-200\/70,
+html.dark .border-gray-200\/80,
+html.dark .border-gray-200\/90 {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+html.dark .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark .border-gray-400 {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Headings & Text hierarchy in Dark Mode */
+html.dark .text-gray-950,
+html.dark .text-gray-900 {
+  color: #FFFFFF !important;
+}
+
+html.dark .text-gray-800,
+html.dark .text-gray-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-gray-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-gray-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark .text-gray-400 {
+  color: #64748B !important;
+}
+
+/* Primary Action Buttons (convert dark navy buttons to vibrant royal blue in dark mode) */
+html.dark .bg-\[\#0B1528\],
+html.dark [class*="bg-[#0B1528]"] {
+  background-color: #2563EB !important;
+  color: #FFFFFF !important;
+}
+
+html.dark .bg-\[\#0B1528\]:hover,
+html.dark [class*="bg-[#0B1528]"]:hover {
+  background-color: #1D4ED8 !important;
+}
+
+html.dark .text-\[\#0B1528\],
+html.dark [class*="text-[#0B1528]"] {
+  color: #60A5FA !important;
+}
+
+/* Form Inputs, Textarea, Selects */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0E1626 !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* Category Badge glows in Dark Mode */
+html.dark .bg-\[\#EEF2FF\],
+html.dark [class*="bg-[#EEF2FF]"] {
+  background-color: rgba(99, 102, 241, 0.18) !important;
+  color: #A5B4FC !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+html.dark .bg-\[\#FDF4FF\],
+html.dark [class*="bg-[#FDF4FF]"] {
+  background-color: rgba(217, 70, 239, 0.18) !important;
+  color: #F0ABFC !important;
+  border-color: rgba(217, 70, 239, 0.35) !important;
+}
+
+html.dark .bg-\[\#FEF3C7\],
+html.dark [class*="bg-[#FEF3C7]"] {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  color: #FDE68A !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark .bg-\[\#E0F2FE\],
+html.dark [class*="bg-[#E0F2FE]"] {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+  color: #7DD3FC !important;
+  border-color: rgba(14, 165, 233, 0.35) !important;
+}
+
+html.dark .bg-\[\#FDF2F8\],
+html.dark [class*="bg-[#FDF2F8]"] {
+  background-color: rgba(244, 114, 182, 0.18) !important;
+  color: #F472B6 !important;
+  border-color: rgba(244, 114, 182, 0.35) !important;
+}
+
+/* Scrollbars in Dark Mode */
+html.dark ::-webkit-scrollbar-track {
+  background: #070B14;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
