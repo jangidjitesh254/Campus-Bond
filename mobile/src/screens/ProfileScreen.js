@@ -32,9 +32,15 @@ export default function ProfileScreen({ navigation }) {
     useCallback(() => {
       let active = true;
       Promise.all([EventsApi.myCreated().catch(() => []), MarketApi.myListings().catch(() => []), ClubApi.mine().catch(() => [])])
-        .then(([p, l, c]) => active && setCounts({ posts: p.length, listings: l.length, clubs: c.length }))
+        .then(([p, l, c]) => {
+          if (!active) return;
+          const next = { posts: p.length, listings: l.length, clubs: c.length };
+          setCounts((prev) => (prev.posts === next.posts && prev.listings === next.listings && prev.clubs === next.clubs ? prev : next));
+        })
         .catch(() => {});
-      ScoreApi.me().then((s) => active && setScore(s)).catch(() => {});
+      ScoreApi.me()
+        .then((s) => active && setScore((prev) => (prev && prev.total === s.total && prev.rank === s.rank ? prev : s)))
+        .catch(() => {});
       return () => { active = false; };
     }, [])
   );

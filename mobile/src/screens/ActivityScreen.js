@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +34,7 @@ export default function ActivityScreen({ navigation }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
+  const seen = useRef('');
 
   const load = useCallback(async () => {
     try {
@@ -83,7 +84,11 @@ export default function ActivityScreen({ navigation }) {
         }
       });
       notes.sort((a, b) => new Date(b.time) - new Date(a.time));
-      setItems(notes);
+      const sig = notes.map((n) => `${n.id}:${n.cta}`).join('|');
+      if (sig !== seen.current) {
+        seen.current = sig;
+        setItems(notes);
+      }
     } catch {
     } finally {
       setLoading(false);

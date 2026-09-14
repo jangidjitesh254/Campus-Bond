@@ -339,11 +339,16 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
 }
 
 /** Each kind gets its own layout so the feed doesn't read as one long list of the same row. */
-function Post(props) {
-  const uri = imageUrl(props.post.image);
-  if (props.post.kind === 'lost') return <LostPost {...props} uri={uri} />;
-  return <TeamPost {...props} />;
-}
+// Memoised on the post object itself: the feed only hands out new objects
+// when the server data actually changed, so untouched rows never re-render.
+const Post = React.memo(
+  function Post(props) {
+    const uri = imageUrl(props.post.image);
+    if (props.post.kind === 'lost') return <LostPost {...props} uri={uri} />;
+    return <TeamPost {...props} />;
+  },
+  (a, b) => a.post === b.post && a.me === b.me
+);
 
 /* ------------------------------------------------------------------ */
 /*  Screen                                                             */
@@ -357,6 +362,7 @@ export default function HomeScreen({ navigation }) {
   const [tab, setTab] = useState('all');
   const [busy, setBusy] = useState(null);
   const listRef = useRef(null);
+  const feedSig = useRef('');
 
   const load = useCallback(async () => {
     const [ev, lost, market, clubs] = await Promise.allSettled([
@@ -371,7 +377,13 @@ export default function HomeScreen({ navigation }) {
     if (market.status === 'fulfilled') items.push(...(market.value.items || []).map((d) => toPost('market', d)));
     if (clubs.status === 'fulfilled') items.push(...(clubs.value || []).map((d) => toPost('club', d)));
     items.sort((a, b) => new Date(b.at) - new Date(a.at));
-    setFeed(items);
+    // Only touch state when something actually changed, so a refetch that
+    // returns the same feed doesn't re-render thirty rows for nothing.
+    const sig = items.map((p) => `${p.kind}:${p.id}:${p.raw.updatedAt || p.at}:${p.raw.status || ''}:${p.raw.isMember ?? ''}:${p.raw.myRequest ?? ''}`).join('|');
+    if (sig !== feedSig.current) {
+      feedSig.current = sig;
+      setFeed(items);
+    }
     setLoading(false);
   }, []);
 
@@ -617,7 +629,11 @@ export default function HomeScreen({ navigation }) {
           bounces={false}
           overScrollMode="never"
           onScroll={(e) => setAtTop(e.nativeEvent.contentOffset.y <= 0)}
-          scrollEventThrottle={16}
+          scrollEventThrottle={32}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews={Platform.OS === 'android'}
         />
       )}
       </PullToRefresh>

@@ -171,11 +171,13 @@ function TabBar({ state, navigation }) {
 
 export default function AppTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Search" component={SearchStack} />
-      <Tab.Screen name="Activity" component={ActivityStack} />
-      <Tab.Screen name="More" component={ProfileStack} />
+    <Tab.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }} tabBar={(props) => <TabBar {...props} />}>
+      {/* The four bar tabs mount up front so switching between them is instant;
+          screens that are not on screen are frozen so they cost nothing. */}
+      <Tab.Screen name="Home" component={HomeStack} options={{ lazy: false }} />
+      <Tab.Screen name="Search" component={SearchStack} options={{ lazy: false }} />
+      <Tab.Screen name="Activity" component={ActivityStack} options={{ lazy: false }} />
+      <Tab.Screen name="More" component={ProfileStack} options={{ lazy: false }} />
       {/* Not in the bar — reachable via navigate('Post' | 'Club' | 'Sell' | 'Map', …) from the feed and profile */}
       <Tab.Screen name="Post" component={PostStack} />
       <Tab.Screen name="Club" component={ClubStack} />

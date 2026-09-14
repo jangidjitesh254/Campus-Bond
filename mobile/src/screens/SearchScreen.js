@@ -82,7 +82,6 @@ export default function SearchScreen({ navigation, route }) {
             placeholderTextColor={t.textMuted}
             value={q}
             onChangeText={setQ}
-            autoFocus={!route.params?.q}
             returnKeyType="search"
             autoCorrect={false}
           />
