@@ -13,7 +13,7 @@ export default function SearchStack() {
   const screenOptions = useStackOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SearchHome" component={SearchScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CreateLost" component={CreateLostScreen} options={{ title: 'Report an item' }} />
       <Stack.Screen name="LostDetail" component={LostDetailScreen} options={{ title: 'Item' }} />
       <Stack.Screen name="MyLostPosts" component={MyLostPostsScreen} options={{ title: 'My items' }} />

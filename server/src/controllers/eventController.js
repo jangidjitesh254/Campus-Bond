@@ -317,7 +317,8 @@ export async function deleteEvent(req, res) {
 export async function myEvents(req, res) {
   const events = await Event.find({ createdBy: req.user._id })
     .sort({ createdAt: -1 })
-    .populate('applicants.user', 'name branch semester avatar');
+    .populate('applicants.user', 'name branch semester avatar')
+    .populate('comments.user', 'name');
   res.status(200).json({ events });
 }
 

@@ -11,7 +11,7 @@ export default function ActivityStack() {
   const screenOptions = useStackOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="Activity" component={ActivityScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ActivityHome" component={ActivityScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Thread" component={EventDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>

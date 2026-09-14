@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 /**
@@ -7,12 +8,16 @@ import { useTheme } from '../context/ThemeContext';
  */
 export function useStackOptions() {
   const { t } = useTheme();
-  return {
-    headerStyle: { backgroundColor: t.page },
-    headerShadowVisible: false,
-    headerTintColor: t.text,
-    headerTitleStyle: { color: t.text, fontFamily: 'Manrope_800ExtraBold', fontSize: 17 },
-    headerBackTitleStyle: { fontFamily: 'Manrope_600SemiBold' },
-    contentStyle: { backgroundColor: t.page },
-  };
+  // Memoised so navigators don't see a new options object on every render.
+  return useMemo(
+    () => ({
+      headerStyle: { backgroundColor: t.surface },
+      headerShadowVisible: false,
+      headerTintColor: t.text,
+      headerTitleStyle: { color: t.text, fontFamily: 'Manrope_700Bold', fontSize: 17 },
+      headerBackTitleStyle: { fontFamily: 'Manrope_600SemiBold' },
+      contentStyle: { backgroundColor: t.surface },
+    }),
+    [t]
+  );
 }

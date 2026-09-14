@@ -12,8 +12,8 @@ import { useTheme } from '../context/ThemeContext';
 import { SearchApi } from '../api/search';
 import { openResource } from '../api/resources';
 import { imageUrl } from '../api/lostfound';
-import { layout, monoFamily } from '../theme';
-import AmbientGlow from '../components/AmbientGlow';
+import { Ghost } from '../components/Mascot';
+import { layout } from '../theme';
 
 // The library and score live in the More (profile) stack.
 const QUICK = [
@@ -66,7 +66,6 @@ export default function SearchScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AmbientGlow />
       <View style={styles.header}>
         {/* As a tab root there is nothing to go back to, so the arrow only shows when pushed. */}
         {navigation.getState().index > 0 ? (
@@ -98,18 +97,22 @@ export default function SearchScreen({ navigation, route }) {
       <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {!typed ? (
           <>
-            <Text style={styles.eyebrow}>JUMP TO</Text>
+            <Text style={styles.eyebrow}>Jump to</Text>
             {QUICK.map((it) => (
               <TouchableOpacity key={it.key} style={styles.quick} activeOpacity={0.7} onPress={() => openQuick(it)}>
-                <View style={styles.quickIcon}><Ionicons name={it.ion} size={19} color={t.primary} /></View>
+                <View style={styles.quickIcon}><Ionicons name={`${it.ion}-outline`} size={19} color={t.text} /></View>
                 <Text style={styles.quickLabel}>{it.label}</Text>
                 <Icon name="chevronRight" size={18} color={t.textFaint} strokeWidth={2} />
               </TouchableOpacity>
             ))}
-            <Text style={styles.tip}>TRY A SKILL — “FLUTTER”, “UI DESIGN”, “PYTHON” — TO FIND PEOPLE</Text>
+            <View style={styles.tipRow}>
+              <Ghost width={40} variant="happy" />
+              <Text style={styles.tip}>Try a skill — “Flutter”, “UI design”, “Python” — to find people.</Text>
+            </View>
           </>
         ) : !loading && total === 0 ? (
           <View style={styles.empty}>
+            <Ghost width={64} variant="surprised" />
             <Text style={styles.emptyTitle}>Nothing for “{q.trim()}”</Text>
             <Text style={styles.emptySub}>Try a subject, a person's name, a skill, or a club.</Text>
           </View>
@@ -141,7 +144,7 @@ export default function SearchScreen({ navigation, route }) {
                         ) : null}
                       </View>
                       <View style={styles.score}>
-                        <Ionicons name="trophy" size={11} color={t.accent} />
+                        <Ionicons name="trophy-outline" size={11} color={t.textMuted} />
                         <Text style={styles.scoreText}>{p.campusScore ?? 0}</Text>
                       </View>
                     </View>
@@ -160,7 +163,7 @@ export default function SearchScreen({ navigation, route }) {
                     activeOpacity={0.75}
                     onPress={() => goTab('Post', { screen: 'Thread', params: { id: p._id } })}
                   >
-                    <View style={styles.glyphBox}><Ionicons name="megaphone-outline" size={19} color={t.primary} /></View>
+                    <View style={styles.glyphBox}><Ionicons name="megaphone-outline" size={19} color={t.text} /></View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.rowTitle} numberOfLines={2}>{p.title}</Text>
                       <Text style={styles.rowSub} numberOfLines={1}>
@@ -204,7 +207,7 @@ export default function SearchScreen({ navigation, route }) {
                       activeOpacity={0.75}
                       onPress={() => goTab('Club', { screen: 'ClubDetail', params: { id: c._id } })}
                     >
-                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="people-circle-outline" size={20} color={t.primary} /></View>}
+                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="people-circle-outline" size={20} color={t.text} /></View>}
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.rowTitle} numberOfLines={1}>{c.name}</Text>
                         <Text style={styles.rowSub} numberOfLines={1}>{c.memberCount} member{c.memberCount === 1 ? '' : 's'}{c.category ? ` · ${c.category}` : ''}</Text>
@@ -228,7 +231,7 @@ export default function SearchScreen({ navigation, route }) {
                       activeOpacity={0.75}
                       onPress={() => goTab('Sell', { screen: 'SellDetail', params: { id: m._id } })}
                     >
-                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="pricetag-outline" size={19} color={t.primary} /></View>}
+                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="pricetag-outline" size={19} color={t.text} /></View>}
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.rowTitle} numberOfLines={1}>{m.title}</Text>
                         <Text style={styles.rowSub} numberOfLines={1}>₹{m.price} · {handleOf(m.seller?.name)}</Text>
@@ -252,7 +255,7 @@ export default function SearchScreen({ navigation, route }) {
                       activeOpacity={0.75}
                       onPress={() => goTab('Post', { screen: 'LostDetail', params: { id: l._id } })}
                     >
-                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="search-outline" size={19} color={t.accent} /></View>}
+                      {uri ? <Image source={{ uri }} style={styles.thumb} /> : <View style={styles.glyphBox}><Ionicons name="search-outline" size={19} color={t.text} /></View>}
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.rowTitle} numberOfLines={1}>{l.title}</Text>
                         <Text style={styles.rowSub} numberOfLines={1}>{l.type === 'found' ? 'Found' : 'Lost'}{l.location ? ` · ${l.location}` : ''} · {timeAgo(l.createdAt)}</Text>
@@ -287,60 +290,58 @@ function Section({ styles, title, count, action, onAction, children }) {
           </TouchableOpacity>
         ) : null}
       </View>
-      <View style={styles.card}>{children}</View>
+      <View>{children}</View>
     </View>
   );
 }
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: t.bg },
-    header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10 },
+    safe: { flex: 1, backgroundColor: t.surface },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10 },
     back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
     searchBar: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 9,
-      backgroundColor: t.field,
+      backgroundColor: t.surfaceMuted,
       borderRadius: 999,
-      borderWidth: 1,
-      borderColor: t.borderSoft,
       paddingHorizontal: 14,
-      height: 44,
+      height: 42,
     },
     input: { flex: 1, fontSize: 15, color: t.text, paddingVertical: 0 },
     list: { paddingBottom: layout.tabBarSpace + 20 },
-    eyebrow: { fontFamily: monoFamily, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: t.textMuted, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 8 },
-    quick: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 18, paddingVertical: 13, borderTopWidth: 1, borderTopColor: t.hairline },
-    quickIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: t.surfaceAlt, borderWidth: 1, borderColor: t.borderSoft, alignItems: 'center', justifyContent: 'center' },
+    eyebrow: { fontSize: 13, fontWeight: '700', color: t.textMuted, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6 },
+    quick: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border },
+    quickIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: t.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
     quickLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: t.text },
-    tip: { fontFamily: monoFamily, fontSize: 9, letterSpacing: 0.8, color: t.textFaint, textAlign: 'center', paddingHorizontal: 30, paddingTop: 28, lineHeight: 15 },
-    empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 30 },
-    emptyTitle: { fontSize: 16, fontWeight: '600', color: t.text, textAlign: 'center' },
-    emptySub: { fontSize: 13, color: t.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 19 },
-    section: { marginTop: 16, paddingHorizontal: 14 },
-    sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, paddingHorizontal: 4 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3, color: t.text },
-    sectionCount: { fontFamily: monoFamily, fontSize: 10, fontWeight: '700', color: t.textFaint },
-    sectionAction: { fontSize: 12.5, fontWeight: '600', color: t.accent },
-    card: { backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden' },
-    rowBorder: { borderBottomWidth: 1, borderBottomColor: t.hairline },
-    rowTitle: { fontSize: 14.5, fontWeight: '600', color: t.text },
-    rowSub: { fontSize: 12.5, color: t.textMuted, marginTop: 2 },
+    tipRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 26, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border, marginTop: 2 },
+    tip: { flex: 1, fontSize: 13, color: t.textMuted, lineHeight: 18 },
+    empty: { alignItems: 'center', paddingVertical: 56, paddingHorizontal: 24 },
+    emptyTitle: { fontSize: 16, fontWeight: '700', color: t.text, marginTop: 12, textAlign: 'center' },
+    emptySub: { fontSize: 14, color: t.textMuted, textAlign: 'center', marginTop: 4, lineHeight: 19 },
+    section: { marginTop: 6 },
+    sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
+    sectionTitle: { fontSize: 15, fontWeight: '700', color: t.text },
+    sectionCount: { fontSize: 12.5, fontWeight: '600', color: t.textFaint },
+    sectionAction: { fontSize: 13.5, fontWeight: '600', color: t.link },
+    rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
+    rowTitle: { fontSize: 15, fontWeight: '600', color: t.text },
+    rowSub: { fontSize: 13, color: t.textMuted, marginTop: 2 },
     avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.surfaceMuted },
     thumb: { width: 44, height: 44, borderRadius: 12, backgroundColor: t.surfaceMuted },
-    glyphBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    glyphBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: t.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
     tags: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 6 },
-    tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: t.field, borderWidth: 1, borderColor: t.borderSoft },
-    tagHit: { backgroundColor: t.primary, borderColor: t.primary },
-    tagText: { fontSize: 10.5, fontWeight: '600', color: t.textMuted },
-    tagTextHit: { color: t.onPrimary },
-    more: { fontFamily: monoFamily, fontSize: 9.5, color: t.textFaint },
+    tag: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: t.surfaceMuted, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
+    tagHit: { backgroundColor: t.text, borderColor: t.text },
+    tagText: { fontSize: 11.5, fontWeight: '600', color: t.text },
+    tagTextHit: { color: t.surface },
+    more: { fontSize: 11, color: t.textFaint },
     score: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginTop: 2 },
-    scoreText: { fontFamily: monoFamily, fontSize: 11, fontWeight: '700', color: t.accent },
+    scoreText: { fontSize: 12, fontWeight: '700', color: t.textMuted },
     // ResourceRow shares the library's row styling; `row` is the shared one.
     ...makeResourceStyles(t, isDark),
-    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
   });
 }
