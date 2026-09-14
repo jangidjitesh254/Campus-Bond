@@ -1,15 +1,7 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import LostItem from '../models/LostItem.js';
-import { UPLOAD_DIR } from '../middleware/upload.js';
+import { storeImage, deleteImage, discardUpload } from '../middleware/upload.js';
 import { award } from '../utils/score.js';
 
-/** Remove an uploaded file from disk (best-effort). */
-function removeImageFile(imagePath) {
-  if (!imagePath) return;
-  const filename = path.basename(imagePath);
-  fs.promises.unlink(path.join(UPLOAD_DIR, filename)).catch(() => {});
-}
 
 /** Shape an item for the client with the current user's interest state. */
 function decorate(item, userId) {
@@ -31,11 +23,11 @@ export async function createLostItem(req, res) {
   const { type, title, description, category, location, contact } = req.body;
 
   if (!['lost', 'found'].includes(type)) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: "Type must be 'lost' or 'found'." });
   }
   if (!title || !title.trim()) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: 'A title is required.' });
   }
 
@@ -46,7 +38,7 @@ export async function createLostItem(req, res) {
     category: category || 'other',
     location: location?.trim() || '',
     contact: contact?.trim() || '',
-    image: req.file ? `/uploads/${req.file.filename}` : '',
+    image: await storeImage(req.file),
     createdBy: req.user._id,
   });
 
@@ -134,11 +126,11 @@ export async function updateLostStatus(req, res) {
 export async function updateLostItem(req, res) {
   const item = await LostItem.findById(req.params.id);
   if (!item) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(404).json({ message: 'Item not found.' });
   }
   if (String(item.createdBy) !== String(req.user._id)) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(403).json({ message: 'Only the poster can edit this item.' });
   }
 
@@ -146,14 +138,14 @@ export async function updateLostItem(req, res) {
 
   if (type !== undefined) {
     if (!['lost', 'found'].includes(type)) {
-      if (req.file) removeImageFile(req.file.filename);
+      discardUpload(req.file);
       return res.status(400).json({ message: "Type must be 'lost' or 'found'." });
     }
     item.type = type;
   }
   if (title !== undefined) {
     if (!String(title).trim()) {
-      if (req.file) removeImageFile(req.file.filename);
+      discardUpload(req.file);
       return res.status(400).json({ message: 'A title is required.' });
     }
     item.title = String(title).trim();
@@ -164,8 +156,8 @@ export async function updateLostItem(req, res) {
   if (contact !== undefined) item.contact = String(contact).trim();
 
   if (req.file) {
-    removeImageFile(item.image); // drop the photo it replaces
-    item.image = `/uploads/${req.file.filename}`;
+    deleteImage(item.image); // drop the photo it replaces
+    item.image = await storeImage(req.file);
   }
 
   await item.save();
@@ -202,7 +194,7 @@ export async function deleteLostItem(req, res) {
   if (String(item.createdBy) !== String(req.user._id)) {
     return res.status(403).json({ message: 'Only the poster can delete this item.' });
   }
-  removeImageFile(item.image);
+  deleteImage(item.image);
   await item.deleteOne();
   res.status(200).json({ message: 'Item deleted.' });
 }

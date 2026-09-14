@@ -68,9 +68,12 @@ export default function SearchScreen({ navigation, route }) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <AmbientGlow />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Icon name="back" size={20} color={t.text} strokeWidth={2} />
-        </TouchableOpacity>
+        {/* As a tab root there is nothing to go back to, so the arrow only shows when pushed. */}
+        {navigation.getState().index > 0 ? (
+          <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Icon name="back" size={20} color={t.text} strokeWidth={2} />
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.searchBar}>
           <Icon name="search" size={16} color={t.textMuted} strokeWidth={1.9} />
           <TextInput

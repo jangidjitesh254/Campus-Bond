@@ -1,15 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import MarketItem from '../models/MarketItem.js';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
-import { UPLOAD_DIR } from '../middleware/upload.js';
+import { storeImage, deleteImage, discardUpload } from '../middleware/upload.js';
 import { award } from '../utils/score.js';
 
-function removeImageFile(imagePath) {
-  if (!imagePath) return;
-  fs.promises.unlink(path.join(UPLOAD_DIR, path.basename(imagePath))).catch(() => {});
-}
 
 /**
  * Create a listing. Expects multipart/form-data with an optional `image`.
@@ -18,12 +12,12 @@ function removeImageFile(imagePath) {
 export async function createItem(req, res) {
   const { title, description, price, category, condition, contact } = req.body;
   if (!title || !title.trim()) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: 'A title is required.' });
   }
   const numPrice = Number(price);
   if (Number.isNaN(numPrice) || numPrice < 0) {
-    if (req.file) removeImageFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(400).json({ message: 'A valid price is required.' });
   }
 
@@ -34,7 +28,7 @@ export async function createItem(req, res) {
     category: category || 'other',
     condition: condition || 'good',
     contact: contact?.trim() || '',
-    image: req.file ? `/uploads/${req.file.filename}` : '',
+    image: await storeImage(req.file),
     seller: req.user._id,
   });
 
@@ -196,7 +190,7 @@ export async function deleteItem(req, res) {
   if (String(item.seller) !== String(req.user._id)) {
     return res.status(403).json({ message: 'Only the seller can delete this listing.' });
   }
-  removeImageFile(item.image);
+  deleteImage(item.image);
   await item.deleteOne();
   res.status(200).json({ message: 'Listing deleted.' });
 }

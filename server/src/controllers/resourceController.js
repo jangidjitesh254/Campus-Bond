@@ -1,15 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import Resource from '../models/Resource.js';
-import { UPLOAD_DIR } from '../middleware/upload.js';
+import { storeFile, deleteFile, discardUpload } from '../middleware/upload.js';
 import { award } from '../utils/score.js';
 
 const KINDS = ['pyq', 'notes', 'slides', 'other'];
-
-function removeFile(filePath) {
-  if (!filePath) return;
-  fs.promises.unlink(path.join(UPLOAD_DIR, path.basename(filePath))).catch(() => {});
-}
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -22,7 +15,7 @@ function escapeRegex(s) {
 export async function createResource(req, res) {
   const { title, description, kind, subject, branch, semester, year } = req.body;
   const fail = (code, message) => {
-    if (req.file) removeFile(req.file.filename);
+    discardUpload(req.file);
     return res.status(code).json({ message });
   };
 
@@ -48,7 +41,7 @@ export async function createResource(req, res) {
     branch: (branch || req.user.branch || '').trim(),
     semester: sem ?? req.user.semester,
     year: yr,
-    file: `/uploads/${req.file.filename}`,
+    file: await storeFile(req.file),
     mime: req.file.mimetype,
     size: req.file.size,
     originalName: req.file.originalname,
@@ -129,7 +122,7 @@ export async function deleteResource(req, res) {
   if (String(resource.uploader) !== String(req.user._id)) {
     return res.status(403).json({ message: 'Only the uploader can delete this.' });
   }
-  removeFile(resource.file);
+  deleteFile(resource.file);
   await resource.deleteOne();
   res.status(200).json({ message: 'Resource deleted.' });
 }

@@ -1,212 +1,201 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Text } from '../components/Text';
-import Icon from '../components/Icon';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import * as Haptics from 'expo-haptics';
+import Avatar from '../components/Avatar';
+import HomeStack from './HomeStack';
 import PostStack from './PostStack';
-import ClubStack from './ClubStack';
 import MapStack from './MapStack';
+import ClubStack from './ClubStack';
 import SellStack from './SellStack';
+import SearchStack from './SearchStack';
+import ActivityStack from './ActivityStack';
 import ProfileStack from './ProfileStack';
-import { useTheme } from '../context/ThemeContext';
-import useKeyboardOpen from '../hooks/useKeyboardOpen';
-import { gradients, shadow } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-// The Post feed IS the home page, so the `Post` route is labelled "Home" and is
-// the navigator's initial route. `Map` stays registered but has no slot — it is
-// reached from a Profile row. Five slots means the centre action lands dead
-// centre.
+/** Two little ghost eyes + a smile, drawn inside a filled icon so the mascot "lives" in it. */
+function Face({ cx = 12, cy = 12, s = 1 }) {
+  const eye = colors.surface;
+  return (
+    <>
+      <Circle cx={cx - 2.4 * s} cy={cy - 0.6 * s} r={1.55 * s} fill={eye} />
+      <Circle cx={cx + 2.4 * s} cy={cy - 0.6 * s} r={1.55 * s} fill={eye} />
+      <Circle cx={cx - 2.4 * s} cy={cy - 0.6 * s} r={0.7 * s} fill={colors.text} />
+      <Circle cx={cx + 2.4 * s} cy={cy - 0.6 * s} r={0.7 * s} fill={colors.text} />
+      <Path d={`M${cx - 1.6 * s} ${cy + 2.2 * s}q${1.6 * s} ${1.6 * s} ${3.2 * s} 0`} stroke={eye} strokeWidth={0.9 * s} strokeLinecap="round" fill="none" />
+    </>
+  );
+}
+
+/** Soft, rounded tab icons (Instagram-like). When active they fill in and the ghost peeks out. */
+function TabIcon({ name, on, size = 27 }) {
+  const c = on ? colors.text : colors.textMuted;
+  const stroke = { stroke: c, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  // Filled state keeps the same stroke so the silhouette stays the same size as the outline
+  const solid = { ...stroke, fill: c };
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {name === 'home' ? (
+        <>
+          {/* Pitched roof with a soft peak, no door — the ghost is the resident */}
+          <Path
+            d="M4.2 11.6c0-.6.3-1.2.8-1.6l5.9-4.8c.6-.5 1.6-.5 2.2 0l5.9 4.8c.5.4.8 1 .8 1.6v6.2c0 1.5-1.2 2.7-2.7 2.7H6.9c-1.5 0-2.7-1.2-2.7-2.7v-6.2Z"
+            {...(on ? solid : stroke)}
+          />
+          {on ? <Face cx={12} cy={13} s={0.95} /> : null}
+        </>
+      ) : name === 'search' ? (
+        <>
+          <Circle cx={10.8} cy={10.8} r={6.6} {...stroke} strokeWidth={on ? 2.4 : 1.9} />
+          <Path d="m16 16 4.4 4.4" {...stroke} strokeWidth={on ? 2.6 : 1.9} />
+          {on ? (
+            <>
+              <Circle cx={8.6} cy={10.6} r={1.2} fill={c} />
+              <Circle cx={13} cy={10.6} r={1.2} fill={c} />
+              <Path d="M9.4 13.3q1.4 1.2 2.8 0" stroke={c} strokeWidth={1} strokeLinecap="round" fill="none" />
+            </>
+          ) : null}
+        </>
+      ) : name === 'plus' ? (
+        <>
+          <Rect x={3.2} y={3.2} width={17.6} height={17.6} rx={5.5} {...stroke} stroke={colors.text} />
+          <Path d="M12 8.4v7.2M8.4 12h7.2" {...stroke} stroke={colors.text} strokeWidth={2} />
+        </>
+      ) : (
+        <>
+          <Path
+            d="M12 20.4c-.3 0-.6-.1-.8-.3C7.5 17.1 3 13.7 3 9.3 3 6.5 5.2 4.4 7.9 4.4c1.7 0 3.1.8 4.1 2.1 1-1.3 2.4-2.1 4.1-2.1 2.7 0 4.9 2.1 4.9 4.9 0 4.4-4.5 7.8-8.2 10.8-.2.2-.5.3-.8.3Z"
+            {...(on ? solid : stroke)}
+          />
+          {on ? <Face cx={12} cy={10.2} s={0.85} /> : null}
+        </>
+      )}
+    </Svg>
+  );
+}
+
+/** Jelly tap: squash → stretch → settle, like the mascot. The plus also does a quarter spin. */
+function useJelly() {
+  const t = useRef(new Animated.Value(0)).current;
+  const play = () => {
+    t.setValue(0);
+    Animated.sequence([
+      Animated.timing(t, { toValue: 1, duration: 90, useNativeDriver: true }),
+      Animated.spring(t, { toValue: 2, friction: 4, tension: 160, useNativeDriver: true }),
+    ]).start();
+  };
+  const scaleX = t.interpolate({ inputRange: [0, 1, 2], outputRange: [1, 1.25, 1] });
+  const scaleY = t.interpolate({ inputRange: [0, 1, 2], outputRange: [1, 0.75, 1] });
+  const translateY = t.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 3, 0] });
+  const rotate = t.interpolate({ inputRange: [0, 2], outputRange: ['0deg', '90deg'] });
+  return { play, scaleX, scaleY, translateY, rotate };
+}
+
+function TabButton({ onPress, spin, children }) {
+  const j = useJelly();
+  return (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() => {
+        j.play();
+        onPress();
+      }}
+      activeOpacity={0.7}
+      hitSlop={6}
+    >
+      <Animated.View style={{ transform: [{ translateY: j.translateY }, { scaleX: j.scaleX }, { scaleY: j.scaleY }, ...(spin ? [{ rotate: j.rotate }] : [])] }}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+/** What the bar shows, in order. `compose` is a button, not a route. */
 const BAR = [
-  { name: 'Post', label: 'Home', icon: 'home' },
-  { name: 'Club', label: 'Club', icon: 'users' },
-  null, // slot for the centre action
-  { name: 'Sell', label: 'Market', icon: 'tag' },
-  // `Map` has no slot of its own, so More stays lit while you're on it.
-  { name: 'More', label: 'More', icon: 'gridDots', owns: ['More', 'Map'] },
+  { route: 'Home', icon: 'home' },
+  { route: 'Search', icon: 'search' },
+  { compose: true },
+  { route: 'Activity', icon: 'heart' },
+  { route: 'More', profile: true },
 ];
 
-// What the centre + can create. Each entry drops the student straight into the
-// right form, with the post kind already chosen for them.
-const COMPOSE = [
-  { key: 'team', label: 'Team post', hint: 'Find teammates for a project', icon: 'users', screen: 'CreateEvent', params: { category: 'hackathon' } },
-  { key: 'lost', label: 'Lost & Found', hint: 'Report a lost or found item', icon: 'search', screen: 'CreateLost' },
-  { key: 'notice', label: 'Notice', hint: 'Announce it to campus', icon: 'megaphone', screen: 'CreateEvent', params: { category: 'cultural' } },
-  { key: 'other', label: 'Other', hint: 'Anything else', icon: 'compose', screen: 'CreateEvent', params: { category: 'other' } },
-];
-
-/**
- * Floating glass pill: icon over label, the active item lit coral, and the
- * coral-gradient + raised out of the centre.
- */
+/** Flat, edge-to-edge bar with icon-only tabs — Instagram / Threads style. */
 function TabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
-  const { t, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const keyboardOpen = useKeyboardOpen();
-  const pop = useRef(new Animated.Value(0)).current;
-
-  // The menu springs up out of the + rather than just appearing.
-  useEffect(() => {
-    Animated.spring(pop, { toValue: composeOpen ? 1 : 0, useNativeDriver: true, friction: 7, tension: 90 }).start();
-  }, [composeOpen, pop]);
-
-  function compose(option) {
-    setComposeOpen(false);
-    navigation.navigate('Post', { screen: option.screen, params: option.params });
-  }
+  const { user } = useAuth();
+  const current = state.routes[state.index]?.name;
 
   function go(name) {
     const route = state.routes.find((r) => r.name === name);
     if (!route) return;
-    const focused = state.routes[state.index].key === route.key;
     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-    if (!focused && !event.defaultPrevented) navigation.navigate(name);
+    if (current !== name && !event.defaultPrevented) navigation.navigate(name);
   }
 
-  const active = state.routes[state.index];
-  const activeName = active.name;
-
-  // Pushed screens — chat, a post, any form — own the whole screen. Leaving the
-  // bar floating over them buries their input bars behind it.
-  const onRootScreen = (active.state?.index ?? 0) === 0;
-  if (keyboardOpen || !onRootScreen) return null;
-
-  const bottom = Math.max(insets.bottom, 10) + 6;
+  function compose() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    navigation.getParent()?.navigate('Compose');
+  }
 
   return (
-    <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
-      <View style={styles.bar}>
-        {/* Real blur only exists on iOS; on Android the bar is simply near-opaque
-            so the feed never shows through the labels. */}
-        {Platform.OS === 'ios' ? <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} /> : null}
-        <View style={[StyleSheet.absoluteFill, styles.barTint]} />
-
-        {BAR.map((item) => {
-          if (!item) {
-            return (
-              <View key="fab" style={styles.item}>
-                <TouchableOpacity activeOpacity={0.85} onPress={() => setComposeOpen(true)} style={styles.fabWrap}>
-                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fab}>
-                    <Icon name="plus" size={20} color="#FFFFFF" strokeWidth={2.2} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            );
-          }
-          // A button owns its own route by default, plus any slot-less ones
-          // listed in `owns` — so exactly one button is always highlighted.
-          const focused = (item.owns || [item.name]).includes(activeName);
-          const color = focused ? t.accent : t.textFaint;
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {BAR.map((item) => {
+        if (item.compose) {
           return (
-            <TouchableOpacity key={item.name} style={styles.item} onPress={() => go(item.name)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10 }}>
-              <Icon name={item.icon} size={21} color={color} strokeWidth={focused ? 1.9 : 1.7} />
-              <Text style={[styles.label, { color }, focused && styles.labelOn]} numberOfLines={1}>{item.label}</Text>
-            </TouchableOpacity>
+            <TabButton key="compose" onPress={compose} spin>
+              <TabIcon name="plus" size={28} />
+            </TabButton>
           );
-        })}
-      </View>
-
-      <Modal visible={composeOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setComposeOpen(false)}>
-        <View style={{ flex: 1 }}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: pop }]} pointerEvents="none">
-            <BlurView intensity={26} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, styles.composeTint]} />
-          </Animated.View>
-
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setComposeOpen(false)} />
-
-          <Animated.View
-            style={[
-              styles.composeStack,
-              {
-                bottom: bottom + 92,
-                opacity: pop,
-                transform: [
-                  { translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }) },
-                  { scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
-                ],
-              },
-            ]}
-          >
-            {COMPOSE.map((c) => (
-              <Pressable key={c.key} onPress={() => compose(c)} style={({ pressed }) => [styles.composeItem, pressed && styles.composeItemOn]}>
-                <View style={styles.composeIcon}>
-                  <Icon name={c.icon} size={17} color={t.accent} strokeWidth={1.8} />
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.composeLabel}>{c.label}</Text>
-                  <Text style={styles.composeHint}>{c.hint}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </Animated.View>
-        </View>
-      </Modal>
+        }
+        const focused = current === item.route;
+        return (
+          <TabButton key={item.route} onPress={() => go(item.route)}>
+            {item.profile ? (
+              <View style={[styles.avatarRing, focused && styles.avatarRingOn]}>
+                <Avatar name={user?.name} size={24} />
+              </View>
+            ) : (
+              <TabIcon name={item.icon} on={focused} />
+            )}
+          </TabButton>
+        );
+      })}
     </View>
   );
 }
 
 export default function AppTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }} tabBar={(props) => <TabBar {...props} />}>
-      {/* Post is first, so the app opens on the feed. */}
+    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="Search" component={SearchStack} />
+      <Tab.Screen name="Activity" component={ActivityStack} />
+      <Tab.Screen name="More" component={ProfileStack} />
+      {/* Not in the bar — reachable via navigate('Post' | 'Club' | 'Sell' | 'Map', …) from the feed and profile */}
       <Tab.Screen name="Post" component={PostStack} />
       <Tab.Screen name="Club" component={ClubStack} />
-      <Tab.Screen name="Map" component={MapStack} />
       <Tab.Screen name="Sell" component={SellStack} />
-      <Tab.Screen name="More" component={ProfileStack} />
+      <Tab.Screen name="Map" component={MapStack} />
     </Tab.Navigator>
   );
 }
 
-function makeStyles(t, isDark) {
-  return StyleSheet.create({
-    wrap: { position: 'absolute', left: 16, right: 16 },
-    bar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 28,
-      borderWidth: 1,
-      borderColor: t.borderSoft,
-      paddingTop: 10,
-      paddingBottom: 10,
-      paddingHorizontal: 14,
-      overflow: 'hidden',
-    },
-    barTint: { backgroundColor: t.barGlass, borderRadius: 28 },
-    item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-    label: { fontSize: 10.5, fontWeight: '500' },
-    labelOn: { fontWeight: '600' },
-
-    // Violet disc sitting level with the icons, not bursting out of the bar.
-    fabWrap: { marginTop: -4, borderRadius: 22 },
-    fab: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', ...shadow.glow },
-
-    composeTint: { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,20,26,0.28)' },
-    composeStack: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },
-    composeItem: {
-      width: 262,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 11,
-      borderRadius: 20,
-      backgroundColor: isDark ? '#17171B' : '#FFFFFF',
-      borderWidth: 1,
-      borderColor: t.borderSoft,
-      ...shadow.card,
-    },
-    composeItemOn: { backgroundColor: t.field },
-    composeIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' },
-    composeLabel: { fontSize: 14, fontWeight: '800', color: t.text },
-    composeHint: { fontSize: 11.5, fontWeight: '600', color: t.textMuted, marginTop: 2 },
-  });
-}
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  item: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center' },
+  avatarRing: { padding: 2, borderRadius: 999, borderWidth: 1.5, borderColor: 'transparent' },
+  avatarRingOn: { borderColor: colors.text },
+});

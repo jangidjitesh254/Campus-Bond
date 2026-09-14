@@ -11,18 +11,26 @@
     "axios": "^1.19.0",
     "expo": "~57.0.22",
     "expo-blur": "~57.0.3",
+    "expo-constants": "~57.0.18",
+    "expo-dev-client": "~57.0.19",
     "expo-document-picker": "~57.0.2",
     "expo-font": "~57.0.4",
+    "expo-haptics": "~57.0.3",
     "expo-image-picker": "~57.0.17",
     "expo-linear-gradient": "~57.0.2",
     "expo-secure-store": "~57.0.4",
+    "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "expo-video": "~57.0.4",
+    "lottie-react-native": "~7.3.8",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-gesture-handler": "~2.32.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
     "react-native-webview": "13.16.1"
   },
   "scripts": {
@@ -31,5 +39,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@lottiefiles/dotlottie-react": "^0.13.5"
+  }
 }

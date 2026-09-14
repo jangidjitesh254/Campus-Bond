@@ -3,7 +3,9 @@ import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { otpEmail } from '../utils/emailTemplates.js';
 import { generateToken } from '../utils/generateToken.js';
+import { storeImage, deleteImage } from '../middleware/upload.js';
 
 /** Return the first validation error, if any. */
 function firstValidationError(req) {
@@ -84,11 +86,7 @@ export async function register(req, res) {
   // "resend code" instead of registering again.
   let delivery;
   try {
-    delivery = await sendEmail({
-      to: normalizedEmail,
-      subject: 'Your Campus Bond verification code',
-      text: `Welcome to Campus Bond! Your verification code is ${code}. It expires in ${minutes} minutes.`,
-    });
+    delivery = await sendEmail({ to: normalizedEmail, ...otpEmail({ name, code, minutes }) });
   } catch (err) {
     return res.status(502).json({ message: err.message, email: normalizedEmail });
   }
@@ -172,8 +170,7 @@ export async function resendOtp(req, res) {
   try {
     delivery = await sendEmail({
       to: normalizedEmail,
-      subject: 'Your new Campus Bond verification code',
-      text: `Your new verification code is ${code}. It expires in ${minutes} minutes.`,
+      ...otpEmail({ name: otp.payload?.name, code, minutes, resend: true }),
     });
   } catch (err) {
     return res.status(502).json({ message: err.message });
@@ -268,7 +265,10 @@ export async function updateProfile(req, res) {
     const s = Number(semester);
     if (!Number.isNaN(s)) user.semester = s;
   }
-  if (req.file) user.avatar = `/uploads/${req.file.filename}`;
+  if (req.file) {
+    deleteImage(user.avatar); // drop the photo it replaces
+    user.avatar = await storeImage(req.file);
+  }
 
   await user.save();
   res.status(200).json({ user });

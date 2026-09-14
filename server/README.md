@@ -28,6 +28,29 @@ To send real emails, fill in `SMTP_HOST/PORT/USER/PASS` (for Gmail, use an App P
 Set `ALLOWED_EMAIL_DOMAIN=yourcollege.edu` in `.env` to only allow that domain to register.
 Leave it blank to allow any email during development.
 
+## Deploying to Vercel
+
+The API is deployed as a single Vercel Function (`api/index.js` wraps the Express
+app; `vercel.json` rewrites every path to it). Two things differ from local dev:
+
+- **Database** — set `MONGO_URI` to a hosted MongoDB (e.g. Atlas). Connections are
+  cached per function instance (`src/config/db.js`).
+- **Images** — when `BLOB_READ_WRITE_TOKEN` is present, uploads go to **Vercel Blob**
+  and documents store the full Blob URL instead of `/uploads/...`. Locally (no token)
+  files still go to `server/uploads/`.
+
+```bash
+cd server
+vercel link                                  # once
+vercel env add MONGO_URI production --sensitive
+vercel env add JWT_SECRET production --sensitive
+vercel deploy --prod
+```
+
+Production URL: `https://campus-bond-api.vercel.app` — the mobile app points at it via
+`mobile/.env` (`EXPO_PUBLIC_API_URL`). Without SMTP variables, OTP codes are only
+printed to the function logs (`vercel logs`), so set `SMTP_*` for real signups.
+
 ## API reference
 
 ### Auth — `/api/auth`

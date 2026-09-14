@@ -15,7 +15,12 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.heynmn.campusbond",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +36,22 @@
         }
       ],
       "expo-video",
-      ["expo-status-bar", { "style": "dark" }]
-    ]
+      ["expo-status-bar", { "style": "dark" }],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#15532E"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bc4576ae-b19d-43a3-8375-0973f66df96c"
+      }
+    },
+    "owner": "heynmn"
   }
 }

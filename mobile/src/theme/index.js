@@ -1,13 +1,16 @@
+import { Platform } from 'react-native';
+
 /**
- * Campus Bond design system — "Ember".
+ * Campus Bond design system — "Grove" theme (locked).
  *
- * From the Claude Design handoff: near-black or warm-white grounds lit by a
- * red brand glow, translucent glass cards, the Zomato-red primary for the
- * one action that matters on a screen, and Manrope everywhere.
+ * Deep forest-green chrome on a pale-green canvas, white cards, and per-type
+ * accent colors (TEAM green · EVENT blue · NOTICE red). Flat, edge-to-edge
+ * surfaces with hairlines — Instagram / Threads style.
  *
- * Both palettes share every key, so a screen reads `t.x` and repaints when
- * the mode flips. Translucent values are deliberate: cards and chips sit on
- * top of the glow, so they must let it through.
+ * Two ways to read a colour:
+ *  - `colors` — the static light palette (Home, composer, onboarding, tab bar).
+ *  - `useTheme().t` — the active palette; `ink` and `inkDark` share every key,
+ *    so a screen reads `t.x` and repaints when the mode flips.
  */
 
 export const FONT = {
@@ -23,208 +26,239 @@ export const FONT = {
 
 // Shared accent ramps — identical in both modes (they sit on their own fills).
 export const gradients = {
-  accent: ['#E23747', '#F25A66'],
-  avatar: ['#F0475A', '#B8202E'],
-  hero: ['#3A151B', '#7A1F2B'],
+  accent: ['#15532E', '#1E7A43'],
+  avatar: ['#3E8A5A', '#15532E'],
+  hero: ['#0F3D22', '#15532E'],
 };
 
-/** Light — "Home feed (Light)" and friends. */
+/** Light — the locked Grove palette. */
 export const ink = {
-  primary: '#E23747', // Zomato red — pill buttons, active chips, the +
+  // Accent — deep forest green (chrome: buttons, nav, FAB, brand)
+  primary: '#15532E',
+  primaryDark: '#0F3D22',
+  primaryLight: '#3E8A5A',
+  primarySoft: '#E4F3E9',
   onPrimary: '#FFFFFF',
-  ink: '#14141A', // the old solid ink, for things that must stay neutral
-  text: '#14141A',
-  textMuted: 'rgba(20,20,26,0.6)',
-  textFaint: 'rgba(20,20,26,0.5)',
-  textDim: 'rgba(20,20,26,0.42)',
-  page: '#F5F4F1',
-  surface: 'rgba(255,255,255,0.75)', // glass card
-  surfaceAlt: '#EDEAE4', // round icon buttons, reply pill, condition tags
-  hairline: 'rgba(20,20,26,0.07)',
-  hairlineAlt: 'rgba(20,20,26,0.06)',
-  borderSoft: 'rgba(20,20,26,0.12)', // chips, outlined pills
-  field: '#EDEAE4',
-  accent: '#CB2A38', // red as text: active tab, TODAY, See All
-  accentFill: '#E23747', // red as a fill (dots, tags)
-  accentSoft: 'rgba(226,55,71,0.12)',
+  ink: '#16241C',
+  accent: '#15532E',
+  accentFill: '#15532E',
+  accentSoft: '#E4F3E9',
+  link: '#1E7A43',
 
-  // glow blobs — red top-right, soft rose bottom-left
-  glowA: '#E23747',
-  glowB: '#FF8A80',
-  glowAOpacity: 0.13,
-  glowBOpacity: 0.1,
-  glass: 'rgba(255,255,255,0.75)',
-  glassBorder: 'rgba(20,20,26,0.08)',
-  barGlass: 'rgba(252,251,249,0.96)',
+  // Text
+  text: '#16241C',
+  textMuted: '#6B7B72',
+  textFaint: '#A6B0A5',
+  textDim: '#A6B0A5',
+  inkSoft: '#6B7B72',
 
-  // --- parity aliases used across screens ---
-  bg: '#F5F4F1',
-  card: 'rgba(255,255,255,0.75)',
+  // Surfaces
+  page: '#EFF5EC', // pale green canvas
+  bg: '#EFF5EC',
+  surface: '#FFFFFF', // cards
+  card: '#FFFFFF',
   white: '#FFFFFF',
-  surfaceMuted: '#EDEAE4',
-  surfaceHi: '#E8E5DF',
-  border: 'rgba(20,20,26,0.08)',
-  mediaStroke: 'rgba(20,20,26,0.3)',
-  primaryDark: '#0A0A0D',
-  primaryLight: 'rgba(20,20,26,0.55)',
-  primarySoft: 'rgba(20,20,26,0.06)',
-  link: '#CB2A38',
-  danger: '#C1461E',
-  dangerSoft: 'rgba(193,70,30,0.12)',
-  success: '#1F7A5A',
-  successSoft: 'rgba(40,170,120,0.14)',
-  warning: '#A85D14',
-  amber: '#A85D14',
-  amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#E23747',
-  avatarBg: 'rgba(226,55,71,0.13)',
-  avatarText: '#CB2A38',
-  avatarNeutral: '#E8E5DF',
-  chatBg: '#F5F4F1',
-  bubbleOut: '#14141A',
-  bubbleIn: 'rgba(255,255,255,0.85)',
-  datePill: '#EDEAE4',
-  badgeTeamBg: 'rgba(20,20,26,0.06)',
-  badgeTeamFg: 'rgba(20,20,26,0.72)',
-  badgeEventBg: 'rgba(108,77,255,0.16)',
-  badgeEventFg: '#5B46D9',
-  badgeNoticeBg: 'rgba(255,107,140,0.16)',
-  badgeNoticeFg: '#C43C68',
-  inkSoft: 'rgba(20,20,26,0.55)',
-  sky: '#5B46D9',
-  sun: '#A85D14',
-  grape: '#5B46D9',
-  coral: '#CB2A38',
+  surfaceAlt: '#E4F3E9', // light-green tint (avatars, soft pills)
+  surfaceMuted: '#EAF1E6', // neutral-ish light (search, inputs)
+  surfaceHi: '#DCEBDF',
+  field: '#FFFFFF',
+  border: '#E6ECE3',
+  borderSoft: '#E6ECE3',
+  hairline: '#E6ECE3',
+  hairlineAlt: '#DCEBDF',
+  mediaStroke: '#B9C6B7',
+  glass: '#FFFFFF',
+  glassBorder: '#E6ECE3',
+  barGlass: '#FFFFFF',
+
+  // Ambient glow blobs (kept very faint so the canvas stays flat)
+  glowA: '#15532E',
+  glowB: '#EBD5AB',
+  glowAOpacity: 0.05,
+  glowBOpacity: 0.06,
+
+  cream: '#EBD5AB',
+  creamSoft: '#FBF0D9',
+
+  // Per-type accents (also used as badge colors)
+  badgeTeamBg: '#E4F3E9',
+  badgeTeamFg: '#1E7A43',
+  badgeEventBg: '#E6EEFC',
+  badgeEventFg: '#2F6FE0',
+  badgeNoticeBg: '#FBEAE2',
+  badgeNoticeFg: '#C6552E',
+  badgeClubBg: '#EEE8FA',
+  badgeClubFg: '#6A4BC4',
+
+  // Avatars (default)
+  avatarBg: '#E4F3E9',
+  avatarText: '#1E7A43',
+  avatarNeutral: '#DCEBDF',
+
+  // Lost / Found labels
+  amber: '#C6892E',
+  amberSoft: '#FBEFD5',
+
+  // Chat
+  chatBg: '#EFF4EC',
+  bubbleOut: '#15532E',
+  bubbleIn: '#FFFFFF',
+  datePill: '#E6ECE3',
+
+  // Semantic
+  success: '#1E7A43',
+  successSoft: '#E4F3E9',
+  danger: '#C6552E',
+  dangerSoft: '#FBEAE2',
+  warning: '#C6892E',
+  like: '#C6552E',
+
+  // Misc accents
+  sky: '#2F6FE0',
+  sun: '#C6892E',
+  grape: '#6A4BC4',
+  coral: '#C6552E',
+  onDark: '#16241C',
 };
+
+/** Static alias for screens that don't switch modes (Home, composer, onboarding, tab bar). */
+export const colors = ink;
 
 /** Per-kind colours for feed cards: foreground / text-on-fill / soft background / ring. */
 export const kinds = {
-  team: { fg: 'rgba(20,20,26,0.72)', on: '#FFFFFF', bg: 'rgba(20,20,26,0.06)', ring: 'rgba(20,20,26,0.12)' },
-  lost: { fg: '#C43C68', on: '#FFFFFF', bg: 'rgba(255,107,140,0.16)', ring: 'rgba(255,107,140,0.35)' },
-  notice: { fg: '#5B46D9', on: '#FFFFFF', bg: 'rgba(108,77,255,0.16)', ring: 'rgba(108,77,255,0.3)' },
+  team: { fg: '#1E7A43', on: '#FFFFFF', bg: '#E4F3E9', ring: '#B9DCC6' },
+  lost: { fg: '#C6552E', on: '#FFFFFF', bg: '#FBEAE2', ring: '#F0C3B3' },
+  notice: { fg: '#2F6FE0', on: '#FFFFFF', bg: '#E6EEFC', ring: '#BFD3F7' },
 };
 
-/** Dark — the primary artboards. */
+/** Dark — the same keys, green-tinted night surfaces. */
 export const inkDark = {
-  primary: '#E23747',
+  primary: '#3E8A5A',
+  primaryDark: '#E8F1EA',
+  primaryLight: '#7FC79A',
+  primarySoft: 'rgba(62,138,90,0.2)',
   onPrimary: '#FFFFFF',
-  ink: '#F6F5F3',
-  text: '#F6F5F3',
-  textMuted: 'rgba(246,245,243,0.5)',
-  textFaint: 'rgba(246,245,243,0.4)',
-  textDim: 'rgba(246,245,243,0.36)',
-  page: '#0A0A0D',
-  surface: 'rgba(255,255,255,0.045)',
-  surfaceAlt: '#17171B',
-  hairline: 'rgba(255,255,255,0.06)',
-  hairlineAlt: 'rgba(255,255,255,0.08)',
+  ink: '#E8F1EA',
+  accent: '#7FC79A',
+  accentFill: '#3E8A5A',
+  accentSoft: 'rgba(62,138,90,0.2)',
+  link: '#7FC79A',
+
+  text: '#E8F1EA',
+  textMuted: 'rgba(232,241,234,0.6)',
+  textFaint: 'rgba(232,241,234,0.42)',
+  textDim: 'rgba(232,241,234,0.36)',
+  inkSoft: 'rgba(232,241,234,0.55)',
+
+  page: '#0E1611',
+  bg: '#0E1611',
+  surface: '#16211A',
+  card: '#16211A',
+  white: '#16211A',
+  surfaceAlt: '#1E2C23',
+  surfaceMuted: '#1B2620',
+  surfaceHi: '#243328',
+  field: '#1B2620',
+  border: 'rgba(255,255,255,0.08)',
   borderSoft: 'rgba(255,255,255,0.1)',
-  field: '#1E1E23',
-  accent: '#FF6B75',
-  accentFill: '#E23747',
-  accentSoft: 'rgba(226,55,71,0.2)',
+  hairline: 'rgba(255,255,255,0.07)',
+  hairlineAlt: 'rgba(255,255,255,0.09)',
+  mediaStroke: 'rgba(232,241,234,0.3)',
+  glass: '#16211A',
+  glassBorder: 'rgba(255,255,255,0.08)',
+  barGlass: '#16211A',
 
-  glowA: '#E23747',
-  glowB: '#FF8A80',
-  glowAOpacity: 0.32,
-  glowBOpacity: 0.16,
-  glass: 'rgba(255,255,255,0.045)',
-  glassBorder: 'rgba(255,255,255,0.09)',
-  barGlass: 'rgba(22,21,27,0.96)',
+  glowA: '#3E8A5A',
+  glowB: '#EBD5AB',
+  glowAOpacity: 0.14,
+  glowBOpacity: 0.06,
 
-  // --- parity aliases ---
-  bg: '#0A0A0D',
-  card: 'rgba(255,255,255,0.045)',
-  white: '#17171B',
-  surfaceMuted: '#1E1E23',
-  surfaceHi: '#232028',
-  border: 'rgba(255,255,255,0.09)',
-  mediaStroke: 'rgba(246,245,243,0.3)',
-  primaryDark: '#F6F5F3',
-  primaryLight: 'rgba(246,245,243,0.55)',
-  primarySoft: 'rgba(255,255,255,0.08)',
-  link: '#FF6B75',
-  danger: '#FF7A5C',
-  dangerSoft: 'rgba(255,122,92,0.16)',
-  success: '#5FD3A0',
-  successSoft: 'rgba(60,200,140,0.16)',
-  warning: '#FFB25C',
-  amber: '#FFB25C',
-  amberSoft: 'rgba(255,169,69,0.16)',
-  like: '#FF6B75',
-  avatarBg: 'rgba(226,55,71,0.22)',
-  avatarText: '#FF8A93',
-  avatarNeutral: '#232028',
-  chatBg: '#0A0A0D',
-  bubbleOut: '#F6F5F3',
-  bubbleIn: '#1E1E23',
-  datePill: '#1E1E23',
-  badgeTeamBg: 'rgba(255,255,255,0.08)',
-  badgeTeamFg: 'rgba(246,245,243,0.7)',
-  badgeEventBg: 'rgba(140,124,240,0.22)',
-  badgeEventFg: '#A99BFF',
-  badgeNoticeBg: 'rgba(255,107,140,0.16)',
-  badgeNoticeFg: '#FF7FA0',
-  inkSoft: 'rgba(246,245,243,0.55)',
-  sky: '#A99BFF',
-  sun: '#FFB25C',
-  grape: '#A99BFF',
-  coral: '#FF6B75',
+  cream: '#EBD5AB',
+  creamSoft: 'rgba(235,213,171,0.16)',
+
+  badgeTeamBg: 'rgba(62,138,90,0.22)',
+  badgeTeamFg: '#7FC79A',
+  badgeEventBg: 'rgba(47,111,224,0.22)',
+  badgeEventFg: '#8FB4F5',
+  badgeNoticeBg: 'rgba(198,85,46,0.22)',
+  badgeNoticeFg: '#F0A085',
+  badgeClubBg: 'rgba(106,75,196,0.24)',
+  badgeClubFg: '#B7A3F2',
+
+  avatarBg: 'rgba(62,138,90,0.22)',
+  avatarText: '#7FC79A',
+  avatarNeutral: '#243328',
+
+  amber: '#E0A85A',
+  amberSoft: 'rgba(224,168,90,0.18)',
+
+  chatBg: '#0E1611',
+  bubbleOut: '#3E8A5A',
+  bubbleIn: '#1B2620',
+  datePill: '#1B2620',
+
+  success: '#7FC79A',
+  successSoft: 'rgba(62,138,90,0.2)',
+  danger: '#F0A085',
+  dangerSoft: 'rgba(198,85,46,0.2)',
+  warning: '#E0A85A',
+  like: '#F0A085',
+
+  sky: '#8FB4F5',
+  sun: '#E0A85A',
+  grape: '#B7A3F2',
+  coral: '#F0A085',
+  onDark: '#E8F1EA',
 };
 
 export const kindsDark = {
-  team: { fg: 'rgba(246,245,243,0.7)', on: '#0A0A0D', bg: 'rgba(255,255,255,0.08)', ring: 'rgba(255,255,255,0.16)' },
-  lost: { fg: '#FF7FA0', on: '#0A0A0D', bg: 'rgba(255,107,140,0.16)', ring: 'rgba(255,107,140,0.35)' },
-  notice: { fg: '#A99BFF', on: '#0A0A0D', bg: 'rgba(140,124,240,0.22)', ring: 'rgba(140,124,240,0.4)' },
+  team: { fg: '#7FC79A', on: '#0E1611', bg: 'rgba(62,138,90,0.22)', ring: 'rgba(62,138,90,0.4)' },
+  lost: { fg: '#F0A085', on: '#0E1611', bg: 'rgba(198,85,46,0.22)', ring: 'rgba(198,85,46,0.4)' },
+  notice: { fg: '#8FB4F5', on: '#0E1611', bg: 'rgba(47,111,224,0.22)', ring: 'rgba(47,111,224,0.4)' },
 };
 
-/** Club category accents — Social and Arts are from the handoff; the rest follow the same tint recipe. */
+/** Club category accents. */
 export const clubAccents = {
-  tech:     { fg: '#5B46D9', bg: 'rgba(108,77,255,0.16)' },
-  cultural: { fg: '#C43C68', bg: 'rgba(255,107,140,0.16)' },
-  sports:   { fg: '#1F7A5A', bg: 'rgba(40,170,120,0.16)' },
-  academic: { fg: '#2F6FE0', bg: 'rgba(47,111,224,0.14)' },
-  arts:     { fg: '#A85D14', bg: 'rgba(255,169,69,0.16)' },
-  social:   { fg: '#C43C68', bg: 'rgba(255,107,140,0.16)' },
-  other:    { fg: 'rgba(20,20,26,0.72)', bg: 'rgba(20,20,26,0.06)' },
+  tech:     { fg: '#6A4BC4', bg: '#EEE8FA' },
+  cultural: { fg: '#C6552E', bg: '#FBEAE2' },
+  sports:   { fg: '#1E7A43', bg: '#E4F3E9' },
+  academic: { fg: '#2F6FE0', bg: '#E6EEFC' },
+  arts:     { fg: '#C6892E', bg: '#FBEFD5' },
+  social:   { fg: '#C6552E', bg: '#FBEAE2' },
+  other:    { fg: '#6B7B72', bg: '#EAF1E6' },
 };
 
 export const clubAccentsDark = {
-  tech:     { fg: '#A99BFF', bg: 'rgba(140,124,240,0.22)' },
-  cultural: { fg: '#FF7FA0', bg: 'rgba(255,107,140,0.16)' },
-  sports:   { fg: '#5FD3A0', bg: 'rgba(60,200,140,0.16)' },
-  academic: { fg: '#7FA8FF', bg: 'rgba(80,140,255,0.18)' },
-  arts:     { fg: '#FFB25C', bg: 'rgba(255,169,69,0.16)' },
-  social:   { fg: '#FF7FA0', bg: 'rgba(255,107,140,0.16)' },
-  other:    { fg: 'rgba(246,245,243,0.7)', bg: 'rgba(255,255,255,0.08)' },
+  tech:     { fg: '#B7A3F2', bg: 'rgba(106,75,196,0.24)' },
+  cultural: { fg: '#F0A085', bg: 'rgba(198,85,46,0.22)' },
+  sports:   { fg: '#7FC79A', bg: 'rgba(62,138,90,0.22)' },
+  academic: { fg: '#8FB4F5', bg: 'rgba(47,111,224,0.22)' },
+  arts:     { fg: '#E0A85A', bg: 'rgba(224,168,90,0.18)' },
+  social:   { fg: '#F0A085', bg: 'rgba(198,85,46,0.22)' },
+  other:    { fg: 'rgba(232,241,234,0.7)', bg: 'rgba(255,255,255,0.08)' },
 };
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
-export const radius = { sm: 10, md: 14, lg: 20, xl: 26, pill: 999 };
-export const layout = { tabBarSpace: 96 }; // clears the floating pill tab bar
-// Eyebrow labels used to be monospace; the handoff sets them in Manrope with tracking.
-export const monoFamily = 'Manrope_700Bold';
+export const radius = { sm: 10, md: 14, lg: 18, xl: 22, pill: 999 };
+// The tab bar sits in the layout (not floating), so lists only need a little breathing room.
+export const layout = { tabBarSpace: 24 };
+export const monoFamily = Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' });
 
 export const font = {
-  h1: { fontSize: 27, fontWeight: '800', color: ink.text },
-  h2: { fontSize: 22, fontWeight: '800', color: ink.text },
-  h3: { fontSize: 18, fontWeight: '800', color: ink.text },
-  body: { fontSize: 14.5, fontWeight: '600', lineHeight: 22, color: ink.text },
-  bodyMuted: { fontSize: 14.5, fontWeight: '600', lineHeight: 22, color: ink.textMuted },
-  small: { fontSize: 13, fontWeight: '600', color: ink.textMuted },
-  label: { fontSize: 13, fontWeight: '700', color: ink.text },
-  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: ink.accent, textTransform: 'uppercase' },
+  h1: { fontSize: 22, fontWeight: '700', color: colors.text },
+  h2: { fontSize: 20, fontWeight: '700', color: colors.text },
+  h3: { fontSize: 16, fontWeight: '600', color: colors.text },
+  body: { fontSize: 15, fontWeight: '400', color: colors.text },
+  bodyMuted: { fontSize: 15, fontWeight: '400', color: colors.textMuted },
+  small: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
+  label: { fontSize: 14, fontWeight: '600', color: colors.text },
+  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: colors.textMuted, textTransform: 'uppercase' },
 };
 
-/**
- * Shadows. On Android an `elevation` shadow on a view with a translucent
- * background is drawn *inside* the view (a pale rectangle inset by the
- * padding), so glass surfaces get no elevation there — the 1px border
- * carries the edge and iOS keeps the real shadow. `glow` is for opaque
- * gradient fills only (the + button, coral CTAs), where elevation is safe.
- */
 export const shadow = {
-  card: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 0 },
-  soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 0 },
-  glow: { shadowColor: '#E23747', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 6 },
+  card: { shadowColor: '#173A26', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
+  soft: { shadowColor: '#173A26', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
+  glow: { shadowColor: '#15532E', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4 },
 };
+
+export default { colors, spacing, radius, layout, font, shadow, monoFamily };

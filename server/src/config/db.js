@@ -3,29 +3,48 @@ import mongoose from 'mongoose';
 /**
  * Connect to MongoDB using the URI in the environment — a local server
  * (mongodb://127.0.0.1/...) or an Atlas cluster (mongodb+srv://...).
- * Exits the process if the connection fails, since the API is useless
- * without a database.
+ *
+ * The connection promise is cached so that on serverless (Vercel) every
+ * request reuses one connection per warm function instance instead of
+ * opening a new one.
  */
-export async function connectDB() {
+let pending = null;
+
+export function isAtlasUri(uri = process.env.MONGO_URI || '') {
+  return uri.startsWith('mongodb+srv://');
+}
+
+export function connectDB() {
+  if (mongoose.connection.readyState === 1) return Promise.resolve(mongoose.connection);
+  if (pending) return pending;
+
   const uri = process.env.MONGO_URI;
   if (!uri) {
-    console.error('❌ MONGO_URI is not set. Copy .env.example to .env and fill it in.');
-    process.exit(1);
+    return Promise.reject(new Error('MONGO_URI is not set. Copy .env.example to .env and fill it in.'));
   }
 
-  const cloud = uri.startsWith('mongodb+srv://');
-  try {
-    const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
-    console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}${cloud ? ' (Atlas)' : ' (local)'}`);
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    if (cloud) {
-      console.error('   • Atlas → Network Access: is this machine\'s IP (or 0.0.0.0/0 for dev) allowed?');
-      console.error('   • Atlas → Database Access: does the user/password in MONGO_URI match? URL-encode special characters.');
-      console.error('   • Does the string end with /campus_bond (the database name) before the ? options?');
-    } else {
-      console.error('   Is your local MongoDB server running?');
-    }
-    process.exit(1);
+  const cloud = isAtlasUri(uri);
+  pending = mongoose
+    .connect(uri, { serverSelectionTimeoutMS: 10000 })
+    .then((conn) => {
+      console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}${cloud ? ' (Atlas)' : ' (local)'}`);
+      return conn.connection;
+    })
+    .catch((err) => {
+      pending = null; // allow a retry on the next request
+      throw err;
+    });
+  return pending;
+}
+
+/** Print actionable hints for a failed connection. */
+export function explainDBError(err) {
+  console.error('❌ MongoDB connection error:', err.message);
+  if (isAtlasUri()) {
+    console.error('   • Atlas → Network Access: is this machine\'s IP (or 0.0.0.0/0 for dev) allowed?');
+    console.error('   • Atlas → Database Access: does the user/password in MONGO_URI match? URL-encode special characters.');
+    console.error('   • Does the string end with /campus_bond (the database name) before the ? options?');
+  } else {
+    console.error('   Is your local MongoDB server running?');
   }
 }

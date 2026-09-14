@@ -4,15 +4,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text, TextInput } from './Text';
 import Icon from './Icon';
 import { useTheme } from '../context/ThemeContext';
-import { gradients, shadow } from '../theme';
+import { gradients, shadow, spacing, radius, monoFamily } from '../theme';
 
-/** Shared primitives in the Ember design language. */
+/** Shared primitives in the Grove design language. */
 function useStyles() {
   const { t, isDark } = useTheme();
   return [useMemo(() => makeStyles(t, isDark), [t, isDark]), t];
 }
 
-/** Glass card — translucent surface over the glow, 26px corners. */
+/** White card with a hairline border and a soft shadow. */
 export function Card({ style, children, onPress }) {
   const [styles] = useStyles();
   const Wrapper = onPress ? TouchableOpacity : View;
@@ -24,21 +24,22 @@ export function Card({ style, children, onPress }) {
 }
 
 /**
- * Pill button. `primary` is the solid ink/paper pill; `accent` is the coral
- * gradient reserved for the one action a screen is about; `secondary` is
- * outlined; `danger` and `ghost` as named.
+ * Big, chunky tap targets (Swiggy / Zomato style). `primary` is the solid
+ * green button; `accent` is the green gradient reserved for the one action a
+ * screen is about; `secondary` is the soft tint; `danger` and `ghost` as named.
  */
-export function Button({ title, onPress, loading, disabled, variant = 'primary', style, icon }) {
+export function Button({ title, onPress, loading, disabled, variant = 'primary', style, icon, iconRight }) {
   const [styles, t] = useStyles();
   const isDisabled = disabled || loading;
   const textColor =
-    variant === 'primary' ? t.onPrimary : variant === 'accent' ? '#FFFFFF' : variant === 'danger' ? t.danger : t.text;
+    variant === 'primary' || variant === 'accent' || variant === 'danger' ? t.onPrimary : t.text;
   const inner = loading ? (
     <ActivityIndicator color={textColor} />
   ) : (
     <View style={styles.btnRow}>
       {icon ? <View style={{ marginRight: 8 }}>{icon}</View> : null}
       <Text style={[styles.btnText, { color: textColor }]}>{title}</Text>
+      {iconRight ? <View style={{ marginLeft: 8 }}>{iconRight}</View> : null}
     </View>
   );
 
@@ -55,19 +56,20 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary',
   const variantStyle =
     variant === 'secondary' ? styles.btnSecondary : variant === 'danger' ? styles.btnDanger : variant === 'ghost' ? styles.btnGhost : styles.btnPrimary;
   return (
-    <TouchableOpacity style={[styles.btn, variantStyle, isDisabled && styles.btnDisabled, style]} onPress={onPress} disabled={isDisabled} activeOpacity={0.88}>
+    <TouchableOpacity style={[styles.btn, variantStyle, isDisabled && styles.btnDisabled, style]} onPress={onPress} disabled={isDisabled} activeOpacity={0.85}>
       {inner}
     </TouchableOpacity>
   );
 }
 
-/** Labeled text input. */
-export function Field({ label, error, style, inputStyle, ...props }) {
+/** Labeled text input. Forwards its ref to the TextInput so screens can chain focus. */
+export const Field = React.forwardRef(function Field({ label, error, style, inputStyle, ...props }, ref) {
   const [styles, t] = useStyles();
   return (
     <View style={[{ marginBottom: 16 }, style]}>
       {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
       <TextInput
+        ref={ref}
         style={[styles.input, error && styles.inputError, inputStyle]}
         placeholderTextColor={t.textFaint}
         selectionColor={t.accentFill}
@@ -76,7 +78,7 @@ export function Field({ label, error, style, inputStyle, ...props }) {
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
     </View>
   );
-}
+});
 
 /** Small uppercase tag — the category label on a card. */
 export function Chip({ label, tone = 'default', style }) {
@@ -191,36 +193,37 @@ export function EmptyState({ title, subtitle }) {
 
 function makeStyles(t, isDark) {
   return StyleSheet.create({
-    card: { backgroundColor: t.glass, borderRadius: 26, padding: 18, borderWidth: 1, borderColor: t.glassBorder, ...shadow.card },
+    card: { backgroundColor: t.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: t.border, ...(isDark ? {} : shadow.soft) },
 
-    btn: { height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22, borderWidth: 1.5, borderColor: 'transparent' },
-    btnShadow: { borderRadius: 999 },
+    // Big, chunky tap targets (Swiggy / Zomato style).
+    btn: { height: 60, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, borderWidth: 1.5, borderColor: 'transparent' },
+    btnShadow: { borderRadius: radius.lg },
     btnRow: { flexDirection: 'row', alignItems: 'center' },
-    btnPrimary: { backgroundColor: t.primary, borderColor: t.primary, ...(isDark ? {} : shadow.soft) },
-    btnSecondary: { backgroundColor: 'transparent', borderColor: t.borderSoft },
-    btnDanger: { backgroundColor: t.dangerSoft, borderColor: 'transparent' },
+    btnPrimary: { backgroundColor: t.primary, borderColor: t.primary, ...(isDark ? {} : { ...shadow.card, shadowColor: t.primaryDark, shadowOpacity: 0.25 }) },
+    btnSecondary: { backgroundColor: t.surfaceAlt, borderColor: t.border },
+    btnDanger: { backgroundColor: t.danger, borderColor: t.danger, ...(isDark ? {} : { ...shadow.card, shadowColor: t.danger, shadowOpacity: 0.25 }) },
     btnGhost: { backgroundColor: 'transparent', borderColor: 'transparent' },
     btnDisabled: { opacity: 0.45 },
-    btnText: { fontSize: 14, fontWeight: '800' },
+    btnText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
 
-    fieldLabel: { fontSize: 12.5, fontWeight: '700', color: t.text, marginBottom: 8 },
-    input: { minHeight: 50, backgroundColor: t.field, borderRadius: 20, paddingHorizontal: 16, fontSize: 14.5, fontWeight: '600', color: t.text, borderWidth: 1, borderColor: t.borderSoft },
+    fieldLabel: { fontSize: 14.5, fontWeight: '600', color: t.text, marginBottom: spacing.sm },
+    input: { minHeight: 58, backgroundColor: t.surface, borderRadius: radius.lg, paddingHorizontal: spacing.lg, fontSize: 16, color: t.text, borderWidth: 1.5, borderColor: t.border },
     inputError: { borderColor: t.danger },
-    fieldError: { color: t.danger, fontSize: 12, fontWeight: '600', marginTop: 5 },
+    fieldError: { color: t.danger, fontSize: 13, marginTop: spacing.xs },
 
-    chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
-    chipText: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
+    chip: { paddingHorizontal: spacing.md, paddingVertical: 5, borderRadius: radius.pill, alignSelf: 'flex-start' },
+    chipText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
 
-    mono: { fontSize: 12, letterSpacing: 1.5, fontWeight: '800', textTransform: 'uppercase' },
+    mono: { fontFamily: monoFamily, fontSize: 12, letterSpacing: 1.5, fontWeight: '600' },
 
     progress: { flexDirection: 'row', gap: 8 },
-    progressSeg: { flex: 1, height: 3, borderRadius: 2, backgroundColor: t.hairlineAlt },
-    progressActive: { backgroundColor: t.accentFill },
-    progressDone: { backgroundColor: t.primary },
+    progressSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: t.surfaceHi },
+    progressActive: { backgroundColor: t.primary },
+    progressDone: { backgroundColor: t.primaryDark },
 
-    sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 },
-    section: { fontSize: 18, fontWeight: '800', color: t.text },
-    sectionActionText: { color: t.accent, fontWeight: '700', fontSize: 13 },
+    sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
+    section: { fontSize: 20, fontWeight: '700', color: t.text },
+    sectionActionText: { color: t.primaryDark, fontWeight: '700', fontSize: 14 },
 
     headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 14, minHeight: 48 },
     headerTitle: { flex: 1, fontSize: 25, fontWeight: '800', color: t.text },
@@ -229,7 +232,7 @@ function makeStyles(t, isDark) {
 
     pillsRow: { paddingTop: 2, paddingBottom: 6 },
     pillsContent: { gap: 8, paddingHorizontal: 20 },
-    pill: { borderRadius: 20, paddingVertical: 8, paddingHorizontal: 18, backgroundColor: 'transparent', borderWidth: 1, borderColor: t.borderSoft },
+    pill: { borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 18, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border },
     pillOn: { backgroundColor: t.primary, borderColor: t.primary },
     pillLabel: { fontSize: 13, fontWeight: '600', color: t.textFaint },
     pillLabelOn: { color: t.onPrimary, fontWeight: '700' },

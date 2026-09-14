@@ -67,7 +67,8 @@ export async function getEvents(req, res) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('createdBy', 'name branch semester avatar'),
+      .populate('createdBy', 'name branch semester avatar')
+      .populate('applicants.user', 'name avatar'), // feed shows the team roster
     Event.countDocuments(filter),
   ]);
 

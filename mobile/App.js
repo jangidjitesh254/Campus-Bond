@@ -1,5 +1,8 @@
+import 'react-native-gesture-handler';
 import React from 'react';
 import { StatusBar, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -12,6 +15,12 @@ import {
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import { colors } from './src/theme';
+
+// Keep the native splash visible until the fonts and the saved session have
+// been restored (RootNavigator hides it), so the user never sees a blank flash.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 400, fade: true });
 
 /**
  * Status bar icons follow the active palette.
@@ -19,18 +28,14 @@ import RootNavigator from './src/navigation/RootNavigator';
  * On Android the bar is forced translucent with a transparent background:
  * on Android 15+ the system already does this (edge-to-edge), but on older
  * phones Expo Go leaves the bar opaque and black, and dark icons on black
- * disappear — which looked like the bar was missing. Every screen already
- * pads by the top inset, so drawing under the bar is safe.
+ * disappear. Every screen already pads by the top inset, so drawing under
+ * the bar is safe.
  */
 function Chrome() {
   const { isDark, t } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: t.page }}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
       <RootNavigator />
     </View>
   );
@@ -44,15 +49,18 @@ export default function App() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#0A0A0D' }} />;
+  // The native splash is still covering the screen while the fonts load.
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.primary }} />;
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <Chrome />
-        </AuthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Chrome />
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
