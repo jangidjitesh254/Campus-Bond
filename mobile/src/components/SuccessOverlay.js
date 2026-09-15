@@ -52,7 +52,9 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
   }
 
   return (
-    <Modal visible transparent animationType="none" statusBarTranslucent hardwareAccelerated onRequestClose={() => {}}>
+    <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent hardwareAccelerated presentationStyle="overFullScreen" onRequestClose={() => {}}>
+      {/* Solid sheet first (never see-through), then the fading content on top of it */}
+      <Animated.View style={[styles.sheet, { opacity: fade }]} />
       <Animated.View style={[styles.overlay, { opacity: fade }]} pointerEvents="none">
         <Animated.View style={{ alignItems: 'center', transform: [{ scale: zoom }] }}>
         <LottieView
@@ -74,14 +76,13 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
 const makeStyles = (colors, isDark) => {
   const font = fontFor(colors);
   return StyleSheet.create({
+  sheet: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.bg },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bg,
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    zIndex: 100,
-    elevation: 100,
   },
   lottie: { width: 220, height: 220 },
   title: { fontSize: 26, fontWeight: '800', color: colors.text, marginTop: spacing.sm, textAlign: 'center' },
