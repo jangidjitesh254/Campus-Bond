@@ -9,6 +9,7 @@ const FlatList = Animated.createAnimatedComponent(Platform.OS === 'web' ? RNFlat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import Avatar from '../components/Avatar';
 import PullToRefresh from '../components/PullToRefresh';
@@ -201,21 +202,111 @@ function useBadgeProgress(active) {
   return progress;
 }
 
-function HeaderBadge({ item, tint, onPress, styles, progress }) {
-  // The clip (the mascot's centre) moves left with the mascot; the pill slides out inside it.
-  const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
-  const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-220, 22] });
-  const left = shortLeft(item);
+const RIBBON_H = 30;
+const RIBBON_W = 168;
+const CONFETTI = ['#F2B84B', '#EF5B54', '#2F6FE0', '#6A4BC4', '#1E7A43', '#FF8FAB'];
+
+/** One confetti piece: flies out along its own angle, tumbles, falls a little and fades. */
+function Piece({ i, burst }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!burst) return;
+    t.setValue(0);
+    Animated.timing(t, { toValue: 1, duration: 720 + (i % 3) * 90, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [burst, t, i]);
+  // Fan from -80° to +40° (up and to the right), 46–84px out.
+  const a = ((-80 + (i * 120) / 9) * Math.PI) / 180;
+  const d = 46 + (i % 4) * 12;
+  const translateX = t.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(a) * d] });
+  const translateY = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, Math.sin(a) * d, Math.sin(a) * d + 22] });
+  const rotate = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${(i % 2 ? 1 : -1) * (180 + i * 40)}deg`] });
+  const opacity = t.interpolate({ inputRange: [0, 0.1, 0.75, 1], outputRange: [0, 1, 1, 0] });
+  const scale = t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.2, 1, 0.8] });
+  const round = i % 3 === 0;
   return (
-    <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
-      <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }] }}>
-        <Pressable style={[styles.badge, { backgroundColor: tint }]} onPress={onPress}>
-          <Ionicons name="trophy" size={13} color="#F2B84B" />
-          <Text style={styles.badgeText} numberOfLines={1}>{shortName(item)}</Text>
-          {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
-        </Pressable>
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: round ? 6 : 8,
+        height: round ? 6 : 4,
+        borderRadius: round ? 3 : 1.5,
+        backgroundColor: CONFETTI[i % CONFETTI.length],
+        opacity,
+        transform: [{ translateX }, { translateY }, { rotate }, { scale }],
+      }}
+    />
+  );
+}
+
+/** The party popper: ten pieces from one point, replayed on every `burst` change. */
+function Confetti({ burst, style }) {
+  return (
+    <View pointerEvents="none" style={[{ position: 'absolute', width: 0, height: 0 }, style]}>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Piece key={i} i={i} burst={burst} />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * The campaign ribbon: a warm gold–orange banner with a swallowtail end
+ * that slides out from behind the mascot (clipped at the mascot's centre),
+ * with a burst of confetti as it appears. Tap opens the announcement.
+ */
+function HeaderBadge({ item, onPress, styles, progress }) {
+  const [burst, setBurst] = useState(0);
+  // Fire the popper each time the ribbon starts coming out.
+  useEffect(() => {
+    let armed = true;
+    const id = progress.addListener(({ value }) => {
+      if (value > 0.12 && armed) {
+        armed = false;
+        setBurst((b) => b + 1);
+      } else if (value < 0.05) {
+        armed = true;
+      }
+    });
+    return () => progress.removeListener(id);
+  }, [progress]);
+
+  // The clip (the mascot's centre) moves left with the mascot; the ribbon slides out inside it.
+  const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
+  const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-RIBBON_W - 40, 18] });
+  const left = shortLeft(item);
+  const notch = 10;
+  return (
+    <>
+      <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
+        <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }] }}>
+          <Pressable style={styles.ribbon} onPress={onPress}>
+            <Svg width={RIBBON_W} height={RIBBON_H} style={StyleSheet.absoluteFill}>
+              <Defs>
+                <SvgGradient id="ribbon" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor="#F7C557" />
+                  <Stop offset="1" stopColor="#E8862E" />
+                </SvgGradient>
+              </Defs>
+              {/* Banner with rounded left corners and a swallowtail on the right */}
+              <Path
+                d={`M6 0 H${RIBBON_W} L${RIBBON_W - notch} ${RIBBON_H / 2} L${RIBBON_W} ${RIBBON_H} H6 A6 6 0 0 1 0 ${RIBBON_H - 6} V6 A6 6 0 0 1 6 0 Z`}
+                fill="url(#ribbon)"
+              />
+            </Svg>
+            <View style={styles.ribbonRow}>
+              <Ionicons name="trophy" size={14} color="#5A2E0A" />
+              <Text style={styles.badgeText} numberOfLines={1}>{shortName(item)}</Text>
+              {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
+            </View>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+      {/* Popper origin: just right of the mascot, moving with it */}
+      <Animated.View pointerEvents="none" style={[styles.popper, { transform: [{ translateX: clipX }] }]}>
+        <Confetti burst={burst} />
+      </Animated.View>
+    </>
   );
 }
 
@@ -897,7 +988,7 @@ export default function HomeScreen({ navigation, route }) {
         </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
-      {news[0] && mood ? <HeaderBadge item={news[0]} tint={colors.primary} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} /> : null}
+      {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
           <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
@@ -1024,9 +1115,12 @@ const makeStyles = (colors, isDark) => {
   headerSide: { width: 32, alignItems: 'flex-end' },
   // Clipped at the mascot's centre so the pill appears from behind it.
   badgeClip: { position: 'absolute', left: '50%', right: 40, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 10, paddingRight: 11, height: 28, borderRadius: 999 },
-  badgeText: { fontSize: 12.5, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
-  badgeSub: { fontSize: 11.5, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
+  // Swallowtail ribbon: the SVG gives the shape; the gradient is masked to it by clipping the right notch.
+  ribbon: { width: RIBBON_W, height: RIBBON_H, justifyContent: 'center', overflow: 'hidden' },
+  ribbonRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 12, paddingRight: 18 },
+  badgeText: { fontSize: 12.5, fontWeight: '800', color: '#3A1D05', letterSpacing: 0.2 },
+  badgeSub: { fontSize: 11.5, fontWeight: '700', color: 'rgba(58,29,5,0.7)' },
+  popper: { position: 'absolute', left: '50%', top: '50%', marginLeft: 22 },
   // Two rounded bars, the lower one shorter — the Threads-style menu glyph.
   burger: { paddingVertical: 8, gap: 6, alignItems: 'flex-start' },
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.text },
