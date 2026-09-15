@@ -137,6 +137,9 @@ function TabBar({ state, navigation }) {
   const [barH, setBarH] = useState(64);
   const current = state.routes[state.index]?.name;
 
+  // The 3D campus map owns the whole screen — no bar there.
+  if (current === 'Map') return null;
+
   // Slides down out of view while a feed is being scrolled down.
   const hide = { transform: [{ translateY: chrome.interpolate({ inputRange: [0, 1], outputRange: [0, barH + 8] }) }] };
 
