@@ -624,8 +624,9 @@ export default function HomeScreen({ navigation, route }) {
     const f = tabFrames.current[key];
     if (!f) return;
     // Scale about the centre, so shift to where the tab's centre is.
-    // 12 = the tab's horizontal padding; 8 = the row's padding, which an absolute child already sits inside.
-    const x = f.x - 8 + (f.width - UL_BASE) / 2 + 12;
+    // The row has no padding of its own (spacer views instead), so the frame's x
+    // and the underline's `left: 0` share the same origin on every platform.
+    const x = f.x + (f.width - UL_BASE) / 2;
     const sx = Math.max(0.01, (f.width - 24) / UL_BASE);
     if (!animated) {
       ulX.setValue(x);
@@ -782,6 +783,7 @@ export default function HomeScreen({ navigation, route }) {
     <Animated.View style={{ backgroundColor: colors.surface, height: TABS_H, opacity: tabsOpacity }}>
       {/* Thin underline tabs */}
       <ScrollView ref={tabsScroll} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
+        <View style={{ width: 8 }} />
         {TABS.map((t) => (
           <TabChip
             key={t.key}
@@ -795,6 +797,7 @@ export default function HomeScreen({ navigation, route }) {
             colors={colors}
           />
         ))}
+        <View style={{ width: 8 }} />
         {/* The sliding underline */}
         <Animated.View pointerEvents="none" style={[styles.tabLine, { backgroundColor: TINT[tab]?.fg || colors.text, transform: [{ translateX: ulX }, { scaleX: ulS }] }]} />
       </ScrollView>
@@ -896,7 +899,7 @@ const makeStyles = (colors, isDark) => {
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.text },
 
   tabsWrap: { flexGrow: 0, height: TABS_H, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },
-  tabs: { paddingHorizontal: 8 },
+  tabs: { paddingHorizontal: 0 },
   tab: { paddingHorizontal: 12, paddingTop: 10, height: TABS_H - HAIRLINE },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingBottom: 10 },
   tabText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
