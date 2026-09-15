@@ -10,7 +10,7 @@ const MenuContext = createContext(null);
 // How far the screen slides aside, as a share of the screen width (Threads-style).
 const REVEAL = 0.78;
 // A rightward swipe that starts within this many px of the left edge opens the menu.
-const EDGE = 28;
+const EDGE = 20;
 
 /**
  * Hosts the side menu *under* the whole tab UI (screens and the bottom bar
@@ -58,29 +58,26 @@ export function MenuHost({ navigation, children }) {
 
   // Swipe: from the left edge to open, leftwards anywhere to close. The
   // sheet follows the finger and springs to whichever side is nearer (or
-  // the way the finger was flicking) on release.
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-14, 14])
-        .failOffsetY([-18, 18])
-        .onTouchesDown((e, manager) => {
-          const x = e.allTouches[0]?.x ?? 0;
-          if (!openRef.current && x > EDGE) manager.fail();
-        })
-        .onUpdate((e) => {
-          const base = openRef.current ? 1 : 0;
-          const p = Math.max(0, Math.min(1, base + e.translationX / travel));
-          slide.setValue(p);
-        })
-        .onEnd((e) => {
-          const base = openRef.current ? 1 : 0;
-          const p = Math.max(0, Math.min(1, base + e.translationX / travel));
-          const open = e.velocityX > 400 ? true : e.velocityX < -400 ? false : p > 0.5;
-          settle(open, open !== openRef.current);
-        })
-        .runOnJS(true),
+  // the way the finger was flicking) on release. Two detectors because
+  // failing a gesture by hand needs reanimated: a thin edge strip carries
+  // the open pan, the whole host carries the close pan while open.
+  function follow(e) {
+    const base = openRef.current ? 1 : 0;
+    slide.setValue(Math.max(0, Math.min(1, base + e.translationX / travel)));
+  }
+  function release(e) {
+    const base = openRef.current ? 1 : 0;
+    const p = Math.max(0, Math.min(1, base + e.translationX / travel));
+    const open = e.velocityX > 400 ? true : e.velocityX < -400 ? false : p > 0.5;
+    settle(open, open !== openRef.current);
+  }
+  const openPan = useMemo(
+    () => Gesture.Pan().activeOffsetX(12).failOffsetY([-18, 18]).onUpdate(follow).onEnd(release).runOnJS(true),
     [travel] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const closePan = useMemo(
+    () => Gesture.Pan().enabled(isOpen).activeOffsetX(-12).failOffsetY([-18, 18]).onUpdate(follow).onEnd(release).runOnJS(true),
+    [travel, isOpen] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const api = useMemo(
@@ -118,7 +115,7 @@ export function MenuHost({ navigation, children }) {
 
   return (
     <MenuContext.Provider value={api}>
-      <GestureDetector gesture={pan}>
+      <GestureDetector gesture={closePan}>
       <View style={styles.root}>
         <SideMenu visible={isOpen} width={width * REVEAL} onClose={api.close} onNavigate={goTab} />
 
@@ -127,6 +124,13 @@ export function MenuHost({ navigation, children }) {
           {/* While pushed aside, any tap on the card brings it back */}
           {isOpen ? <Pressable style={StyleSheet.absoluteFill} onPress={api.close} /> : null}
         </Animated.View>
+
+        {/* Invisible strip along the left edge (below the header) that catches the open swipe */}
+        {!isOpen ? (
+          <GestureDetector gesture={openPan}>
+            <View style={styles.edge} />
+          </GestureDetector>
+        ) : null}
       </View>
       </GestureDetector>
     </MenuContext.Provider>
@@ -142,6 +146,7 @@ export function useMenu() {
 const makeStyles = (colors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
+    edge: { position: 'absolute', left: 0, top: 110, bottom: 0, width: EDGE },
     sheet: {
       flex: 1,
       backgroundColor: colors.surface,
