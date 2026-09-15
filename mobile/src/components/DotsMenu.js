@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { View, StyleSheet, Modal, Pressable, Animated, Easing, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Text } from './Text';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +16,7 @@ const WIDTH = 220;
  *
  * Items: { label, icon, onPress, destructive?, disabled? }. Falsy entries are skipped.
  */
-export default function DotsMenu({ items, size = 20, color, style, children, align = 'right' }) {
+const DotsMenu = forwardRef(function DotsMenu({ items, size = 20, color, style, children, align = 'right' }, ref) {
   const { t: colors } = useTheme();
   const tint = color || colors.textMuted;
   const styles = useStyles(makeStyles);
@@ -35,6 +35,9 @@ export default function DotsMenu({ items, size = 20, color, style, children, ali
       setMounted(true);
     });
   }
+
+  // Lets a parent open the menu too, e.g. on a long-press of the whole card.
+  useImperativeHandle(ref, () => ({ open }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function close(after) {
     Animated.timing(t, { toValue: 0, duration: 140, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
@@ -88,7 +91,9 @@ export default function DotsMenu({ items, size = 20, color, style, children, ali
       </Modal>
     </>
   );
-}
+});
+
+export default DotsMenu;
 
 const makeStyles = (colors, isDark) => {
   return StyleSheet.create({

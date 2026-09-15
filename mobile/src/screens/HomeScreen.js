@@ -354,12 +354,12 @@ function HeaderBadge({ item, onPress, styles, progress, bob }) {
 }
 
 /** A card that presses down (scale 0.97) while held and opens on release. */
-function PressCard({ style, onPress, children }) {
+function PressCard({ style, onPress, onLongPress, children }) {
   const press = useRef(new Animated.Value(0)).current;
   const set = (to) => Animated.spring(press, { toValue: to, damping: 20, stiffness: 380, mass: 0.6, useNativeDriver: true }).start();
   const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
   return (
-    <Pressable onPress={onPress} onPressIn={() => set(1)} onPressOut={() => set(0)}>
+    <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={320} onPressIn={() => set(1)} onPressOut={() => set(0)}>
       <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>
   );
@@ -527,7 +527,7 @@ function PostHead({ post, menu, right }) {
       <Avatar name={o.name} size={40} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.name} numberOfLines={1}>{handleOf(o.name)}</Text>
-        <Text style={styles.label} numberOfLines={1}>{o.branch ? `${o.branch} · ` : ''}{timeAgo(post.at)}</Text>
+        <Text style={styles.who} numberOfLines={1}>{o.branch ? `${o.branch} · ` : ''}{timeAgo(post.at)}</Text>
       </View>
       {right}
       <DotsMenu items={menu} />
@@ -593,9 +593,10 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
   const isMine = String(post.owner._id || post.owner) === String(me?._id);
   const liked = (post.raw.applicants || []).some((a) => String(a.user?._id || a.user) === String(me?._id));
   const who = post.owner.branch ? `${post.owner.branch}${post.owner.semester ? ` · Sem ${post.owner.semester}` : ''}` : '';
+  const menuRef = useRef(null);
 
   return (
-    <PressCard style={styles.post} onPress={onOpen}>
+    <PressCard style={styles.post} onPress={onOpen} onLongPress={() => menuRef.current?.open()}>
       <View style={styles.gutter}>
         <Avatar name={post.owner.name} size={40} neutral />
         <View style={styles.thread} />
@@ -604,15 +605,15 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
       <View style={styles.content}>
         <View style={styles.head}>
           <Text style={styles.name} numberOfLines={1}>{handleOf(post.owner.name)}</Text>
+          {who ? <Text style={styles.who} numberOfLines={1}>{who}</Text> : null}
           <Text style={styles.time}>{timeAgo(post.at)}</Text>
-          <DotsMenu items={menu} />
+          <DotsMenu ref={menuRef} items={menu} />
         </View>
         <View style={styles.labelRow}>
           <View style={styles.pill}>
             <Ionicons name="people-outline" size={11} color={colors.textMuted} />
             <Text style={styles.pillText}>{post.label}</Text>
           </View>
-          {who ? <Text style={styles.label} numberOfLines={1}>{who}</Text> : null}
         </View>
 
         <TeamBody post={post} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
@@ -1275,8 +1276,9 @@ const makeStyles = (colors, isDark) => {
   thread: { flex: 1, width: 2, borderRadius: 1, backgroundColor: colors.border, marginTop: 8, marginBottom: -4 },
   content: { flex: 1, minWidth: 0 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1, flex: 1 },
-  time: { fontSize: 13, color: colors.textMuted },
+  name: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  who: { flex: 1, fontSize: 12, color: colors.textFaint, marginLeft: -2 },
+  time: { fontSize: 12.5, color: colors.textFaint },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   pillText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2, color: colors.textMuted },
