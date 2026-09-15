@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, LayoutAnimation, UIManager, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, LayoutAnimation, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -146,10 +146,6 @@ function Enter({ index, leaving, children }) {
   return <Animated.View style={{ opacity, transform: [{ translateY }, { translateX }] }}>{children}</Animated.View>;
 }
 
-// LayoutAnimation on the old Android architecture needs opting in.
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 const SHIFT_UP = {
   duration: 320,
   create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
