@@ -102,7 +102,7 @@ export default function CampusMapScreen({ navigation, route }) {
   const catLabel = (key) => data?.categories?.find((c) => c.key === key)?.label || key;
 
   const uri = `${campusUrl(campusId)}?dark=${isDark ? 1 : 0}&v=${reloadKey}`;
-  const bottomPad = layout.tabBarSpace + 8;
+  const bottomPad = insets.bottom + 12; // no tab bar on the map — sit just above the home indicator
 
   return (
     <View style={styles.safe}>
