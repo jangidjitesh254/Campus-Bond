@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, FlatList, Pressable, ActivityIndicator, useWindowDimensions, Keyboard } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, FlatList, Pressable, ActivityIndicator, useWindowDimensions, Keyboard, Platform } from 'react-native';
 import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -347,6 +347,10 @@ function PhotoViewer({ photos, onClose, campusId, styles, t }) {
 }
 
 function makeStyles(t, isDark) {
+  // Android draws elevation as a dark rim around rounded/clipped views, which
+  // read as borders over the scene - so the map chrome only casts shadows on iOS.
+  const soft = Platform.OS === 'ios' ? shadow.soft : null;
+  const card = Platform.OS === 'ios' ? shadow.card : null;
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
     web: { flex: 1, backgroundColor: isDark ? '#0B0B0B' : '#E9EAE9' },
@@ -360,17 +364,17 @@ function makeStyles(t, isDark) {
     top: { position: 'absolute', left: 0, right: 0, top: 0 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 6 },
     // Solid pills like Home's search bar — no borders, a whisper of shadow so they read over the scene.
-    roundBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
-    searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, borderRadius: 999, backgroundColor: t.surface, paddingHorizontal: 14, ...shadow.soft },
+    roundBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...soft },
+    searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, borderRadius: 999, backgroundColor: t.surface, paddingHorizontal: 14, ...soft },
     searchInput: { flex: 1, fontSize: 15, color: t.text, paddingVertical: 0 },
     chips: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
-    chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 12, backgroundColor: t.surface, ...shadow.soft },
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 12, backgroundColor: t.surface, ...soft },
     chipOn: { backgroundColor: t.text },
     chipAccent: {},
     chipText: { fontSize: 12.5, fontWeight: '600', color: t.textMuted },
     chipTextOn: { color: t.surface },
 
-    listPanel: { marginHorizontal: 12, marginTop: 4, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.card },
+    listPanel: { marginHorizontal: 12, marginTop: 4, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...card },
     listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 11 },
     listRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
     listIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
@@ -380,9 +384,9 @@ function makeStyles(t, isDark) {
     listClose: { alignItems: 'center', paddingVertical: 11, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border, backgroundColor: t.surfaceMuted },
     listCloseText: { fontSize: 13, fontWeight: '700', color: t.text },
 
-    fab: { position: 'absolute', right: 14, width: 44, height: 44, borderRadius: 22, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...shadow.card },
+    fab: { position: 'absolute', right: 14, width: 44, height: 44, borderRadius: 22, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...card },
 
-    card: { position: 'absolute', left: 12, right: 12, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.card },
+    card: { position: 'absolute', left: 12, right: 12, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...card },
     thumbs: { gap: 6, paddingHorizontal: 12, paddingTop: 12 },
     thumb: { width: 96, height: 68, borderRadius: 10, backgroundColor: t.surfaceMuted },
     cardBody: { padding: 14 },
@@ -408,7 +412,7 @@ function makeStyles(t, isDark) {
     smallBtnText: { fontSize: 12, fontWeight: '700', color: t.text },
 
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-    sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 16, ...shadow.card },
+    sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 16, ...card },
     sheetTitle: { fontSize: 17, fontWeight: '700', color: t.text, paddingHorizontal: 18 },
     sheetSub: { fontSize: 13, color: t.textMuted, paddingHorizontal: 18, marginTop: 3, marginBottom: 8 },
 
