@@ -17,6 +17,7 @@ import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
 import { useMenu } from '../context/MenuContext';
 import SearchOverlay from '../components/SearchOverlay';
+import Spotlight from '../components/Spotlight';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
@@ -356,11 +357,23 @@ function HeaderBadge({ item, onPress, styles, progress, bob }) {
 /** A card that presses down (scale 0.97) while held and opens on release. */
 function PressCard({ style, onPress, onLongPress, children }) {
   const press = useRef(new Animated.Value(0)).current;
+  const box = useRef(null);
   const set = (to) => Animated.spring(press, { toValue: to, damping: 20, stiffness: 380, mass: 0.6, useNativeDriver: true }).start();
   const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
+  // Long-press hands over the card's frame (window coords) so it can be spotlit
+  // in place. The frame is taken on press-in, before the squash starts.
+  const frame = useRef(null);
+  function pressIn() {
+    box.current?.measureInWindow((x, y, width, height) => { frame.current = { x, y, width, height }; });
+    set(1);
+  }
+  function longPress() {
+    set(0);
+    if (frame.current) onLongPress?.(frame.current);
+  }
   return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={320} onPressIn={() => set(1)} onPressOut={() => set(0)}>
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
+    <Pressable onPress={onPress} onLongPress={onLongPress ? longPress : undefined} delayLongPress={320} onPressIn={pressIn} onPressOut={() => set(0)}>
+      <Animated.View ref={box} collapsable={false} style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>
   );
 }
@@ -536,7 +549,7 @@ function PostHead({ post, menu, right }) {
 }
 
 /** Lost & Found — photo first (or a faint mascot placeholder), then who / what / where. */
-function LostPost({ post, uri, menu, onOpen, onShare }) {
+function LostPost({ post, uri, menu, onOpen, onShare, onSpotlight }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const r = post.raw;
@@ -545,7 +558,7 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
   const resolved = r.status === 'resolved';
   const where = r.location ? `${lost ? 'near' : 'at'} ${r.location}` : 'on campus';
   return (
-    <PressCard style={[styles.plain, resolved && { opacity: 0.55 }]} onPress={onOpen}>
+    <PressCard style={[styles.plain, resolved && { opacity: 0.55 }]} onPress={onOpen} onLongPress={onSpotlight}>
       {/* Instagram order: who → photo → caption */}
       <PostHead post={post} menu={menu} right={resolved ? <Text style={styles.resolved}>Resolved</Text> : null} />
 
@@ -586,17 +599,16 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
 }
 
 /** Team — Threads-style row: avatar gutter, handle, title; tap to unfold the details. */
-function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
+function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare, onSpotlight }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const [expanded, setExpanded] = useState(false);
   const isMine = String(post.owner._id || post.owner) === String(me?._id);
   const liked = (post.raw.applicants || []).some((a) => String(a.user?._id || a.user) === String(me?._id));
   const who = post.owner.branch ? `${post.owner.branch}${post.owner.semester ? ` · Sem ${post.owner.semester}` : ''}` : '';
-  const menuRef = useRef(null);
 
   return (
-    <PressCard style={styles.post} onPress={onOpen} onLongPress={() => menuRef.current?.open()}>
+    <PressCard style={styles.post} onPress={onOpen} onLongPress={onSpotlight}>
       <View style={styles.gutter}>
         <Avatar name={post.owner.name} size={40} neutral />
         <View style={styles.thread} />
@@ -607,7 +619,7 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
           <Text style={styles.name} numberOfLines={1}>{handleOf(post.owner.name)}</Text>
           {who ? <Text style={styles.who} numberOfLines={1}>{who}</Text> : null}
           <Text style={styles.time}>{timeAgo(post.at)}</Text>
-          <DotsMenu ref={menuRef} items={menu} />
+          <DotsMenu items={menu} />
         </View>
         <View style={styles.labelRow}>
           <View style={styles.pill}>
@@ -776,6 +788,12 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   const [toDelete, setToDelete] = useState(null);
+  // Long-pressed card: { item, frame } — shown lit above a dim with its menu beneath.
+  const [spot, setSpot] = useState(null);
+  function spotlight(item, frame) {
+    buzz(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+    setSpot({ item, frame });
+  }
   const menu = useMenu(); // the side menu lives under the whole tab UI (see MenuHost)
 
   // In-place search: the pill measures itself, then the overlay glides it to the top.
@@ -989,6 +1007,7 @@ export default function HomeScreen({ navigation, route }) {
         onLike={() => like(item)}
         onComment={() => goTab('Post', { screen: 'Thread', params: { id: item.id, focusComment: true } })}
         onShare={() => share(item)}
+        onSpotlight={(frame) => spotlight(item, frame)}
       />
     );
   };
@@ -1137,6 +1156,12 @@ export default function HomeScreen({ navigation, route }) {
       )}
       </PullToRefresh>
 
+      {spot ? (
+        <Spotlight frame={spot.frame} items={menuFor(spot.item)} onClose={() => setSpot(null)}>
+          <Post post={spot.item} me={user} menu={[]} onOpen={() => {}} onLike={() => {}} onComment={() => {}} onShare={() => {}} />
+        </Spotlight>
+      ) : null}
+
       <SearchOverlay open={searchOpen} from={searchFrom} onClose={() => setSearchOpen(false)} goTab={goTab} />
 
       <Confirm
@@ -1276,9 +1301,9 @@ const makeStyles = (colors, isDark) => {
   thread: { flex: 1, width: 2, borderRadius: 1, backgroundColor: colors.border, marginTop: 8, marginBottom: -4 },
   content: { flex: 1, minWidth: 0 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  who: { flex: 1, fontSize: 12, color: colors.textFaint, marginLeft: -2 },
-  time: { fontSize: 12.5, color: colors.textFaint },
+  name: { fontSize: 15, lineHeight: 20, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  who: { flex: 1, fontSize: 12, lineHeight: 20, color: colors.textFaint, marginLeft: -2, includeFontPadding: false },
+  time: { fontSize: 12.5, lineHeight: 20, color: colors.textFaint, includeFontPadding: false },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   pillText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2, color: colors.textMuted },
