@@ -353,6 +353,18 @@ function HeaderBadge({ item, onPress, styles, progress, bob }) {
   );
 }
 
+/** A card that presses down (scale 0.97) while held and opens on release. */
+function PressCard({ style, onPress, children }) {
+  const press = useRef(new Animated.Value(0)).current;
+  const set = (to) => Animated.spring(press, { toValue: to, damping: 20, stiffness: 380, mass: 0.6, useNativeDriver: true }).start();
+  const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
+  return (
+    <Pressable onPress={onPress} onPressIn={() => set(1)} onPressOut={() => set(0)}>
+      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
+    </Pressable>
+  );
+}
+
 /** One category tab: squashes a little while pressed, reports its frame for the underline. */
 function TabChip({ active, tint, icon, label, onPress, onLayout, styles, colors }) {
   const press = useRef(new Animated.Value(0)).current;
@@ -451,7 +463,7 @@ function daysLeft(d) {
  * Team post body. Collapsed it is just the title and the seats strip; tapping
  * the card reveals the description and the skills wanted.
  */
-function TeamBody({ post, expanded }) {
+function TeamBody({ post, expanded, onToggle }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const r = post.raw;
@@ -482,17 +494,17 @@ function TeamBody({ post, expanded }) {
         </>
       ) : null}
 
-      {/* Roster: owner + approved members, then a dashed "+" for every open seat */}
-      <View style={styles.roster}>
+      {/* Roster: owner + approved members, then a dashed "+" for every open seat. Tap to unfold the details. */}
+      <Pressable style={styles.roster} onPress={hasMore ? onToggle : undefined} hitSlop={{ top: 6, bottom: 6 }}>
         <View style={styles.seats}>
           {[{ user: r.createdBy }, ...approved].slice(0, 5).map((a, i) => (
-            <View key={a.user?._id || i} style={[styles.seat, i > 0 && { marginLeft: -8 }]}>
-              {a.user?.name ? <Avatar name={a.user.name} size={28} neutral /> : <View style={styles.seatFilled}><Ionicons name="person" size={13} color={colors.textMuted} /></View>}
+            <View key={a.user?._id || i} style={[styles.seat, i > 0 && { marginLeft: -7 }]}>
+              {a.user?.name ? <Avatar name={a.user.name} size={22} neutral /> : <View style={styles.seatFilled}><Ionicons name="person" size={11} color={colors.textMuted} /></View>}
             </View>
           ))}
           {Array.from({ length: Math.min(Math.max(size - filled, 0), 4) }).map((_, i) => (
-            <View key={`open-${i}`} style={[styles.seat, styles.seatOpen, { marginLeft: -8 }]}>
-              <Ionicons name="add" size={14} color={colors.textMuted} />
+            <View key={`open-${i}`} style={[styles.seat, styles.seatOpen, { marginLeft: -7 }]}>
+              <Ionicons name="add" size={12} color={colors.textMuted} />
             </View>
           ))}
         </View>
@@ -501,7 +513,7 @@ function TeamBody({ post, expanded }) {
           {left && !closed ? <Text style={{ color: colors.amber, fontWeight: '600' }}> · {left}</Text> : null}
         </Text>
         {hasMore ? <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textFaint} /> : null}
-      </View>
+      </Pressable>
     </>
   );
 }
@@ -533,7 +545,7 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
   const resolved = r.status === 'resolved';
   const where = r.location ? `${lost ? 'near' : 'at'} ${r.location}` : 'on campus';
   return (
-    <TouchableOpacity style={[styles.plain, resolved && { opacity: 0.55 }]} activeOpacity={0.9} onPress={onOpen}>
+    <PressCard style={[styles.plain, resolved && { opacity: 0.55 }]} onPress={onOpen}>
       {/* Instagram order: who → photo → caption */}
       <PostHead post={post} menu={menu} right={resolved ? <Text style={styles.resolved}>Resolved</Text> : null} />
 
@@ -569,7 +581,7 @@ function LostPost({ post, uri, menu, onOpen, onShare }) {
           </TouchableOpacity>
         ) : null}
       </View>
-    </TouchableOpacity>
+    </PressCard>
   );
 }
 
@@ -583,7 +595,7 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
   const who = post.owner.branch ? `${post.owner.branch}${post.owner.semester ? ` · Sem ${post.owner.semester}` : ''}` : '';
 
   return (
-    <TouchableOpacity style={styles.post} activeOpacity={0.9} onPress={() => setExpanded((v) => !v)}>
+    <PressCard style={styles.post} onPress={onOpen}>
       <View style={styles.gutter}>
         <Avatar name={post.owner.name} size={40} neutral />
         <View style={styles.thread} />
@@ -603,7 +615,7 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
           {who ? <Text style={styles.label} numberOfLines={1}>{who}</Text> : null}
         </View>
 
-        <TeamBody post={post} expanded={expanded} />
+        <TeamBody post={post} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.action} onPress={isMine ? undefined : onLike} hitSlop={8} disabled={isMine}>
@@ -623,7 +635,7 @@ function TeamPost({ post, me, menu, onOpen, onLike, onComment, onShare }) {
           </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+    </PressCard>
   );
 }
 
@@ -1048,10 +1060,16 @@ export default function HomeScreen({ navigation, route }) {
       {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} bob={bob} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-          {/* Thin paper plane — the messages glyph Threads/Instagram use, drawn to match the menu bars */}
+          {/* Soft rounded bubble — thin stroke, round corners, a small tail; nothing inside */}
           <Svg width={26} height={26} viewBox="0 0 24 24">
-            <Path d="M21 3.6 3.4 10.4c-.9.35-.85 1.6.05 1.9l6.6 2.2 2.2 6.6c.3.9 1.55.95 1.9.05L21 3.6Z" stroke={colors.text} strokeWidth={1.8} strokeLinejoin="round" fill="none" />
-            <Path d="M10.2 14.4 21 3.6" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" />
+            <Path
+              d="M7.5 4.5h9A4.5 4.5 0 0 1 21 9v4a4.5 4.5 0 0 1-4.5 4.5H11l-4.2 3.1a.6.6 0 0 1-1-.5V17A4.5 4.5 0 0 1 3 13V9a4.5 4.5 0 0 1 4.5-4.5Z"
+              stroke={colors.text}
+              strokeWidth={1.7}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              fill="none"
+            />
           </Svg>
         </Animated.View>
       </TouchableOpacity>
@@ -1270,10 +1288,10 @@ const makeStyles = (colors, isDark) => {
   chipsLabel: { fontSize: 12.5, color: colors.textMuted, marginRight: 2 },
   chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.surfaceMuted, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   chipText: { fontSize: 12.5, fontWeight: '600', color: colors.text },
-  roster: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  roster: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
   seats: { flexDirection: 'row', alignItems: 'center' },
-  seat: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.surface, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  seatFilled: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  seat: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.surface, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  seatFilled: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   seatOpen: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.mediaStroke },
   rosterText: { flex: 1, fontSize: 13, color: colors.textMuted },
   stripItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -1292,7 +1310,7 @@ const makeStyles = (colors, isDark) => {
   photo: { width: '100%', height: 220, borderRadius: 14, marginBottom: 12, backgroundColor: colors.surfaceMuted },
   photoEmpty: { width: '100%', height: 100, borderRadius: 14, marginBottom: 12, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
 
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 12 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 14 },
   ctaLink: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 3 },
   ctaLinkText: { fontSize: 14, fontWeight: '700' },
   openText: { fontSize: 13.5, fontWeight: '600', color: colors.textMuted },

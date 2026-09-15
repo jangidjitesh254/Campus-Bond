@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from './Text';
 import Icon from './Icon';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { gradients } from '../theme';
 
@@ -11,7 +12,7 @@ import { gradients } from '../theme';
  * gradient the design uses for the signed-in student; `neutral` is the
  * quiet grey used for other people in lists; `bg` / `textColor` override.
  */
-export default function Avatar({ name, size = 38, badge, style, bg, textColor, gradient, neutral }) {
+export default function Avatar({ name, size = 38, badge, style, bg, textColor, gradient, neutral, initials: showInitials = false }) {
   const { t, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(t, isDark), [t, isDark]);
   const initials = (name || '?')
@@ -22,16 +23,22 @@ export default function Avatar({ name, size = 38, badge, style, bg, textColor, g
     .toUpperCase();
   const fontSize = Math.round(size * 0.36);
   const round = { width: size, height: size, borderRadius: size / 2 };
+  // Default is a quiet person glyph; pass `initials` to show letters instead.
+  const glyph = (color) => <Ionicons name="person" size={Math.round(size * 0.5)} color={color} style={{ marginTop: Math.round(size * 0.04) }} />;
 
   return (
     <View style={[{ width: size, height: size }, style]}>
       {gradient ? (
         <LinearGradient colors={gradients.avatar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.circle, round]}>
-          <Text style={[styles.text, { fontSize, color: '#FFFFFF' }]}>{initials}</Text>
+          {showInitials ? <Text style={[styles.text, { fontSize, color: '#FFFFFF' }]}>{initials}</Text> : glyph('#FFFFFF')}
         </LinearGradient>
       ) : (
         <View style={[styles.circle, round, neutral && { backgroundColor: t.avatarNeutral }, bg && { backgroundColor: bg }]}>
-          <Text style={[styles.text, { fontSize }, neutral && { color: t.textMuted }, textColor && { color: textColor }]}>{initials}</Text>
+          {showInitials ? (
+            <Text style={[styles.text, { fontSize }, neutral && { color: t.textMuted }, textColor && { color: textColor }]}>{initials}</Text>
+          ) : (
+            glyph(textColor || (neutral ? t.textMuted : t.avatarText))
+          )}
         </View>
       )}
       {badge === 'check' ? (
