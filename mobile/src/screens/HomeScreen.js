@@ -263,7 +263,7 @@ function Confetti({ burst, style }) {
  * that slides out from behind the mascot (clipped at the mascot's centre),
  * with a burst of confetti as it appears. Tap opens the announcement.
  */
-const STRIPS = 14; // the ribbon is cut into this many vertical slices that ripple
+const STRIPS = 24; // the ribbon is cut into this many vertical slices that ripple
 
 /**
  * Cloth wave: a linear 0→1 phase loops forever; each slice maps it onto a
@@ -282,8 +282,8 @@ function useWave() {
 }
 
 function sliceOffset(phase, i) {
-  const amp = 4 * ((i + 1) / STRIPS);
-  const shift = (i / STRIPS) * 1.2; // ~1.2 wavelengths across the ribbon
+  const amp = 3 * ((i + 1) / STRIPS);
+  const shift = (i / STRIPS) * 1.0; // one wavelength across the ribbon
   const steps = 16;
   const inputRange = Array.from({ length: steps + 1 }, (_, k) => k / steps);
   const outputRange = inputRange.map((t) => Math.sin(2 * Math.PI * (t - shift)) * amp);
@@ -346,7 +346,8 @@ function HeaderBadge({ item, onPress, styles, progress, bob }) {
         <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }, { translateY: bobY }] }}>
           <Pressable style={styles.ribbon} onPress={onPress}>
             {Array.from({ length: STRIPS }).map((_, i) => (
-              <Animated.View key={i} style={[styles.strip, { width: stripW, transform: [{ translateY: sliceOffset(wave, i) }] }]}>
+              // Each slice is a hair wider than its step and overlaps the previous one, so no seams show.
+              <Animated.View key={i} style={[styles.strip, { width: stripW + 1, marginLeft: i ? -1 : 0, transform: [{ translateY: sliceOffset(wave, i) }] }]}>
                 <View style={{ width: RIBBON_W, height: RIBBON_H, marginLeft: -i * stripW, justifyContent: 'center' }}>{art}</View>
               </Animated.View>
             ))}

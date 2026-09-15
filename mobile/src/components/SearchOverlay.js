@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated, Easing, TouchableOpacity, Keyboard, BackHan
 import { Ionicons } from '@expo/vector-icons';
 import { Text, TextInput } from './Text';
 import { SearchBody } from '../screens/SearchScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useStyles } from '../context/ThemeContext';
 
 const SIDE = 16;
@@ -23,6 +24,7 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
   const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const progress = useRef(new Animated.Value(0)).current; // native: the bar's position
   const widthAnim = useRef(new Animated.Value(0)).current; // JS: the bar's width, the sheet and result fades
   const [mounted, setMounted] = useState(false);
@@ -30,7 +32,7 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
-  const topY = 8; // where the bar rests, inside the safe area
+  const topY = insets.top + 8; // where the bar rests: just under the status bar
   const startY = from?.y ?? 120;
   const startW = from?.width ?? width - SIDE * 2;
   const endW = width - SIDE * 2 - CANCEL_W;
@@ -80,12 +82,12 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
       <Animated.View style={[styles.sheet, { opacity: sheetOpacity }]} collapsable={false} />
 
       {/* Results, under the bar */}
-      <Animated.View style={[styles.body, { opacity: fade }]} collapsable={false} pointerEvents={open ? 'auto' : 'none'}>
+      <Animated.View style={[styles.body, { paddingTop: topY + BAR_H + 8, opacity: fade }]} collapsable={false} pointerEvents={open ? 'auto' : 'none'}>
         <SearchBody q={q} goTab={(tab, params) => { onClose(); goTab(tab, params); }} onLoading={setLoading} />
       </Animated.View>
 
       {/* The bar itself — moves natively, its width animates on the JS side inside */}
-      <Animated.View style={[styles.barRow, { transform: [{ translateY }] }]}>
+      <Animated.View style={[styles.barRow, { top: topY, transform: [{ translateY }] }]}>
         <Animated.View style={[styles.bar, { width: barWidth }]}>
           <Ionicons name="search" size={17} color={colors.textFaint} />
           <TextInput
@@ -117,8 +119,8 @@ export default function SearchOverlay({ open, from, onClose, goTab }) {
 const makeStyles = (colors) =>
   StyleSheet.create({
     sheet: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surface },
-    body: { ...StyleSheet.absoluteFillObject, paddingTop: 8 + BAR_H + 8, backgroundColor: colors.surface },
-    barRow: { position: 'absolute', top: 8, left: SIDE, right: SIDE, flexDirection: 'row', alignItems: 'center' },
+    body: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surface },
+    barRow: { position: 'absolute', left: SIDE, right: SIDE, flexDirection: 'row', alignItems: 'center' },
     bar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, height: BAR_H, borderRadius: 999, backgroundColor: colors.surfaceMuted },
     input: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: 0 },
     cancel: { width: CANCEL_W, alignItems: 'flex-end', paddingVertical: 8 },
