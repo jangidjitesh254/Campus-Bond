@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, cloneElement } from 'react';
-import { View, Animated, StyleSheet, Platform } from 'react-native';
+import { View, Animated, StyleSheet, Platform, Easing } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { Ghost } from './Mascot';
+import { Ghost, MascotDecor } from './Mascot';
 
 const TRIGGER = 72; // pull distance (px) that starts a refresh
 const MAX = 150; // how far the pull can go
@@ -45,11 +45,25 @@ const CURVE_OUT = CURVE_IN.map(ease);
  * tabs+list block slides up by `topHeight` and is made that much taller so
  * no gap appears underneath.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0 }) {
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
   const pan = useRef(null);
+
+  // Idle: a slow bob, so the mascot always feels alive in the header.
+  const bob = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bob, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(bob, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bob]);
+  const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] });
 
   // Wink loop while refreshing.
   useEffect(() => {
@@ -121,8 +135,9 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
             {children}
           </Animated.View>
         </View>
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ scale: ghostScale }] }]}>
-          <Ghost width={ghostSize} />
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateY: bobY }, { scale: ghostScale }] }]}>
+          <Ghost width={ghostSize} variant={variant} />
+          <MascotDecor mood={mood} size={ghostSize} />
         </Animated.View>
       </View>
     );
@@ -150,8 +165,9 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
           </Animated.View>
         </View>
 
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: ghostY }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
-          <Ghost width={bigW} lid={lid} />
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: Animated.add(ghostY, bobY) }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
+          <Ghost width={bigW} lid={lid} variant={variant} />
+          <MascotDecor mood={mood} size={bigW} />
         </Animated.View>
       </Animated.View>
     </PanGestureHandler>

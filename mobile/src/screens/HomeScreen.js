@@ -793,6 +793,10 @@ export default function HomeScreen({ navigation, route }) {
     return pickTab('all');
   }
 
+  // The header mascot dresses for the campus moment (from the headline announcement).
+  const MOOD = { Hackathon: ['trophy', 'happy'], Fest: ['party', 'kiss'], Exams: ['study', 'glasses'], Placements: ['work', 'cool'] };
+  const [mood, mascotFace] = MOOD[news[0]?.tag] || [null, undefined];
+
   // Search pill above the banner — jumps to the Search tab with the keyboard up.
   const Search = (
     <TouchableOpacity ref={pillRef} style={[styles.search, searchOpen && { opacity: 0 }]} activeOpacity={0.8} onPress={openSearch}>
@@ -865,7 +869,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView ref={rootRef} style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace}>
       {loading ? (
         <Skeleton />
       ) : (

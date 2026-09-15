@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
 /** Faint one-colour ghost used as a watermark on empty media slots. `bg` is the colour behind it. */
@@ -178,3 +179,130 @@ const st = StyleSheet.create({
     elevation: 3,
   },
 });
+
+/* ------------------------------------------------------------------ */
+/*  Event outfits for the header mascot                                */
+/* ------------------------------------------------------------------ */
+
+/** Little sparkle that twinkles on its own rhythm. */
+function Twinkle({ x, y, size, color, delay }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(v, { toValue: 1, duration: 420, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 520, useNativeDriver: true }),
+        Animated.delay(900),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [v, delay]);
+  const scale = v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  return (
+    <Animated.View style={{ position: 'absolute', left: x, top: y, opacity: v, transform: [{ scale }] }}>
+      <Ionicons name="sparkles" size={size} color={color} />
+    </Animated.View>
+  );
+}
+
+/** A note / confetti bit that floats up and fades, forever. */
+function Drift({ x, y, size, color, delay, icon }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([Animated.delay(delay), Animated.timing(v, { toValue: 1, duration: 1600, easing: Easing.out(Easing.quad), useNativeDriver: true })])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [v, delay]);
+  const translateY = v.interpolate({ inputRange: [0, 1], outputRange: [0, -size * 1.6] });
+  const opacity = v.interpolate({ inputRange: [0, 0.2, 0.8, 1], outputRange: [0, 1, 1, 0] });
+  const rotate = v.interpolate({ inputRange: [0, 1], outputRange: ['-12deg', '12deg'] });
+  return (
+    <Animated.View style={{ position: 'absolute', left: x, top: y, opacity, transform: [{ translateY }, { rotate }] }}>
+      <Ionicons name={icon} size={size} color={color} />
+    </Animated.View>
+  );
+}
+
+/**
+ * What the header mascot carries for the campus moment — laid over the
+ * ghost in the ghost's own coordinate space (`size` = ghost width).
+ *
+ *   trophy  — SIH / hackathons: a gold trophy that swings, with sparkles
+ *   party   — fests: a party hat and drifting music notes
+ *   study   — exams: a mortarboard
+ *   work    — placements: a tie
+ */
+export function MascotDecor({ mood, size = 100 }) {
+  const swing = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (mood !== 'trophy') return undefined;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(swing, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(swing, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [mood, swing]);
+
+  if (!mood) return null;
+  const u = size / 100; // 1 unit = 1% of the ghost's width
+  const gold = '#F2B84B';
+
+  if (mood === 'trophy') {
+    const rotate = swing.interpolate({ inputRange: [0, 1], outputRange: ['-14deg', '10deg'] });
+    return (
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {/* Held out to the right, swinging from the "hand" */}
+        <Animated.View style={{ position: 'absolute', left: 74 * u, top: 44 * u, transform: [{ rotate }] }}>
+          <Ionicons name="trophy" size={48 * u} color={gold} />
+        </Animated.View>
+        <Twinkle x={-6 * u} y={8 * u} size={16 * u} color={gold} delay={0} />
+        <Twinkle x={86 * u} y={-2 * u} size={14 * u} color={gold} delay={600} />
+        <Twinkle x={104 * u} y={40 * u} size={12 * u} color={gold} delay={1100} />
+      </View>
+    );
+  }
+  if (mood === 'party') {
+    return (
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {/* Party hat perched on the head */}
+        <View style={{ position: 'absolute', left: 30 * u, top: -30 * u, transform: [{ rotate: '-14deg' }] }}>
+          <Svg width={44 * u} height={44 * u} viewBox="0 0 44 44">
+            <Path d="M22 2 L40 40 H4 Z" fill="#EF5B54" />
+            <Path d="M10 27 L34 27 L38 36 H6 Z" fill="#F2B84B" />
+            <Circle cx="22" cy="3" r="4" fill="#F2B84B" />
+          </Svg>
+        </View>
+        <Drift x={-10 * u} y={30 * u} size={16 * u} color="#EF5B54" delay={0} icon="musical-note" />
+        <Drift x={96 * u} y={20 * u} size={18 * u} color="#6A4BC4" delay={700} icon="musical-notes" />
+      </View>
+    );
+  }
+  if (mood === 'study') {
+    return (
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={{ position: 'absolute', left: 22 * u, top: -20 * u, transform: [{ rotate: '-8deg' }] }}>
+          <Ionicons name="school" size={52 * u} color="#16241C" />
+        </View>
+      </View>
+    );
+  }
+  if (mood === 'work') {
+    return (
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={{ position: 'absolute', left: 42 * u, top: 74 * u }}>
+          <Svg width={16 * u} height={30 * u} viewBox="0 0 16 30">
+            <Path d="M3 0 H13 L10 5 L14 24 L8 30 L2 24 L6 5 Z" fill="#2F6FE0" />
+          </Svg>
+        </View>
+      </View>
+    );
+  }
+  return null;
+}
