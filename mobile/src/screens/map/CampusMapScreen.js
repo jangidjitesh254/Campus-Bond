@@ -8,7 +8,7 @@ import Icon from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
 import { CampusApi, campusUrl, campusThumb, campusPhoto, CATEGORY_ION, walkMinutes, DEFAULT_CAMPUS } from '../../api/campus';
 import { ScoreApi } from '../../api/score';
-import { layout, monoFamily, shadow } from '../../theme';
+import { shadow } from '../../theme';
 
 const START_DEFAULT = 'main-gate';
 
@@ -129,7 +129,7 @@ export default function CampusMapScreen({ navigation, route }) {
       {!ready && !error ? (
         <View style={[StyleSheet.absoluteFill, styles.loading]} pointerEvents="none">
           <ActivityIndicator size="large" color={t.primary} />
-          <Text style={styles.loadingText}>BUILDING THE CAMPUS…</Text>
+          <Text style={styles.loadingText}>Building the campus…</Text>
         </View>
       ) : null}
 
@@ -169,7 +169,7 @@ export default function CampusMapScreen({ navigation, route }) {
             ) : null}
           </View>
           <TouchableOpacity style={styles.roundBtn} onPress={() => setListOpen((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Icon name="list" size={18} color={showList ? t.accent : t.text} strokeWidth={1.9} />
+            <Icon name="list" size={18} color={t.text} strokeWidth={showList ? 2.4 : 1.9} />
           </TouchableOpacity>
         </View>
 
@@ -184,15 +184,15 @@ export default function CampusMapScreen({ navigation, route }) {
             );
           })}
           {data?.videos?.length ? (
-            <TouchableOpacity style={[styles.chip, styles.chipAccent]} onPress={() => navigation.navigate('Walkthrough', { campus: campusId })} activeOpacity={0.85}>
-              <Ionicons name="play" size={12} color={t.accent} />
-              <Text style={[styles.chipText, { color: t.accent }]}>Campus walks</Text>
+            <TouchableOpacity style={styles.chip} onPress={() => navigation.navigate('Walkthrough', { campus: campusId })} activeOpacity={0.85}>
+              <Ionicons name="play" size={12} color={t.text} />
+              <Text style={[styles.chipText, { color: t.text }]}>Campus walks</Text>
             </TouchableOpacity>
           ) : null}
           {/* Your Campus Score, one tap from the map */}
-          <TouchableOpacity style={[styles.chip, styles.chipAccent]} onPress={() => navigation.getParent()?.navigate('More', { screen: 'CampusScore' })} activeOpacity={0.85}>
-            <Ionicons name="trophy" size={12} color={t.accent} />
-            <Text style={[styles.chipText, { color: t.accent }]}>{score == null ? '…' : `${score} pts`}</Text>
+          <TouchableOpacity style={styles.chip} onPress={() => navigation.getParent()?.navigate('More', { screen: 'CampusScore' })} activeOpacity={0.85}>
+            <Ionicons name="trophy-outline" size={12} color={t.text} />
+            <Text style={[styles.chipText, { color: t.text }]}>{score == null ? '…' : `${score} pts`}</Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -215,7 +215,7 @@ export default function CampusMapScreen({ navigation, route }) {
               )}
             </ScrollView>
             <TouchableOpacity style={styles.listClose} onPress={() => { setListOpen(false); setQuery(''); setCategory(null); Keyboard.dismiss(); }}>
-              <Text style={styles.listCloseText}>CLOSE</Text>
+              <Text style={styles.listCloseText}>Close</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -236,7 +236,7 @@ export default function CampusMapScreen({ navigation, route }) {
             <Text style={styles.routeText} numberOfLines={1}>{byId(routeInfo.from)?.name}</Text>
           </View>
           <View style={styles.routeRow}>
-            <View style={[styles.routeDot, { backgroundColor: t.accent }]} />
+            <View style={[styles.routeDot, { backgroundColor: t.primary }]} />
             <Text style={[styles.routeText, { fontWeight: '700' }]} numberOfLines={1}>{byId(routeInfo.to)?.name}</Text>
           </View>
           <View style={styles.routeMeta}>
@@ -349,9 +349,9 @@ function PhotoViewer({ photos, onClose, campusId, styles, t }) {
 function makeStyles(t, isDark) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
-    web: { flex: 1, backgroundColor: isDark ? '#0F1315' : '#DCE6EC' },
+    web: { flex: 1, backgroundColor: isDark ? '#0B0B0B' : '#E9EAE9' },
     loading: { alignItems: 'center', justifyContent: 'center', backgroundColor: t.bg, padding: 30 },
-    loadingText: { fontFamily: monoFamily, fontSize: 10, letterSpacing: 1.4, color: t.textMuted, marginTop: 14 },
+    loadingText: { fontSize: 13, fontWeight: '600', color: t.textMuted, marginTop: 14 },
     errTitle: { fontSize: 16, fontWeight: '700', color: t.text, marginTop: 12 },
     errSub: { fontSize: 13, color: t.textMuted, textAlign: 'center', marginTop: 6, lineHeight: 18 },
     retry: { marginTop: 16, borderRadius: 999, backgroundColor: t.primary, paddingHorizontal: 18, paddingVertical: 10 },
@@ -359,54 +359,55 @@ function makeStyles(t, isDark) {
 
     top: { position: 'absolute', left: 0, right: 0, top: 0 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 6 },
-    roundBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
-    searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, borderRadius: 999, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft, paddingHorizontal: 13, ...shadow.soft },
-    searchInput: { flex: 1, fontSize: 14, color: t.text, paddingVertical: 0 },
-    chips: { flexDirection: 'row', gap: 7, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
-    chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 11, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft, ...shadow.soft },
-    chipOn: { backgroundColor: t.primary, borderColor: t.primary },
-    chipAccent: { borderColor: t.accent, backgroundColor: t.accentSoft },
-    chipText: { fontSize: 12, fontWeight: '600', color: t.textMuted },
-    chipTextOn: { color: t.onPrimary },
+    // Solid pills like Home's search bar — no borders, a whisper of shadow so they read over the scene.
+    roundBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
+    searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, borderRadius: 999, backgroundColor: t.surface, paddingHorizontal: 14, ...shadow.soft },
+    searchInput: { flex: 1, fontSize: 15, color: t.text, paddingVertical: 0 },
+    chips: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 12, backgroundColor: t.surface, ...shadow.soft },
+    chipOn: { backgroundColor: t.text },
+    chipAccent: {},
+    chipText: { fontSize: 12.5, fontWeight: '600', color: t.textMuted },
+    chipTextOn: { color: t.surface },
 
     listPanel: { marginHorizontal: 12, marginTop: 4, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.card },
     listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 11 },
-    listRowBorder: { borderBottomWidth: 1, borderBottomColor: t.hairline },
-    listIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: t.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-    listName: { fontSize: 14, fontWeight: '600', color: t.text },
-    listSub: { fontSize: 12, color: t.textMuted, marginTop: 2 },
+    listRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
+    listIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    listName: { fontSize: 15, fontWeight: '600', color: t.text },
+    listSub: { fontSize: 12.5, color: t.textMuted, marginTop: 2 },
     listEmpty: { fontSize: 13, color: t.textMuted, padding: 16 },
-    listClose: { alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: t.hairline, backgroundColor: t.surfaceAlt },
-    listCloseText: { fontFamily: monoFamily, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, color: t.textMuted },
+    listClose: { alignItems: 'center', paddingVertical: 11, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border, backgroundColor: t.surfaceMuted },
+    listCloseText: { fontSize: 13, fontWeight: '700', color: t.text },
 
-    fab: { position: 'absolute', right: 14, width: 44, height: 44, borderRadius: 22, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft, alignItems: 'center', justifyContent: 'center', ...shadow.card },
+    fab: { position: 'absolute', right: 14, width: 44, height: 44, borderRadius: 22, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', ...shadow.card },
 
-    card: { position: 'absolute', left: 12, right: 12, backgroundColor: t.surface, borderRadius: 20, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.card },
+    card: { position: 'absolute', left: 12, right: 12, backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.card },
     thumbs: { gap: 6, paddingHorizontal: 12, paddingTop: 12 },
     thumb: { width: 96, height: 68, borderRadius: 10, backgroundColor: t.surfaceMuted },
     cardBody: { padding: 14 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-    cardEyebrow: { fontFamily: monoFamily, fontSize: 9, fontWeight: '700', letterSpacing: 1.1, color: t.accent },
-    cardTitle: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3, color: t.text, marginTop: 3 },
-    cardClose: { width: 28, height: 28, borderRadius: 14, backgroundColor: t.field, alignItems: 'center', justifyContent: 'center' },
-    cardDesc: { fontSize: 13, color: t.textMuted, lineHeight: 18, marginTop: 6 },
+    cardEyebrow: { fontSize: 12, fontWeight: '600', color: t.textMuted },
+    cardTitle: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3, color: t.text, marginTop: 2 },
+    cardClose: { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    cardDesc: { fontSize: 13.5, color: t.textMuted, lineHeight: 19, marginTop: 6 },
     cardActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
     primaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, height: 42, borderRadius: 999, backgroundColor: t.primary },
     primaryBtnText: { color: t.onPrimary, fontWeight: '700', fontSize: 13.5 },
-    secondaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, height: 42, paddingHorizontal: 16, borderRadius: 999, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft },
-    secondaryBtnText: { color: t.text, fontWeight: '600', fontSize: 13 },
+    secondaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, height: 42, paddingHorizontal: 16, borderRadius: 999, backgroundColor: t.surfaceMuted },
+    secondaryBtnText: { color: t.text, fontWeight: '700', fontSize: 13 },
 
     routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10 },
     routeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: t.ink },
     routeText: { flex: 1, fontSize: 14.5, color: t.text },
-    routeMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 12, marginTop: 6, backgroundColor: t.surfaceAlt, borderTopWidth: 1, borderTopColor: t.hairlineAlt },
-    routeStat: { fontFamily: monoFamily, fontSize: 11, fontWeight: '700', color: t.text },
+    routeMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 12, marginTop: 6, backgroundColor: t.surfaceMuted, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border },
+    routeStat: { fontSize: 12.5, fontWeight: '700', color: t.text },
     routeStatSep: { color: t.textFaint },
-    smallBtn: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: t.surface, borderWidth: 1, borderColor: t.borderSoft },
+    smallBtn: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: t.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
     smallBtnInk: { backgroundColor: t.primary, borderColor: t.primary },
     smallBtnText: { fontSize: 12, fontWeight: '700', color: t.text },
 
-    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(23,27,29,0.28)' },
+    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
     sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 16, ...shadow.card },
     sheetTitle: { fontSize: 17, fontWeight: '700', color: t.text, paddingHorizontal: 18 },
     sheetSub: { fontSize: 13, color: t.textMuted, paddingHorizontal: 18, marginTop: 3, marginBottom: 8 },
@@ -414,6 +415,6 @@ function makeStyles(t, isDark) {
     viewer: { flex: 1, backgroundColor: '#000' },
     viewerTop: { position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 8 },
     viewerClose: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-    viewerCount: { fontFamily: monoFamily, color: '#fff', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+    viewerCount: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
   });
 }

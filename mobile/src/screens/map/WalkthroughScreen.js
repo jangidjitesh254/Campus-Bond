@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Loading } from '../../components/ui';
 import { useTheme } from '../../context/ThemeContext';
 import { CampusApi, campusAsset, DEFAULT_CAMPUS } from '../../api/campus';
-import { layout, monoFamily } from '../../theme';
+import { layout } from '../../theme';
 
 /**
  * The real campus, on foot: short clips recorded around campus, listed under
@@ -37,7 +37,7 @@ export default function WalkthroughScreen({ route }) {
         {clip ? <VideoView player={player} style={styles.player} contentFit="contain" nativeControls fullscreenOptions={{ enable: true }} /> : null}
       </View>
       <ScrollView contentContainerStyle={styles.list}>
-        <Text style={styles.eyebrow}>CLIPS</Text>
+        <Text style={styles.eyebrow}>Clips</Text>
         {videos.length === 0 ? <Text style={styles.empty}>No walkthrough clips for this campus yet.</Text> : null}
         {videos.map((v, i) => {
           const on = i === current;
@@ -64,7 +64,7 @@ function makeStyles(t, isDark) {
     playerWrap: { backgroundColor: '#000', aspectRatio: 9 / 12, maxHeight: 460, width: '100%' },
     player: { flex: 1 },
     list: { padding: 14, paddingBottom: layout.tabBarSpace + 16 },
-    eyebrow: { fontFamily: monoFamily, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: t.textMuted, marginBottom: 8, marginLeft: 4 },
+    eyebrow: { fontSize: 13, fontWeight: '700', color: t.textMuted, marginBottom: 8, marginLeft: 4 },
     empty: { fontSize: 13.5, color: t.textMuted, padding: 12 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, marginBottom: 8 },
     rowOn: { borderColor: t.primary },
