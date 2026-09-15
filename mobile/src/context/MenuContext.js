@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, Pressable, BackHandler, useWindowDimensions } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import SideMenu from '../components/SideMenu';
 import { useTheme, useStyles } from './ThemeContext';
@@ -8,6 +9,8 @@ const MenuContext = createContext(null);
 
 // How far the screen slides aside, as a share of the screen width (Threads-style).
 const REVEAL = 0.78;
+// A rightward swipe that starts within this many px of the left edge opens the menu.
+const EDGE = 28;
 
 /**
  * Hosts the side menu *under* the whole tab UI (screens and the bottom bar
@@ -22,7 +25,9 @@ export function MenuHost({ navigation, children }) {
   const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
   const [isOpen, setOpen] = useState(false);
+  const openRef = useRef(false); // mirror for gesture callbacks
   const slide = useRef(new Animated.Value(0)).current; // 0 = in place, 1 = pushed aside
+  const travel = width * REVEAL;
   const chrome = useRef(new Animated.Value(0)).current; // 0 = bottom bar shown, 1 = hidden
   const chromeHidden = useRef(false);
 
@@ -44,20 +49,50 @@ export function MenuHost({ navigation, children }) {
     }).start();
   }
 
+  function settle(open, haptic = true) {
+    if (haptic) Haptics.impactAsync(open ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    openRef.current = open;
+    setOpen(open);
+    animate(open);
+  }
+
+  // Swipe: from the left edge to open, leftwards anywhere to close. The
+  // sheet follows the finger and springs to whichever side is nearer (or
+  // the way the finger was flicking) on release.
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-14, 14])
+        .failOffsetY([-18, 18])
+        .onTouchesDown((e, manager) => {
+          const x = e.allTouches[0]?.x ?? 0;
+          if (!openRef.current && x > EDGE) manager.fail();
+        })
+        .onUpdate((e) => {
+          const base = openRef.current ? 1 : 0;
+          const p = Math.max(0, Math.min(1, base + e.translationX / travel));
+          slide.setValue(p);
+        })
+        .onEnd((e) => {
+          const base = openRef.current ? 1 : 0;
+          const p = Math.max(0, Math.min(1, base + e.translationX / travel));
+          const open = e.velocityX > 400 ? true : e.velocityX < -400 ? false : p > 0.5;
+          settle(open, open !== openRef.current);
+        })
+        .runOnJS(true),
+    [travel] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   const api = useMemo(
     () => ({
       isOpen,
       chrome,
       setChrome,
       open() {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        setOpen(true);
-        animate(true);
+        settle(true);
       },
       close() {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        setOpen(false);
-        animate(false);
+        settle(false);
       },
     }),
     [isOpen] // eslint-disable-line react-hooks/exhaustive-deps
@@ -83,6 +118,7 @@ export function MenuHost({ navigation, children }) {
 
   return (
     <MenuContext.Provider value={api}>
+      <GestureDetector gesture={pan}>
       <View style={styles.root}>
         <SideMenu visible={isOpen} width={width * REVEAL} onClose={api.close} onNavigate={goTab} />
 
@@ -92,6 +128,7 @@ export function MenuHost({ navigation, children }) {
           {isOpen ? <Pressable style={StyleSheet.absoluteFill} onPress={api.close} /> : null}
         </Animated.View>
       </View>
+      </GestureDetector>
     </MenuContext.Provider>
   );
 }
