@@ -255,8 +255,36 @@ function Confetti({ burst, style }) {
  * that slides out from behind the mascot (clipped at the mascot's centre),
  * with a burst of confetti as it appears. Tap opens the announcement.
  */
+const STRIPS = 14; // the ribbon is cut into this many vertical slices that ripple
+
+/**
+ * Cloth wave: a linear 0→1 phase loops forever; each slice maps it onto a
+ * sine, shifted by the slice's position along the ribbon, so a wave travels
+ * from the mascot's end to the tail. The amplitude grows towards the free
+ * end — the end tied to the mascot barely moves.
+ */
+function useWave() {
+  const phase = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(phase, { toValue: 1, duration: 1500, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [phase]);
+  return phase;
+}
+
+function sliceOffset(phase, i) {
+  const amp = 4 * ((i + 1) / STRIPS);
+  const shift = (i / STRIPS) * 1.2; // ~1.2 wavelengths across the ribbon
+  const steps = 16;
+  const inputRange = Array.from({ length: steps + 1 }, (_, k) => k / steps);
+  const outputRange = inputRange.map((t) => Math.sin(2 * Math.PI * (t - shift)) * amp);
+  return phase.interpolate({ inputRange, outputRange });
+}
+
 function HeaderBadge({ item, onPress, styles, progress, bob }) {
   const [burst, setBurst] = useState(0);
+  const wave = useWave();
   // Fire the popper each time the ribbon starts coming out.
   useEffect(() => {
     let armed = true;
@@ -274,49 +302,46 @@ function HeaderBadge({ item, onPress, styles, progress, bob }) {
   // The clip (the mascot's centre) moves left with the mascot; the ribbon slides out inside it.
   const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
   const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-RIBBON_W - 40, 18] });
-  // Tied to the mascot at its left end: it rides his bob and swings from that
-  // anchor, with a slight skew so the tail lags like cloth.
+  // Tied to the mascot: the whole ribbon rides his bob…
   const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] });
-  const swing = bob.interpolate({ inputRange: [0, 1], outputRange: ['2.2deg', '-2.2deg'] });
-  const skew = bob.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] });
   const left = shortLeft(item);
   const notch = 16;
+  const stripW = RIBBON_W / STRIPS;
+
+  // …and every slice shows the same artwork, offset so the slices tile into one ribbon.
+  const art = (
+    <>
+      <Svg width={RIBBON_W} height={RIBBON_H} style={StyleSheet.absoluteFill}>
+        <Defs>
+          <SvgGradient id="ribbon" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor="#F7C557" />
+            <Stop offset="1" stopColor="#E8862E" />
+          </SvgGradient>
+        </Defs>
+        {/* Banner with rounded left corners and a swallowtail on the right */}
+        <Path
+          d={`M6 0 H${RIBBON_W} L${RIBBON_W - notch} ${RIBBON_H / 2} L${RIBBON_W} ${RIBBON_H} H6 A6 6 0 0 1 0 ${RIBBON_H - 6} V6 A6 6 0 0 1 6 0 Z`}
+          fill="url(#ribbon)"
+        />
+      </Svg>
+      <View style={styles.ribbonRow}>
+        <Ionicons name="trophy" size={14} color="#5A2E0A" />
+        <Text style={styles.badgeText} numberOfLines={1}>{shortName(item)}</Text>
+        {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
+      </View>
+    </>
+  );
+
   return (
     <>
       <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
-        <Animated.View
-          style={{
-            alignSelf: 'flex-start',
-            transform: [
-              { translateX: x },
-              { translateY: bobY },
-              // rotate about the left end, not the centre
-              { translateX: -RIBBON_W / 2 },
-              { rotate: swing },
-              { skewY: skew },
-              { translateX: RIBBON_W / 2 },
-            ],
-          }}
-        >
+        <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }, { translateY: bobY }] }}>
           <Pressable style={styles.ribbon} onPress={onPress}>
-            <Svg width={RIBBON_W} height={RIBBON_H} style={StyleSheet.absoluteFill}>
-              <Defs>
-                <SvgGradient id="ribbon" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor="#F7C557" />
-                  <Stop offset="1" stopColor="#E8862E" />
-                </SvgGradient>
-              </Defs>
-              {/* Banner with rounded left corners and a swallowtail on the right */}
-              <Path
-                d={`M6 0 H${RIBBON_W} L${RIBBON_W - notch} ${RIBBON_H / 2} L${RIBBON_W} ${RIBBON_H} H6 A6 6 0 0 1 0 ${RIBBON_H - 6} V6 A6 6 0 0 1 6 0 Z`}
-                fill="url(#ribbon)"
-              />
-            </Svg>
-            <View style={styles.ribbonRow}>
-              <Ionicons name="trophy" size={14} color="#5A2E0A" />
-              <Text style={styles.badgeText} numberOfLines={1}>{shortName(item)}</Text>
-              {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
-            </View>
+            {Array.from({ length: STRIPS }).map((_, i) => (
+              <Animated.View key={i} style={[styles.strip, { width: stripW, transform: [{ translateY: sliceOffset(wave, i) }] }]}>
+                <View style={{ width: RIBBON_W, height: RIBBON_H, marginLeft: -i * stripW, justifyContent: 'center' }}>{art}</View>
+              </Animated.View>
+            ))}
           </Pressable>
         </Animated.View>
       </Animated.View>
@@ -1154,7 +1179,8 @@ const makeStyles = (colors, isDark) => {
   // that much further out — otherwise it would cut off the ribbon's tail.
   badgeClip: { position: 'absolute', left: '50%', right: 40 - BADGE_SHIFT, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
   // Swallowtail ribbon: the SVG gives the shape; the gradient is masked to it by clipping the right notch.
-  ribbon: { width: RIBBON_W, height: RIBBON_H, justifyContent: 'center', overflow: 'hidden' },
+  ribbon: { width: RIBBON_W, height: RIBBON_H + 12, marginVertical: -6, flexDirection: 'row', alignItems: 'center' },
+  strip: { height: RIBBON_H, overflow: 'hidden' },
   ribbonRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 12, paddingRight: 24 },
   badgeText: { fontSize: 12.5, fontWeight: '800', color: '#3A1D05', letterSpacing: 0.2 },
   badgeSub: { fontSize: 11.5, fontWeight: '700', color: 'rgba(58,29,5,0.7)' },
