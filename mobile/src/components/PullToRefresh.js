@@ -45,25 +45,14 @@ const CURVE_OUT = CURVE_IN.map(ease);
  * tabs+list block slides up by `topHeight` and is made that much taller so
  * no gap appears underneath.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant, ghostShiftX = 0 }) {
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant, ghostShiftX = 0, ghostBobY = 0 }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
   const pan = useRef(null);
 
-  // Idle: a slow bob, so the mascot always feels alive in the header.
-  const bob = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bob, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(bob, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [bob]);
-  const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] });
+  // Idle bob comes from the screen (so the header can tie other things to it).
+  const bobY = ghostBobY;
 
   // Wink loop while refreshing.
   useEffect(() => {

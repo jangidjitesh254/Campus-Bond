@@ -255,7 +255,7 @@ function Confetti({ burst, style }) {
  * that slides out from behind the mascot (clipped at the mascot's centre),
  * with a burst of confetti as it appears. Tap opens the announcement.
  */
-function HeaderBadge({ item, onPress, styles, progress }) {
+function HeaderBadge({ item, onPress, styles, progress, bob }) {
   const [burst, setBurst] = useState(0);
   // Fire the popper each time the ribbon starts coming out.
   useEffect(() => {
@@ -274,12 +274,30 @@ function HeaderBadge({ item, onPress, styles, progress }) {
   // The clip (the mascot's centre) moves left with the mascot; the ribbon slides out inside it.
   const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
   const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-RIBBON_W - 40, 18] });
+  // Tied to the mascot at its left end: it rides his bob and swings from that
+  // anchor, with a slight skew so the tail lags like cloth.
+  const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] });
+  const swing = bob.interpolate({ inputRange: [0, 1], outputRange: ['2.2deg', '-2.2deg'] });
+  const skew = bob.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] });
   const left = shortLeft(item);
   const notch = 16;
   return (
     <>
       <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
-        <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }] }}>
+        <Animated.View
+          style={{
+            alignSelf: 'flex-start',
+            transform: [
+              { translateX: x },
+              { translateY: bobY },
+              // rotate about the left end, not the centre
+              { translateX: -RIBBON_W / 2 },
+              { rotate: swing },
+              { skewY: skew },
+              { translateX: RIBBON_W / 2 },
+            ],
+          }}
+        >
           <Pressable style={styles.ribbon} onPress={onPress}>
             <Svg width={RIBBON_W} height={RIBBON_H} style={StyleSheet.absoluteFill}>
               <Defs>
@@ -952,6 +970,20 @@ export default function HomeScreen({ navigation, route }) {
   const badgeProgress = useBadgeProgress(!!(news[0] && mood));
   const mascotX = badgeProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
 
+  // The mascot's idle bob. The ribbon is tied to it, so it rides and waves with him.
+  const bob = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bob, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(bob, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bob]);
+  const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] });
+
   // Search pill above the banner — jumps to the Search tab with the keyboard up.
   const Search = (
     <TouchableOpacity ref={pillRef} style={[styles.search, searchOpen && { opacity: 0 }]} activeOpacity={0.8} onPress={openSearch}>
@@ -988,19 +1020,13 @@ export default function HomeScreen({ navigation, route }) {
         </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
-      {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} /> : null}
+      {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} bob={bob} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-          {/* Minimal speech bubble — thin rounded stroke, like the two-bar menu glyph */}
+          {/* Thin paper plane — the messages glyph Threads/Instagram use, drawn to match the menu bars */}
           <Svg width={26} height={26} viewBox="0 0 24 24">
-            <Path
-              d="M12 3.5c-4.7 0-8.5 3.2-8.5 7.2 0 1.8.8 3.5 2.1 4.8L4.8 20.3l4.6-1.6c.8.2 1.7.4 2.6.4 4.7 0 8.5-3.2 8.5-7.2S16.7 3.5 12 3.5Z"
-              stroke={colors.text}
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
+            <Path d="M21 3.6 3.4 10.4c-.9.35-.85 1.6.05 1.9l6.6 2.2 2.2 6.6c.3.9 1.55.95 1.9.05L21 3.6Z" stroke={colors.text} strokeWidth={1.8} strokeLinejoin="round" fill="none" />
+            <Path d="M10.2 14.4 21 3.6" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" />
           </Svg>
         </Animated.View>
       </TouchableOpacity>
@@ -1035,7 +1061,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView ref={rootRef} style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace} ghostShiftX={mascotX}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace} ghostShiftX={mascotX} ghostBobY={bobY}>
       {loading ? (
         <Skeleton />
       ) : (
