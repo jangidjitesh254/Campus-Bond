@@ -991,7 +991,17 @@ export default function HomeScreen({ navigation, route }) {
       {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-          <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
+          {/* Minimal speech bubble — thin rounded stroke, like the two-bar menu glyph */}
+          <Svg width={26} height={26} viewBox="0 0 24 24">
+            <Path
+              d="M12 3.5c-4.7 0-8.5 3.2-8.5 7.2 0 1.8.8 3.5 2.1 4.8L4.8 20.3l4.6-1.6c.8.2 1.7.4 2.6.4 4.7 0 8.5-3.2 8.5-7.2S16.7 3.5 12 3.5Z"
+              stroke={colors.text}
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </Svg>
         </Animated.View>
       </TouchableOpacity>
     </View>
