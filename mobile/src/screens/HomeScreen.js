@@ -17,7 +17,7 @@ import DotsMenu from '../components/DotsMenu';
 import Confirm from '../components/Confirm';
 import { useMenu } from '../context/MenuContext';
 import SearchOverlay from '../components/SearchOverlay';
-import Spotlight from '../components/Spotlight';
+import { DimLayer, SpotMenu } from '../components/Spotlight';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
@@ -131,7 +131,7 @@ const UL_BASE = 100; // the underline's unscaled width; it is scaled to each tab
  * A feed block that slides up into place when it appears — staggered by its
  * position — and fades with the shared `fade` value when its tab is left.
  */
-function Enter({ index, leaving, children }) {
+function Enter({ index, leaving, dim, lit, children }) {
   const enter = useRef(new Animated.Value(0)).current; // 0 → 1: rise in
   const exit = useRef(new Animated.Value(0)).current; // 0 → 1: slide out left
   useEffect(() => {
@@ -145,7 +145,14 @@ function Enter({ index, leaving, children }) {
   const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
   const translateX = exit.interpolate({ inputRange: [0, 1], outputRange: [0, -Dimensions.get('window').width] });
   const opacity = Animated.multiply(enter, exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }));
-  return <Animated.View style={{ opacity, transform: [{ translateY }, { translateX }] }}>{children}</Animated.View>;
+  // The spotlit block lifts (scales up a touch) while the others dim under their DimLayer.
+  const lift = lit ? dim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] }) : 1;
+  return (
+    <Animated.View style={{ opacity, zIndex: lit ? 10 : 0, transform: [{ translateY }, { translateX }, { scale: lift }] }}>
+      {children}
+      <DimLayer dim={dim} lit={lit} />
+    </Animated.View>
+  );
 }
 
 const SHIFT_UP = {
@@ -788,11 +795,24 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   const [toDelete, setToDelete] = useState(null);
-  // Long-pressed card: { item, frame } — shown lit above a dim with its menu beneath.
-  const [spot, setSpot] = useState(null);
+  // Long-pressed card: everything else dims in place, the real card lifts,
+  // and its menu opens beneath it. `dimOthers` drives all of it.
+  const [spot, setSpot] = useState(null); // { item, frame } — frame in this screen's coordinates
+  const dimOthers = useRef(new Animated.Value(0)).current;
   function spotlight(item, frame) {
     buzz(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
-    setSpot({ item, frame });
+    rootRef.current?.measureInWindow((rx, ry) => {
+      setSpot({ item, frame: { ...frame, x: frame.x - rx, y: frame.y - ry } });
+      menu.setChrome(true); // tuck the bottom bar away too
+      Animated.spring(dimOthers, { toValue: 1, damping: 18, stiffness: 240, mass: 0.7, useNativeDriver: true }).start();
+    });
+  }
+  function unspotlight(after) {
+    Animated.spring(dimOthers, { toValue: 0, damping: 22, stiffness: 260, mass: 0.7, overshootClamping: true, useNativeDriver: true }).start(() => {
+      setSpot(null);
+      menu.setChrome(false);
+      after?.();
+    });
   }
   const menu = useMenu(); // the side menu lives under the whole tab UI (see MenuHost)
 
@@ -961,7 +981,7 @@ export default function HomeScreen({ navigation, route }) {
   const rowKey = (p) => `${p.kind}:${p.id}`;
 
   const renderItem = ({ item, index }) => (
-    <Enter index={index} leaving={leaving.has(rowKey(item))}>
+    <Enter index={index} leaving={leaving.has(rowKey(item))} dim={dimOthers} lit={spot ? spot.item.id === item.id : false}>
       {renderBlock(item)}
     </Enter>
   );
@@ -1093,6 +1113,7 @@ export default function HomeScreen({ navigation, route }) {
           </Svg>
         </Animated.View>
       </TouchableOpacity>
+      <DimLayer dim={dimOthers} />
     </View>
   );
 
@@ -1119,6 +1140,7 @@ export default function HomeScreen({ navigation, route }) {
         {/* The sliding underline */}
         <Animated.View pointerEvents="none" style={[styles.tabLine, { backgroundColor: TINT[tab]?.fg || colors.text, transform: [{ translateX: ulX }, { scaleX: ulS }] }]} />
       </ScrollView>
+      <DimLayer dim={dimOthers} />
     </Animated.View>
   );
 
@@ -1139,6 +1161,7 @@ export default function HomeScreen({ navigation, route }) {
               {Search}
               {tab === 'all' ? <AnnouncementBanner items={news} onPress={openAnnouncement} /> : null}
               {Compose}
+              <DimLayer dim={dimOthers} />
             </View>
           }
           ListEmptyComponent={Empty}
@@ -1156,11 +1179,7 @@ export default function HomeScreen({ navigation, route }) {
       )}
       </PullToRefresh>
 
-      {spot ? (
-        <Spotlight frame={spot.frame} items={menuFor(spot.item)} onClose={() => setSpot(null)}>
-          <Post post={spot.item} me={user} menu={[]} onOpen={() => {}} onLike={() => {}} onComment={() => {}} onShare={() => {}} />
-        </Spotlight>
-      ) : null}
+      {spot ? <SpotMenu frame={spot.frame} items={menuFor(spot.item)} progress={dimOthers} onClose={unspotlight} /> : null}
 
       <SearchOverlay open={searchOpen} from={searchFrom} onClose={() => setSearchOpen(false)} goTab={goTab} />
 
