@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef, useEffect, startTransition } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -123,6 +123,23 @@ function ClubTile({ post, onOpen, onJoin, busy, width }) {
 
 const TILE = 156;
 const TABS_H = 46; // category tabs row, collapsed to 0 while scrolling down
+const UL_BASE = 100; // the underline's unscaled width; it is scaled to each tab
+
+/** One category tab: squashes a little while pressed, reports its frame for the underline. */
+function TabChip({ active, tint, icon, label, onPress, onLayout, styles, colors }) {
+  const press = useRef(new Animated.Value(0)).current;
+  const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
+  const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, 1.5] });
+  const set = (to) => Animated.spring(press, { toValue: to, damping: 18, stiffness: 400, mass: 0.5, useNativeDriver: true }).start();
+  return (
+    <Pressable style={styles.tab} onPress={onPress} onPressIn={() => set(1)} onPressOut={() => set(0)} onLayout={onLayout} hitSlop={{ top: 6, bottom: 6 }}>
+      <Animated.View style={[styles.tabInner, { transform: [{ scale }, { translateY }] }]}>
+        <Ionicons name={active ? icon : `${icon}-outline`} size={15} color={active ? tint : colors.textMuted} />
+        <Text style={[styles.tabText, active && { color: tint, fontWeight: '700' }]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 const GRID_GAP = 12;
 const gridTile = Math.floor((Dimensions.get('window').width - 16 * 2 - GRID_GAP) / 2);
 
@@ -597,12 +614,47 @@ export default function HomeScreen({ navigation, route }) {
     if (wanted && TABS.some((t) => t.key === wanted)) pickTab(wanted);
   }, [route.params?.tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The underline is one view that springs between tabs; each tab reports its frame.
+  const tabFrames = useRef({});
+  const tabsScroll = useRef(null);
+  const ulX = useRef(new Animated.Value(0)).current;
+  const ulS = useRef(new Animated.Value(0)).current;
+  const ulColor = useRef(colors.text);
+  function moveUnderline(key, animated = true) {
+    const f = tabFrames.current[key];
+    if (!f) return;
+    // Scale about the centre, so shift to where the tab's centre is.
+    // 12 = the tab's horizontal padding; 8 = the row's padding, which an absolute child already sits inside.
+    const x = f.x - 8 + (f.width - UL_BASE) / 2 + 12;
+    const sx = Math.max(0.01, (f.width - 24) / UL_BASE);
+    if (!animated) {
+      ulX.setValue(x);
+      ulS.setValue(sx);
+      return;
+    }
+    Animated.parallel([
+      Animated.spring(ulX, { toValue: x, damping: 26, stiffness: 320, mass: 0.6, useNativeDriver: true }),
+      Animated.spring(ulS, { toValue: sx, damping: 26, stiffness: 320, mass: 0.6, useNativeDriver: true }),
+    ]).start();
+    // Keep the chosen tab in view.
+    tabsScroll.current?.scrollTo({ x: Math.max(0, f.x - 60), animated: true });
+  }
+  function onTabLayout(key, e) {
+    tabFrames.current[key] = e.nativeEvent.layout;
+    if (key === tab && !ulReady.current) {
+      ulReady.current = true;
+      moveUnderline(key, false);
+    }
+  }
+  const ulReady = useRef(false);
+
   function pickTab(key) {
     if (key === tab) return;
     buzz(() => Haptics.selectionAsync());
-    setTab(key);
+    moveUnderline(key); // instant feedback on the native side…
     const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
     node?.scrollToOffset({ offset: 0, animated: false });
+    startTransition(() => setTab(key)); // …while the feed swaps in the background
   }
 
   const clubs = useMemo(() => feed.filter((p) => p.kind === 'club'), [feed]);
@@ -729,20 +781,22 @@ export default function HomeScreen({ navigation, route }) {
   const Tabs = (
     <Animated.View style={{ backgroundColor: colors.surface, height: TABS_H, opacity: tabsOpacity }}>
       {/* Thin underline tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
-        {TABS.map((t) => {
-          const active = tab === t.key;
-          const tint = TINT[t.key]?.fg || colors.text;
-          return (
-            <TouchableOpacity key={t.key} style={styles.tab} onPress={() => pickTab(t.key)} activeOpacity={0.7}>
-              <View style={styles.tabInner}>
-                <Ionicons name={active ? t.icon : `${t.icon}-outline`} size={15} color={active ? tint : colors.textMuted} />
-                <Text style={[styles.tabText, active && { color: tint, fontWeight: '700' }]}>{t.label}</Text>
-              </View>
-              <View style={[styles.tabLine, active && { backgroundColor: tint }]} />
-            </TouchableOpacity>
-          );
-        })}
+      <ScrollView ref={tabsScroll} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
+        {TABS.map((t) => (
+          <TabChip
+            key={t.key}
+            active={tab === t.key}
+            tint={TINT[t.key]?.fg || colors.text}
+            icon={t.icon}
+            label={t.label}
+            onPress={() => pickTab(t.key)}
+            onLayout={(e) => onTabLayout(t.key, e)}
+            styles={styles}
+            colors={colors}
+          />
+        ))}
+        {/* The sliding underline */}
+        <Animated.View pointerEvents="none" style={[styles.tabLine, { backgroundColor: TINT[tab]?.fg || colors.text, transform: [{ translateX: ulX }, { scaleX: ulS }] }]} />
       </ScrollView>
     </Animated.View>
   );
@@ -843,10 +897,10 @@ const makeStyles = (colors, isDark) => {
 
   tabsWrap: { flexGrow: 0, height: TABS_H, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },
   tabs: { paddingHorizontal: 8 },
-  tab: { paddingHorizontal: 12, paddingTop: 10 },
+  tab: { paddingHorizontal: 12, paddingTop: 10, height: TABS_H - HAIRLINE },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingBottom: 10 },
   tabText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
-  tabLine: { height: 2, borderRadius: 1, backgroundColor: 'transparent' },
+  tabLine: { position: 'absolute', left: 0, bottom: 0, width: UL_BASE, height: 2.5, borderRadius: 2 },
 
   list: { paddingBottom: layout.tabBarSpace + 16, backgroundColor: colors.bg, flexGrow: 1 },
   hairline: { height: HAIRLINE, backgroundColor: colors.border },
