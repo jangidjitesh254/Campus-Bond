@@ -12,7 +12,8 @@ const announcementSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true, maxlength: 80 },
     body: { type: String, trim: true, maxlength: 240, default: '' },
     tag: { type: String, trim: true, maxlength: 24, default: 'Notice' }, // Hackathon · Fest · Exams · Notice
-    tone: { type: String, enum: ['brand', 'neutral', 'amber', 'blue'], default: 'neutral' },
+    tone: { type: String, enum: ['brand', 'neutral', 'amber', 'blue', 'panache'], default: 'neutral' },
+    art: { type: String, trim: true, default: '' }, // bundled artwork key shown on the card, e.g. 'panache'
     link: { type: String, trim: true, default: '' }, // opened on tap, if set
     cta: { type: String, trim: true, maxlength: 24, default: '' }, // button label, e.g. "Register"
     pinned: { type: Boolean, default: false },

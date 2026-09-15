@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './Text';
@@ -45,6 +45,18 @@ const tonesFor = (colors, isDark) => ({
     blob: 'rgba(47,111,224,0.1)',
     mark: 'rgba(47,111,224,0.16)',
   },
+  // Panache (the cultural fest): a soft pink → sky wash under the wordmark
+  panache: {
+    gradient: isDark ? ['#2B1830', '#17223A'] : ['#FFEEF6', '#E6F2FF'],
+    fg: colors.text,
+    muted: colors.textMuted,
+    pill: 'rgba(233,30,140,0.14)',
+    pillFg: '#D9127A',
+    btn: colors.text,
+    btnFg: colors.surface,
+    blob: 'rgba(233,30,140,0.08)',
+    mark: 'rgba(233,30,140,0.16)',
+  },
   neutral: {
     gradient: isDark ? ['#1A1A1A', '#242424'] : ['#F4F4F4', '#E6E7E6'],
     fg: colors.text,
@@ -60,11 +72,16 @@ const tonesFor = (colors, isDark) => ({
 
 const TAG_ICON = { Hackathon: 'code-slash', Fest: 'sparkles', Exams: 'school', Placements: 'briefcase', Notice: 'megaphone' };
 
+/** Bundled artwork an announcement can show instead of the icon watermark (`art` on the server). */
+const ART = {
+  panache: { source: require('../../assets/panache.png'), ratio: 900 / 268 },
+};
+
 /** "3 days left" / "Last day" — from expiresAt, if any. */
 function endsIn(a) {
   if (!a.expiresAt) return null;
   const d = Math.ceil((new Date(a.expiresAt) - Date.now()) / 86400000);
-  if (d <= 0) return null;
+  if (d <= 0 || d > 70) return null; // far-off dates read better without a countdown
   if (d === 1) return 'Last day';
   if (d < 14) return `${d} days left`;
   return `${Math.round(d / 7)} weeks left`;
@@ -132,13 +149,16 @@ export default function AnnouncementBanner({ items, onPress }) {
           const tone = TONES[a.tone] || TONES.neutral;
           const icon = TAG_ICON[a.tag] || 'megaphone';
           const left = endsIn(a);
+          const art = ART[a.art];
+          // Artwork cards split in two: text on the left, the wordmark standing on the right.
+          const artW = Math.min(150, cardW * 0.42);
           return (
             <TouchableOpacity key={a._id} style={[styles.card, { width: cardW }]} activeOpacity={0.9} onPress={() => open(a)}>
               <LinearGradient colors={tone.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
 
               {/* Decoration: two soft circles and a big faint icon behind the text */}
               <View style={[styles.blob, { backgroundColor: tone.blob }]} />
-              {a.tone === 'brand' ? (
+              {art ? null : a.tone === 'brand' ? (
                 <View style={styles.mascot}>
                   <GhostMark width={44} color="rgba(255,255,255,0.9)" bg="#15532E" variant="happy" />
                 </View>
@@ -146,13 +166,19 @@ export default function AnnouncementBanner({ items, onPress }) {
                 <Ionicons name={icon} size={96} color={tone.mark} style={styles.mark} />
               )}
 
+              {art ? (
+                <View style={styles.artCol}>
+                  <Image source={art.source} style={{ width: artW, height: artW / art.ratio, marginTop: 8, transform: [{ rotate: '-5deg' }] }} resizeMode="contain" />
+                </View>
+              ) : null}
+
               <View style={styles.inner}>
                 <View style={[styles.pill, { backgroundColor: tone.pill }]}>
                   <Ionicons name={`${icon}-outline`} size={11} color={tone.pillFg} />
                   <Text style={[styles.pillText, { color: tone.pillFg }]}>{a.tag || 'Notice'}</Text>
                 </View>
 
-                <View style={styles.textCol}>
+                <View style={[styles.textCol, art && { paddingRight: artW + 6 }]}>
                   <Text style={[styles.title, { color: tone.fg }]} numberOfLines={2}>{a.title}</Text>
                   {a.body ? <Text style={[styles.body, { color: tone.muted }]} numberOfLines={1}>{a.body}</Text> : null}
                 </View>
@@ -191,6 +217,7 @@ const makeStyles = (colors, isDark) => {
   blob: { position: 'absolute', width: 200, height: 200, borderRadius: 100, right: -80, top: -100 },
   mark: { position: 'absolute', right: 14, bottom: 14, transform: [{ rotate: '-10deg' }] },
   mascot: { position: 'absolute', right: 16, bottom: 14 },
+  artCol: { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 },
   pillText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
   textCol: { paddingRight: 70, gap: 6 },

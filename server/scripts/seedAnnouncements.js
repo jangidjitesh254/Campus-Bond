@@ -22,15 +22,20 @@ const ANNOUNCEMENTS = [
     cta: 'Find a team',
     link: 'https://www.sih.gov.in/',
     pinned: true,
+    startsAt: days(0),
     expiresAt: days(45),
   },
   {
-    title: 'Vivacity 2026 — cultural fest registrations open',
-    body: 'Dance, music, drama and the fashion walk. Club heads: submit your event list by Friday.',
+    // VGU's own cultural fest — every March. Shown with its wordmark, right after SIH.
+    title: 'Panache is back this March',
+    body: "VGU's cultural fest — one stage, many stories. Auditions and club sign-ups open soon.",
     tag: 'Fest',
-    tone: 'amber',
-    cta: 'See events',
-    expiresAt: days(30),
+    tone: 'panache',
+    art: 'panache',
+    cta: 'vgupanache.com',
+    link: 'https://www.vgupanache.com/',
+    startsAt: days(-1),
+    expiresAt: new Date(new Date().getFullYear() + (new Date().getMonth() >= 2 ? 1 : 0), 3, 1), // 1 April after the next March
   },
   {
     title: 'Mid-semester exams start 6 Oct',
@@ -38,6 +43,7 @@ const ANNOUNCEMENTS = [
     tag: 'Exams',
     tone: 'blue',
     cta: 'Past papers',
+    startsAt: days(-2),
     expiresAt: days(25),
   },
   {
@@ -46,9 +52,12 @@ const ANNOUNCEMENTS = [
     tag: 'Placements',
     tone: 'neutral',
     cta: 'Details',
+    startsAt: days(-3),
     expiresAt: days(20),
   },
 ];
+// Seeds this script no longer lists (removed on every run).
+const RETIRED = ['Vivacity 2026 — cultural fest registrations open', "Panache — VGU's cultural fest is back this March"];
 
 async function main() {
   await connectDB();
@@ -61,6 +70,7 @@ async function main() {
     return;
   }
 
+  await Announcement.deleteMany({ title: { $in: RETIRED } });
   for (const a of ANNOUNCEMENTS) {
     await Announcement.findOneAndUpdate({ title: a.title }, { $set: a }, { upsert: true, new: true });
     console.log(`✓ ${a.title}`);
