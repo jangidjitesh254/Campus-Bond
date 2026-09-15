@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect, startTransition } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
@@ -124,6 +124,19 @@ function ClubTile({ post, onOpen, onJoin, busy, width }) {
 const TILE = 156;
 const TABS_H = 46; // category tabs row, collapsed to 0 while scrolling down
 const UL_BASE = 100; // the underline's unscaled width; it is scaled to each tab
+
+/**
+ * A feed block that slides up into place when it appears — staggered by its
+ * position — and fades with the shared `fade` value when its tab is left.
+ */
+function Enter({ index, fade, children }) {
+  const enter = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(enter, { toValue: 1, delay: Math.min(index, 6) * 40, damping: 22, stiffness: 240, mass: 0.8, useNativeDriver: true }).start();
+  }, [enter, index]);
+  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
+  return <Animated.View style={{ opacity: Animated.multiply(fade, enter), transform: [{ translateY }] }}>{children}</Animated.View>;
+}
 
 /** One category tab: squashes a little while pressed, reports its frame for the underline. */
 function TabChip({ active, tint, icon, label, onPress, onLayout, styles, colors }) {
@@ -649,14 +662,23 @@ export default function HomeScreen({ navigation, route }) {
   }
   const ulReady = useRef(false);
 
+  // Switching tabs: the blocks that don't belong fade out, then the new
+  // ones slide up into place (Enter). `rowsFade` is shared by every block.
+  const rowsFade = useRef(new Animated.Value(1)).current;
   function pickTab(key) {
     if (key === tab) return;
     buzz(() => Haptics.selectionAsync());
     moveUnderline(key); // instant feedback on the native side…
-    const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
-    node?.scrollToOffset({ offset: 0, animated: false });
-    startTransition(() => setTab(key)); // …while the feed swaps in the background
+    Animated.timing(rowsFade, { toValue: 0, duration: 110, useNativeDriver: true }).start(() => {
+      const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
+      node?.scrollToOffset({ offset: 0, animated: false });
+      setTab(key); // …then the feed swaps (the fade already gave instant feedback)
+    });
   }
+  // Once the new blocks are committed, let them show (they animate in themselves).
+  useEffect(() => {
+    rowsFade.setValue(1);
+  }, [tab, rowsFade]);
 
   const clubs = useMemo(() => feed.filter((p) => p.kind === 'club'), [feed]);
   const market = useMemo(() => feed.filter((p) => p.kind === 'market'), [feed]);
@@ -680,7 +702,13 @@ export default function HomeScreen({ navigation, route }) {
     return out;
   }, [posts, clubs, market, tab]);
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item, index }) => (
+    <Enter index={index} fade={rowsFade}>
+      {renderBlock(item)}
+    </Enter>
+  );
+
+  const renderBlock = (item) => {
     if (item.kind === 'rail' && item.id === 'clubs') {
       return (
         <Rail icon={KIND.club.icon} tint={TINT.club.fg} bg={TINT.club.bg} title="Clubs for you" subtitle={`${clubs.length} clubs on campus`} onSeeAll={() => pickTab('club')}>
@@ -813,7 +841,7 @@ export default function HomeScreen({ navigation, route }) {
         <FlatList
           ref={listRef}
           data={visible}
-          keyExtractor={(p) => `${p.kind}:${p.id}`}
+          keyExtractor={(p) => `${tab}:${p.kind}:${p.id}`}
           renderItem={renderItem}
           ItemSeparatorComponent={() => (tab === 'club' || tab === 'market' ? null : <View style={styles.gap} />)}
           ListHeaderComponent={
