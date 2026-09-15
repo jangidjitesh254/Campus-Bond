@@ -275,7 +275,7 @@ function HeaderBadge({ item, onPress, styles, progress }) {
   const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
   const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-RIBBON_W - 40, 18] });
   const left = shortLeft(item);
-  const notch = 10;
+  const notch = 16;
   return (
     <>
       <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
@@ -1114,10 +1114,12 @@ const makeStyles = (colors, isDark) => {
   header: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
   // Clipped at the mascot's centre so the pill appears from behind it.
-  badgeClip: { position: 'absolute', left: '50%', right: 40, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
+  // The clip travels left with the mascot (BADGE_SHIFT), so its right edge is set
+  // that much further out — otherwise it would cut off the ribbon's tail.
+  badgeClip: { position: 'absolute', left: '50%', right: 40 - BADGE_SHIFT, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
   // Swallowtail ribbon: the SVG gives the shape; the gradient is masked to it by clipping the right notch.
   ribbon: { width: RIBBON_W, height: RIBBON_H, justifyContent: 'center', overflow: 'hidden' },
-  ribbonRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 12, paddingRight: 18 },
+  ribbonRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 12, paddingRight: 24 },
   badgeText: { fontSize: 12.5, fontWeight: '800', color: '#3A1D05', letterSpacing: 0.2 },
   badgeSub: { fontSize: 11.5, fontWeight: '700', color: 'rgba(58,29,5,0.7)' },
   popper: { position: 'absolute', left: '50%', top: '50%', marginLeft: 22 },
