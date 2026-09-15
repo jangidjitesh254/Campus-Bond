@@ -145,12 +145,11 @@ function Enter({ index, leaving, dim, lit, children }) {
   const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
   const translateX = exit.interpolate({ inputRange: [0, 1], outputRange: [0, -Dimensions.get('window').width] });
   const opacity = Animated.multiply(enter, exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }));
-  // The spotlit block lifts (scales up a touch) while the others dim under their DimLayer.
+  // The spotlit block lifts (scales up a touch); the dim sheet covers everything else.
   const lift = lit ? dim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] }) : 1;
   return (
-    <Animated.View style={{ opacity, zIndex: lit ? 10 : 0, transform: [{ translateY }, { translateX }, { scale: lift }] }}>
+    <Animated.View style={{ opacity, transform: [{ translateY }, { translateX }, { scale: lift }] }}>
       {children}
-      <DimLayer dim={dim} lit={lit} />
     </Animated.View>
   );
 }
@@ -379,7 +378,7 @@ function PressCard({ style, onPress, onLongPress, children }) {
     if (frame.current) onLongPress?.(frame.current);
   }
   return (
-    <Pressable onPress={onPress} onLongPress={onLongPress ? longPress : undefined} delayLongPress={320} onPressIn={pressIn} onPressOut={() => set(0)}>
+    <Pressable onPress={onPress} onLongPress={onLongPress ? longPress : undefined} delayLongPress={240} onPressIn={pressIn} onPressOut={() => set(0)}>
       <Animated.View ref={box} collapsable={false} style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>
   );
@@ -799,8 +798,20 @@ export default function HomeScreen({ navigation, route }) {
   // and its menu opens beneath it. `dimOthers` drives all of it.
   const [spot, setSpot] = useState(null); // { item, frame } — frame in this screen's coordinates
   const dimOthers = useRef(new Animated.Value(0)).current;
+  const [contentH, setContentH] = useState(2000);
+  const litKey = useRef(null);
+  // Cell wrapper: the spotlit row's cell is raised above the dim sheet (a later sibling).
+  const LitCell = useCallback(
+    ({ children, item, style, ...rest }) => (
+      <View {...rest} style={[style, litKey.current && item && rowKey(item) === litKey.current ? { zIndex: 10 } : null]}>
+        {children}
+      </View>
+    ),
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  );
   function spotlight(item, frame) {
     buzz(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+    litKey.current = rowKey(item);
     rootRef.current?.measureInWindow((rx, ry) => {
       setSpot({ item, frame: { ...frame, x: frame.x - rx, y: frame.y - ry } });
       menu.setChrome(true); // tuck the bottom bar away too
@@ -809,6 +820,7 @@ export default function HomeScreen({ navigation, route }) {
   }
   function unspotlight(after) {
     Animated.spring(dimOthers, { toValue: 0, damping: 22, stiffness: 260, mass: 0.7, overshootClamping: true, useNativeDriver: true }).start(() => {
+      litKey.current = null;
       setSpot(null);
       menu.setChrome(false);
       after?.();
@@ -1161,10 +1173,17 @@ export default function HomeScreen({ navigation, route }) {
               {Search}
               {tab === 'all' ? <AnnouncementBanner items={news} onPress={openAnnouncement} /> : null}
               {Compose}
-              <DimLayer dim={dimOthers} />
             </View>
           }
           ListEmptyComponent={Empty}
+          ListFooterComponent={
+            <Animated.View
+              pointerEvents="none"
+              style={{ position: 'absolute', left: 0, right: 0, top: -contentH, height: contentH + 600, backgroundColor: '#000', opacity: Animated.multiply(dimOthers, 0.55) }}
+            />
+          }
+          onContentSizeChange={(w, h) => setContentH(h)}
+          CellRendererComponent={LitCell}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -1174,7 +1193,7 @@ export default function HomeScreen({ navigation, route }) {
           initialNumToRender={6}
           maxToRenderPerBatch={6}
           windowSize={7}
-          removeClippedSubviews={Platform.OS === 'android'}
+          removeClippedSubviews={false}
         />
       )}
       </PullToRefresh>
