@@ -178,7 +178,7 @@ export default function OtpScreen({ route }) {
         <Button title="Verify & continue" onPress={() => onVerify()} loading={loading} disabled={verified} />
 
         <TouchableOpacity style={styles.resend} onPress={onResend} disabled={cooldown > 0}>
-          <Text style={[font.bodyMuted]}>Didn't get it? </Text>
+          <Text style={fontFor(colors).bodyMuted}>Didn't get it? </Text>
           <Text style={[styles.link, cooldown > 0 && { color: colors.textFaint }]}>
             {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
           </Text>

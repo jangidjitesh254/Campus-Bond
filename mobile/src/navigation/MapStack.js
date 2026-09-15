@@ -10,7 +10,7 @@ export default function MapStack() {
   const screenOptions = useStackOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="Map" component={CampusMapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CampusMap" component={CampusMapScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Walkthrough" component={WalkthroughScreen} options={{ title: 'Campus walks' }} />
     </Stack.Navigator>
   );

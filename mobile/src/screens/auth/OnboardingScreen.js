@@ -45,6 +45,7 @@ function Bits({ stage }) {
 /* ------------------------------------------------------------------ */
 
 export default function OnboardingScreen({ navigation }) {
+  const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const { completeOnboarding } = useAuth();
   const { width, height } = useWindowDimensions();
@@ -147,7 +148,7 @@ export default function OnboardingScreen({ navigation }) {
       <Animated.View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, spacing.lg), opacity: cta }]}>
         <Button title="Yes, let's go!" onPress={() => go('Register')} />
         <TouchableOpacity style={styles.footer} onPress={() => go('Login')}>
-          <Text style={font.bodyMuted}>Already have an account? </Text>
+          <Text style={fontFor(colors).bodyMuted}>Already have an account? </Text>
           <Text style={styles.link}>Log in</Text>
         </TouchableOpacity>
       </Animated.View>

@@ -19,6 +19,7 @@ import { spacing, fontFor } from '../../theme';
 import { useTheme, useStyles } from '../../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
+  const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
   const { login, celebrate } = useAuth();
   const [email, setEmail] = useState('');
@@ -135,7 +136,7 @@ export default function LoginScreen({ navigation }) {
             style={styles.footer}
             onPress={() => navigation.navigate('Register')}
           >
-            <Text style={font.bodyMuted}>New here? </Text>
+            <Text style={fontFor(colors).bodyMuted}>New here? </Text>
             <Text style={styles.link}>Create an account</Text>
           </TouchableOpacity>
         </View>
