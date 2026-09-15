@@ -258,6 +258,47 @@ const ICONS = {
       <Path d="M3.5 10h17M8 3v4M16 3v4" stroke={c} />
     </>
   ),
+  // ---- Campus map set (same rounded strokes as everything above) ----
+  play: (c) => <Path d="M7.5 4.8c0-.9 1-1.4 1.7-.9l10.2 7.2c.7.5.7 1.4 0 1.9L9.2 20.1c-.7.5-1.7 0-1.7-.9V4.8Z" stroke={c} />,
+  pause: (c) => <Path d="M8 5.5v13M16 5.5v13" stroke={c} strokeWidth={2.6} />,
+  flag: (c) => <Path d="M5 21V4.5C5 3.7 5.7 3 6.5 3H18l-1.5 4L18 11H6.5" stroke={c} />,
+  academic: (c) => (
+    <>
+      <Path d="m2.5 9.5 9.5-4.5 9.5 4.5-9.5 4.5-9.5-4.5Z" stroke={c} />
+      <Path d="M6 11.7V16c3.4 2.7 8.6 2.7 12 0v-4.3M21.5 9.5V15" stroke={c} />
+    </>
+  ),
+  building: (c) => (
+    <>
+      <Path d="M5 21V5.5C5 4.7 5.7 4 6.5 4h11c.8 0 1.5.7 1.5 1.5V21M3 21h18" stroke={c} />
+      <Path d="M9 8.5h.01M15 8.5h.01M9 12.5h.01M15 12.5h.01M10 21v-4h4v4" stroke={c} />
+    </>
+  ),
+  food: (c) => (
+    <>
+      <Path d="M6 3v6a2.5 2.5 0 0 0 5 0V3M8.5 3v18" stroke={c} />
+      <Path d="M18 3c-2 2.2-2.5 6.3-1 9v9" stroke={c} />
+    </>
+  ),
+  car: (c) => (
+    <>
+      <Path d="M4 13.5 5.8 8.2C6.1 7.5 6.8 7 7.6 7h8.8c.8 0 1.5.5 1.8 1.2L20 13.5M4 13.5h16v4.5H4v-4.5Z" stroke={c} />
+      <Path d="M7.5 18v2M16.5 18v2M7.5 15.5h.01M16.5 15.5h.01" stroke={c} />
+    </>
+  ),
+  ball: (c) => (
+    <>
+      <Circle cx={12} cy={12} r={8.5} stroke={c} />
+      <Path d="M4.5 9.2c4.2 2.4 10.8 2.4 15 0M4.5 14.8c4.2-2.4 10.8-2.4 15 0M12 3.5v17" stroke={c} />
+    </>
+  ),
+  leaf: (c) => (
+    <>
+      <Path d="M12 21c0-8.5 4-13.5 9.5-16-1 7.5-4.5 13-9.5 16Z" stroke={c} />
+      <Path d="M12 21c-4.5-1-7.5-4.5-8.5-9.5 4.5 1.2 7.5 4.5 8.5 9.5Z" stroke={c} />
+      <Path d="M12 21c1-4 3.5-7.5 7-10" stroke={c} />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 24, color = '#171B1D', filled = false, onColor = '#FFFFFF', strokeWidth = 1.7, style }) {

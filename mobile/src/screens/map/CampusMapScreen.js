@@ -3,14 +3,16 @@ import { View, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, FlatList,
 import { Text, TextInput } from '../../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { Ionicons } from '@expo/vector-icons';
 import Icon from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
-import { CampusApi, campusUrl, campusThumb, campusPhoto, CATEGORY_ION, walkMinutes, DEFAULT_CAMPUS } from '../../api/campus';
+import { CampusApi, campusUrl, campusThumb, campusPhoto, walkMinutes, DEFAULT_CAMPUS } from '../../api/campus';
 import { ScoreApi } from '../../api/score';
 import { shadow } from '../../theme';
 
 const START_DEFAULT = 'main-gate';
+// Category glyphs from our own rounded icon set (see components/Icon).
+const CATEGORY_ICON = { academic: 'academic', admin: 'building', food: 'food', parking: 'car', sports: 'ball', outdoor: 'leaf' };
+const catIcon = (key) => CATEGORY_ICON[key] || 'location';
 
 /**
  * 3D campus map. The scene itself is a three.js page served by the API
@@ -135,7 +137,7 @@ export default function CampusMapScreen({ navigation, route }) {
 
       {error ? (
         <View style={[StyleSheet.absoluteFill, styles.loading]}>
-          <Ionicons name="map-outline" size={34} color={t.textMuted} />
+          <Icon name="map" size={34} color={t.textMuted} strokeWidth={1.6} />
           <Text style={styles.errTitle}>The map could not load</Text>
           <Text style={styles.errSub}>{error}</Text>
           <TouchableOpacity style={styles.retry} onPress={() => { setError(''); setReady(false); setReloadKey((k) => k + 1); }}>
@@ -178,20 +180,20 @@ export default function CampusMapScreen({ navigation, route }) {
             const on = category === c.key;
             return (
               <TouchableOpacity key={c.key} style={[styles.chip, on && styles.chipOn]} onPress={() => setCategory(on ? null : c.key)} activeOpacity={0.85}>
-                <Ionicons name={CATEGORY_ION[c.key] || 'location-outline'} size={13} color={on ? t.onPrimary : t.textMuted} />
+                <Icon name={catIcon(c.key)} size={14} color={on ? t.surface : t.textMuted} strokeWidth={1.9} />
                 <Text style={[styles.chipText, on && styles.chipTextOn]}>{c.label}</Text>
               </TouchableOpacity>
             );
           })}
           {data?.videos?.length ? (
             <TouchableOpacity style={styles.chip} onPress={() => navigation.navigate('Walkthrough', { campus: campusId })} activeOpacity={0.85}>
-              <Ionicons name="play" size={12} color={t.text} />
+              <Icon name="play" size={13} color={t.text} strokeWidth={1.9} />
               <Text style={[styles.chipText, { color: t.text }]}>Campus walks</Text>
             </TouchableOpacity>
           ) : null}
           {/* Your Campus Score, one tap from the map */}
           <TouchableOpacity style={styles.chip} onPress={() => navigation.getParent()?.navigate('More', { screen: 'CampusScore' })} activeOpacity={0.85}>
-            <Ionicons name="trophy-outline" size={12} color={t.text} />
+            <Icon name="trophy" size={13} color={t.text} strokeWidth={1.9} />
             <Text style={[styles.chipText, { color: t.text }]}>{score == null ? '…' : `${score} pts`}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -204,7 +206,7 @@ export default function CampusMapScreen({ navigation, route }) {
               ) : (
                 filtered.map((p, i) => (
                   <TouchableOpacity key={p.id} style={[styles.listRow, i < filtered.length - 1 && styles.listRowBorder]} onPress={() => focus(p.id)} activeOpacity={0.75}>
-                    <View style={styles.listIcon}><Ionicons name={CATEGORY_ION[p.category] || 'location-outline'} size={17} color={t.primary} /></View>
+                    <View style={styles.listIcon}><Icon name={catIcon(p.category)} size={18} color={t.text} strokeWidth={1.7} /></View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.listName} numberOfLines={1}>{p.name}</Text>
                       <Text style={styles.listSub} numberOfLines={1}>{catLabel(p.category)}{p.floors ? ` · ${p.floors} floors` : ''}{p.approx ? ' · location approx.' : ''}</Text>
@@ -296,7 +298,7 @@ export default function CampusMapScreen({ navigation, route }) {
           <ScrollView style={{ maxHeight: 340 }}>
             {[byId(START_DEFAULT), ...places.filter((p) => p.id !== START_DEFAULT)].filter((p) => p && p.id !== selected).map((p, i, arr) => (
               <TouchableOpacity key={p.id} style={[styles.listRow, i < arr.length - 1 && styles.listRowBorder]} onPress={() => directions(p.id)} activeOpacity={0.75}>
-                <View style={styles.listIcon}><Ionicons name={p.id === START_DEFAULT ? 'flag-outline' : CATEGORY_ION[p.category] || 'location-outline'} size={17} color={t.primary} /></View>
+                <View style={styles.listIcon}><Icon name={p.id === START_DEFAULT ? 'flag' : catIcon(p.category)} size={18} color={t.text} strokeWidth={1.7} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.listName}>{p.name}</Text>
                   {p.id === START_DEFAULT ? <Text style={styles.listSub}>Most visitors start here</Text> : null}
