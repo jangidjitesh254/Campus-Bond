@@ -45,7 +45,7 @@ const CURVE_OUT = CURVE_IN.map(ease);
  * tabs+list block slides up by `topHeight` and is made that much taller so
  * no gap appears underneath.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant }) {
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant, ghostShiftX = 0 }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -135,7 +135,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
             {children}
           </Animated.View>
         </View>
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateY: bobY }, { scale: ghostScale }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateX: ghostShiftX }, { translateY: bobY }, { scale: ghostScale }] }]}>
           <Ghost width={ghostSize} variant={variant} />
           <MascotDecor mood={mood} size={ghostSize} />
         </Animated.View>
@@ -165,7 +165,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
           </Animated.View>
         </View>
 
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateY: Animated.add(ghostY, bobY) }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateX: ghostShiftX }, { translateY: Animated.add(ghostY, bobY) }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
           <Ghost width={bigW} lid={lid} variant={variant} />
           <MascotDecor mood={mood} size={bigW} />
         </Animated.View>

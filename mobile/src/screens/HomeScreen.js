@@ -176,24 +176,38 @@ function shortName(a) {
  * at the mascot's centre, so it really looks like it emerges), stays a
  * while, tucks back in, and peeks out again. Tap opens the announcement.
  */
-function HeaderBadge({ item, tint, onPress, styles }) {
-  const x = useRef(new Animated.Value(-220)).current;
+const BADGE_SHIFT = 58; // how far the mascot steps left while the badge is out, so the pair stays centred
+
+/** Drives the badge in and out; the mascot borrows the same value to step aside. */
+function useBadgeProgress(active) {
+  const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (!active) return undefined;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.delay(900),
-        Animated.spring(x, { toValue: 24, damping: 18, stiffness: 150, mass: 0.9, useNativeDriver: true }),
+        Animated.spring(progress, { toValue: 1, damping: 18, stiffness: 150, mass: 0.9, useNativeDriver: true }),
         Animated.delay(5000),
-        Animated.timing(x, { toValue: -220, duration: 380, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(progress, { toValue: 0, duration: 380, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
         Animated.delay(6000),
       ])
     );
     loop.start();
-    return () => loop.stop();
-  }, [x]);
+    return () => {
+      loop.stop();
+      progress.setValue(0);
+    };
+  }, [active, progress]);
+  return progress;
+}
+
+function HeaderBadge({ item, tint, onPress, styles, progress }) {
+  // The clip (the mascot's centre) moves left with the mascot; the pill slides out inside it.
+  const clipX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
+  const x = progress.interpolate({ inputRange: [0, 1], outputRange: [-220, 22] });
   const left = shortLeft(item);
   return (
-    <View style={styles.badgeClip} pointerEvents="box-none">
+    <Animated.View style={[styles.badgeClip, { transform: [{ translateX: clipX }] }]} pointerEvents="box-none">
       <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }] }}>
         <Pressable style={[styles.badge, { backgroundColor: tint }]} onPress={onPress}>
           <Ionicons name="trophy" size={13} color="#F2B84B" />
@@ -201,7 +215,7 @@ function HeaderBadge({ item, tint, onPress, styles }) {
           {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
         </Pressable>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -844,6 +858,8 @@ export default function HomeScreen({ navigation, route }) {
   // The header mascot dresses for the campus moment (from the headline announcement).
   const MOOD = { Hackathon: ['trophy', 'happy'], Fest: ['party', 'kiss'], Exams: ['study', 'glasses'], Placements: ['work', 'cool'] };
   const [mood, mascotFace] = MOOD[news[0]?.tag] || [null, undefined];
+  const badgeProgress = useBadgeProgress(!!(news[0] && mood));
+  const mascotX = badgeProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
 
   // Search pill above the banner — jumps to the Search tab with the keyboard up.
   const Search = (
@@ -881,7 +897,7 @@ export default function HomeScreen({ navigation, route }) {
         </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
-      {news[0] && mood ? <HeaderBadge item={news[0]} tint={colors.primary} onPress={() => openAnnouncement(news[0])} styles={styles} /> : null}
+      {news[0] && mood ? <HeaderBadge item={news[0]} tint={colors.primary} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
           <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
@@ -918,7 +934,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView ref={rootRef} style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace} ghostShiftX={mascotX}>
       {loading ? (
         <Skeleton />
       ) : (
@@ -1007,7 +1023,7 @@ const makeStyles = (colors, isDark) => {
   header: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
   // Clipped at the mascot's centre so the pill appears from behind it.
-  badgeClip: { position: 'absolute', left: '50%', right: 44, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
+  badgeClip: { position: 'absolute', left: '50%', right: 40, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 10, paddingRight: 11, height: 28, borderRadius: 999 },
   badgeText: { fontSize: 12.5, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
   badgeSub: { fontSize: 11.5, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
