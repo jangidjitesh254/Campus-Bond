@@ -7,7 +7,7 @@ import { useTheme, useStyles } from './ThemeContext';
 const MenuContext = createContext(null);
 
 // How far the screen slides aside, as a share of the screen width (Threads-style).
-const REVEAL = 0.87;
+const REVEAL = 0.78;
 
 /**
  * Hosts the side menu *under* the whole tab UI (screens and the bottom bar
