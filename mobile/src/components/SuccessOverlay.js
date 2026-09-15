@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Animated, Easing } from 'react-native';
+import { StyleSheet, Animated, Easing, Modal } from 'react-native';
 import { Text } from './Text';
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
@@ -9,7 +9,9 @@ import { useTheme, useStyles } from '../context/ThemeContext';
 /**
  * Full-screen check-mark celebration shown after login / signup succeeds.
  *
- * Rendered at the root (above navigation) so it can outlive the auth screens:
+ * Rendered in its own Modal window so it sits above the native navigation
+ * screens (a plain absolutely-positioned View loses to react-native-screens
+ * on Android and ended up behind the login form). It outlives the auth screens:
  *   1. fade in + success haptic, play the Lottie once
  *   2. `onDone()` — the session is activated and the app mounts underneath
  *   3. fade + zoom out over the new screen, then `onHidden()`
@@ -50,8 +52,9 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
   }
 
   return (
-    <Animated.View style={[styles.overlay, { opacity: fade }]} pointerEvents="none">
-      <Animated.View style={{ alignItems: 'center', transform: [{ scale: zoom }] }}>
+    <Modal visible transparent animationType="none" statusBarTranslucent hardwareAccelerated onRequestClose={() => {}}>
+      <Animated.View style={[styles.overlay, { opacity: fade }]} pointerEvents="none">
+        <Animated.View style={{ alignItems: 'center', transform: [{ scale: zoom }] }}>
         <LottieView
           source={require('../../assets/animations/checkMark.json')}
           autoPlay
@@ -62,8 +65,9 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
         />
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </Modal>
   );
 }
 
