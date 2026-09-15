@@ -96,6 +96,7 @@ export async function register(req, res) {
       ? `Email is not set up on this server — the code for ${normalizedEmail} was printed in the server console.`
       : `Verification code sent to ${normalizedEmail}. It expires in ${minutes} minutes.`,
     email: normalizedEmail,
+    ...(delivery.devMode ? { devOtp: code } : {}),
   });
 }
 
@@ -180,6 +181,7 @@ export async function resendOtp(req, res) {
     message: delivery.devMode
       ? `Email is not set up on this server — the new code was printed in the server console.`
       : `A new code was sent to ${normalizedEmail}.`,
+    ...(delivery.devMode ? { devOtp: code } : {}),
   });
 }
 
@@ -219,8 +221,10 @@ export async function getMe(req, res) {
 }
 
 /**
- * Update the current user's profile (name, branch, semester, avatar, skills).
+ * Update the current user's profile (name, branch, semester, avatar, skills,
+ * bio, interests, links).
  * PATCH /api/auth/profile  (multipart/form-data; optional `avatar` file)
+ * PUT   /api/auth/profile  (JSON; `avatar` may be a URL string)
  *
  * `skills` / `learning` arrive as a JSON array or a comma-separated string
  * (multipart cannot carry arrays natively).
@@ -251,13 +255,19 @@ function parseTags(value) {
 }
 
 export async function updateProfile(req, res) {
-  const { name, branch, semester } = req.body;
+  const { name, branch, semester, bio, githubUrl, linkedinUrl, portfolioUrl } = req.body;
   const user = req.user;
 
   const skills = parseTags(req.body.skills);
   const learning = parseTags(req.body.learning);
+  const interests = parseTags(req.body.interests);
   if (skills !== undefined) user.skills = skills;
   if (learning !== undefined) user.learning = learning;
+  if (interests !== undefined) user.interests = interests;
+  if (bio !== undefined) user.bio = String(bio).trim();
+  if (githubUrl !== undefined) user.githubUrl = String(githubUrl).trim();
+  if (linkedinUrl !== undefined) user.linkedinUrl = String(linkedinUrl).trim();
+  if (portfolioUrl !== undefined) user.portfolioUrl = String(portfolioUrl).trim();
 
   if (name !== undefined && name.trim()) user.name = name.trim();
   if (branch !== undefined) user.branch = branch.trim();
@@ -268,6 +278,8 @@ export async function updateProfile(req, res) {
   if (req.file) {
     deleteImage(user.avatar); // drop the photo it replaces
     user.avatar = await storeImage(req.file);
+  } else if (typeof req.body.avatar === 'string' && req.body.avatar.trim()) {
+    user.avatar = req.body.avatar.trim(); // JSON clients pass a URL
   }
 
   await user.save();

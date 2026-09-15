@@ -45,5 +45,7 @@ router.post(
 
 router.get('/me', protect, getMe);
 router.patch('/profile', protect, uploadImage.single('avatar'), updateProfile);
+// JSON variant (the web app): same handler, no file upload.
+router.put('/profile', protect, updateProfile);
 
 export default router;

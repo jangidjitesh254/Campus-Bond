@@ -11,6 +11,13 @@ const conversationSchema = new mongoose.Schema(
     market: { type: mongoose.Schema.Types.ObjectId, ref: 'MarketItem' }, // or the listing it started from
     lastMessage: { type: String, default: '' },
     lastMessageAt: { type: Date, default: Date.now },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'declined'],
+      default: 'accepted',
+    },
+    requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    requestMessage: { type: String, default: '' },
   },
   { timestamps: true }
 );

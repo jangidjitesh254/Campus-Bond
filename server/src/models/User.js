@@ -29,6 +29,14 @@ const userSchema = new mongoose.Schema(
     // Campus Score — running total; the ledger lives in ScoreEvent.
     campusScore: { type: Number, default: 0 },
 
+    // AI & Collaboration profile
+    skills: [{ type: String, trim: true }], // e.g. ["React", "Python", "UI/UX"]
+    bio: { type: String, trim: true, default: '' },
+    interests: [{ type: String, trim: true }], // e.g. ["Hackathons", "Robotics", "Web3"]
+    githubUrl: { type: String, trim: true, default: '' },
+    linkedinUrl: { type: String, trim: true, default: '' },
+    portfolioUrl: { type: String, trim: true, default: '' },
+
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
   },
   { timestamps: true }

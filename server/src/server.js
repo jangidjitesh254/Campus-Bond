@@ -16,6 +16,8 @@ import resourceRoutes from './routes/resourceRoutes.js';
 import scoreRoutes from './routes/scoreRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
+import assistantRoutes from './routes/assistantRoutes.js';
+import skillMatchRoutes from './routes/skillMatchRoutes.js';
 import { UPLOAD_DIR, USE_BLOB } from './middleware/upload.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -72,6 +74,8 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/score', scoreRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/assistant', assistantRoutes);
+app.use('/api/skill-match', skillMatchRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);
