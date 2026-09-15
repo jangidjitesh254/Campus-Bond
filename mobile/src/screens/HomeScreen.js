@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, LayoutAnimation, UIManager, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -129,20 +129,33 @@ const UL_BASE = 100; // the underline's unscaled width; it is scaled to each tab
  * A feed block that slides up into place when it appears — staggered by its
  * position — and fades with the shared `fade` value when its tab is left.
  */
-function Enter({ index, fade, children }) {
-  const enter = useRef(new Animated.Value(0)).current;
+function Enter({ index, leaving, children }) {
+  const enter = useRef(new Animated.Value(0)).current; // 0 → 1: rise in
+  const exit = useRef(new Animated.Value(0)).current; // 0 → 1: slide out left
   useEffect(() => {
     Animated.spring(enter, { toValue: 1, delay: Math.min(index, 6) * 40, damping: 22, stiffness: 240, mass: 0.8, useNativeDriver: true }).start();
   }, [enter, index]);
-  // In: rise from below. Out: sink 28px while fading (driven by the shared `fade`).
-  const rise = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
-  const sink = fade.interpolate({ inputRange: [0, 1], outputRange: [28, 0] });
-  return (
-    <Animated.View style={{ opacity: Animated.multiply(fade, enter), transform: [{ translateY: Animated.add(rise, sink) }] }}>
-      {children}
-    </Animated.View>
-  );
+  useEffect(() => {
+    if (leaving) {
+      Animated.timing(exit, { toValue: 1, duration: 220, delay: Math.min(index, 5) * 30, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start();
+    }
+  }, [leaving, exit, index]);
+  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
+  const translateX = exit.interpolate({ inputRange: [0, 1], outputRange: [0, -Dimensions.get('window').width] });
+  const opacity = Animated.multiply(enter, exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }));
+  return <Animated.View style={{ opacity, transform: [{ translateY }, { translateX }] }}>{children}</Animated.View>;
 }
+
+// LayoutAnimation on the old Android architecture needs opting in.
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+const SHIFT_UP = {
+  duration: 320,
+  create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+  update: { type: LayoutAnimation.Types.spring, springDamping: 0.85 },
+  delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 120 },
+};
 
 /** One category tab: squashes a little while pressed, reports its frame for the underline. */
 function TabChip({ active, tint, icon, label, onPress, onLayout, styles, colors }) {
@@ -672,23 +685,26 @@ export default function HomeScreen({ navigation, route }) {
   }
   const ulReady = useRef(false);
 
-  // Switching tabs: the blocks that don't belong fade out, then the new
-  // ones slide up into place (Enter). `rowsFade` is shared by every block.
-  const rowsFade = useRef(new Animated.Value(1)).current;
+  // Switching tabs: blocks that don't belong slide out to the left; a beat
+  // later they are dropped from the list under a layout spring, so the
+  // blocks that stay glide up into the gaps while the new ones rise in.
+  const [leaving, setLeaving] = useState(() => new Set());
+  const switching = useRef(null);
   function pickTab(key) {
     if (key === tab) return;
     buzz(() => Haptics.selectionAsync());
     moveUnderline(key); // instant feedback on the native side…
-    Animated.timing(rowsFade, { toValue: 0, duration: 200, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
+    const next = new Set(visibleFor(key).map(rowKey));
+    setLeaving(new Set(visible.map(rowKey).filter((k) => !next.has(k))));
+    clearTimeout(switching.current);
+    switching.current = setTimeout(() => {
       const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
       node?.scrollToOffset({ offset: 0, animated: false });
-      setTab(key); // …then the feed swaps (the fade already gave instant feedback)
-    });
+      LayoutAnimation.configureNext(SHIFT_UP);
+      setLeaving(new Set());
+      setTab(key);
+    }, 150);
   }
-  // Once the new blocks are committed, let them show (they animate in themselves).
-  useEffect(() => {
-    rowsFade.setValue(1);
-  }, [tab, rowsFade]);
 
   const clubs = useMemo(() => feed.filter((p) => p.kind === 'club'), [feed]);
   const market = useMemo(() => feed.filter((p) => p.kind === 'market'), [feed]);
@@ -702,18 +718,23 @@ export default function HomeScreen({ navigation, route }) {
 
   // For you: posts with the market rail after the 2nd post and the club rail after the 4th.
   // Clubs / Market tabs: a 2-column grid. Other tabs: just that kind.
-  const visible = useMemo(() => {
-    if (tab === 'club') return gridOf(clubs);
-    if (tab === 'market') return gridOf(market);
-    if (tab !== 'all') return posts.filter((p) => p.kind === tab);
-    const out = [...posts];
-    if (clubs.length) out.splice(Math.min(4, out.length), 0, { kind: 'rail', id: 'clubs' });
-    if (market.length) out.splice(Math.min(2, out.length), 0, { kind: 'rail', id: 'market' });
-    return out;
-  }, [posts, clubs, market, tab]);
+  const visibleFor = useCallback(
+    (t) => {
+      if (t === 'club') return gridOf(clubs);
+      if (t === 'market') return gridOf(market);
+      if (t !== 'all') return posts.filter((p) => p.kind === t);
+      const out = [...posts];
+      if (clubs.length) out.splice(Math.min(4, out.length), 0, { kind: 'rail', id: 'clubs' });
+      if (market.length) out.splice(Math.min(2, out.length), 0, { kind: 'rail', id: 'market' });
+      return out;
+    },
+    [posts, clubs, market] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const visible = useMemo(() => visibleFor(tab), [visibleFor, tab]);
+  const rowKey = (p) => `${p.kind}:${p.id}`;
 
   const renderItem = ({ item, index }) => (
-    <Enter index={index} fade={rowsFade}>
+    <Enter index={index} leaving={leaving.has(rowKey(item))}>
       {renderBlock(item)}
     </Enter>
   );
@@ -851,7 +872,7 @@ export default function HomeScreen({ navigation, route }) {
         <FlatList
           ref={listRef}
           data={visible}
-          keyExtractor={(p) => `${tab}:${p.kind}:${p.id}`}
+          keyExtractor={rowKey}
           renderItem={renderItem}
           ItemSeparatorComponent={() => (tab === 'club' || tab === 'market' ? null : <View style={styles.gap} />)}
           ListHeaderComponent={
