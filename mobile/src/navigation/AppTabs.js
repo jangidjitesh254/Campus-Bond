@@ -52,17 +52,14 @@ function TabIcon({ name, on, size = 27 }) {
           />
           {on ? <Face cx={12} cy={13} s={0.95} /> : null}
         </>
-      ) : name === 'search' ? (
+      ) : name === 'map' ? (
         <>
-          <Circle cx={10.8} cy={10.8} r={6.6} {...stroke} strokeWidth={on ? 2.4 : 1.9} />
-          <Path d="m16 16 4.4 4.4" {...stroke} strokeWidth={on ? 2.6 : 1.9} />
-          {on ? (
-            <>
-              <Circle cx={8.6} cy={10.6} r={1.2} fill={c} />
-              <Circle cx={13} cy={10.6} r={1.2} fill={c} />
-              <Path d="M9.4 13.3q1.4 1.2 2.8 0" stroke={c} strokeWidth={1} strokeLinecap="round" fill="none" />
-            </>
-          ) : null}
+          {/* Folded campus map with soft corners; the ghost peeks out of the middle panel when active */}
+          <Path
+            d="M3.6 6.9c0-.7.4-1.3 1-1.6l3.5-1.6c.5-.2 1.1-.2 1.6 0l4.4 1.9c.5.2 1.1.2 1.6 0l3.2-1.4c1-.4 2 .3 2 1.4v11.5c0 .7-.4 1.3-1 1.6l-3.5 1.6c-.5.2-1.1.2-1.6 0l-4.4-1.9c-.5-.2-1.1-.2-1.6 0l-3.2 1.4c-1 .4-2-.3-2-1.4V6.9Z"
+            {...(on ? solid : stroke)}
+          />
+          {on ? <Face cx={12} cy={12.6} s={0.85} /> : <Path d="M9 3.6v15M15 5.4v15" {...stroke} strokeWidth={1.6} />}
         </>
       ) : name === 'plus' ? (
         <>
@@ -122,7 +119,7 @@ function TabButton({ onPress, spin, children }) {
 /** What the bar shows, in order. `compose` is a button, not a route. */
 const BAR = [
   { route: 'Home', icon: 'home' },
-  { route: 'Search', icon: 'search' },
+  { route: 'Map', icon: 'map' },
   { compose: true },
   { route: 'Activity', icon: 'heart' },
   { route: 'More', profile: true },
@@ -190,14 +187,14 @@ export default function AppTabs({ navigation }) {
       {/* The four bar tabs mount up front so switching between them is instant;
           screens that are not on screen are frozen so they cost nothing. */}
       <Tab.Screen name="Home" component={HomeStack} options={{ lazy: false, freezeOnBlur: false }} />
-      <Tab.Screen name="Search" component={SearchStack} options={{ lazy: false }} />
+      <Tab.Screen name="Map" component={MapStack} />
       <Tab.Screen name="Activity" component={ActivityStack} options={{ lazy: false }} />
       <Tab.Screen name="More" component={ProfileStack} options={{ lazy: false }} />
-      {/* Not in the bar — reachable via navigate('Post' | 'Club' | 'Sell' | 'Map', …) from the feed and profile */}
+      {/* Not in the bar — reachable via navigate('Post' | 'Club' | 'Sell' | 'Search', …) from the feed and profile */}
       <Tab.Screen name="Post" component={PostStack} />
       <Tab.Screen name="Club" component={ClubStack} />
       <Tab.Screen name="Sell" component={SellStack} />
-      <Tab.Screen name="Map" component={MapStack} />
+      <Tab.Screen name="Search" component={SearchStack} />
     </Tab.Navigator>
     </MenuHost>
   );

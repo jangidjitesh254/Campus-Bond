@@ -45,7 +45,7 @@ const CURVE_OUT = CURVE_IN.map(ease);
  * tabs+list block slides up by `topHeight` and is made that much taller so
  * no gap appears underneath.
  */
-export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant, ghostShiftX = 0, ghostBobY = 0 }) {
+export default function PullToRefresh({ onRefresh, atTop, children, header, top, ghostSize = 30, ghostTop = 9, ghostScale = 1, topHidden, topHeight = 0, mood, variant, ghostShiftX = 0, ghostBobY = 0, ghostSquash }) {
   const drag = useRef(new Animated.Value(0)).current; // raw finger travel
   const lid = useRef(new Animated.Value(0)).current;
   const [refreshing, setRefreshing] = useState(false);
@@ -53,6 +53,9 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
 
   // Idle bob comes from the screen (so the header can tie other things to it).
   const bobY = ghostBobY;
+  // `ghostSquash` 0→1 flattens the mascot down into the header floor (the trophy takes its place).
+  const squashY = ghostSquash ? ghostSquash.interpolate({ inputRange: [0, 1], outputRange: [1, 0.02] }) : 1;
+  const squashDown = ghostSquash ? ghostSquash.interpolate({ inputRange: [0, 1], outputRange: [0, 18] }) : 0;
 
   // Wink loop while refreshing.
   useEffect(() => {
@@ -124,7 +127,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
             {children}
           </Animated.View>
         </View>
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateX: ghostShiftX }, { translateY: bobY }, { scale: ghostScale }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostTop, transform: [{ translateX: ghostShiftX }, { translateY: bobY }, { translateY: squashDown }, { scale: ghostScale }, { scaleY: squashY }] }]}>
           <Ghost width={ghostSize} variant={variant} />
           <MascotDecor mood={mood} size={ghostSize} />
         </Animated.View>
@@ -154,7 +157,7 @@ export default function PullToRefresh({ onRefresh, atTop, children, header, top,
           </Animated.View>
         </View>
 
-        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateX: ghostShiftX }, { translateY: Animated.add(ghostY, bobY) }, { scaleX }, { scaleY }, { scale: ghostScale }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.ghost, { top: ghostOffset, transform: [{ translateX: ghostShiftX }, { translateY: Animated.add(ghostY, bobY) }, { translateY: squashDown }, { scaleX }, { scaleY }, { scale: ghostScale }, { scaleY: squashY }] }]}>
           <Ghost width={bigW} lid={lid} variant={variant} />
           <MascotDecor mood={mood} size={bigW} />
         </Animated.View>

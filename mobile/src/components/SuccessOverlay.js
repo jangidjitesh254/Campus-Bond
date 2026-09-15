@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Animated, Easing, Modal } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Animated, Easing, Modal } from 'react-native';
 import { Text } from './Text';
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
@@ -9,15 +9,19 @@ import { useTheme, useStyles } from '../context/ThemeContext';
 /**
  * Full-screen check-mark celebration shown after login / signup succeeds.
  *
- * Rendered in its own Modal window so it sits above the native navigation
- * screens (a plain absolutely-positioned View loses to react-native-screens
- * on Android and ended up behind the login form). It outlives the auth screens:
- *   1. fade in + success haptic, play the Lottie once
+ * Rendered in its own opaque Modal window so it sits above the native
+ * navigation screens (a plain absolutely-positioned View loses to
+ * react-native-screens on Android and ended up behind the login form, and a
+ * transparent modal still let the form show through). It outlives the auth
+ * screens:
+ *   1. the window fades in + success haptic, play the Lottie once
  *   2. `onDone()` — the session is activated and the app mounts underneath
- *   3. fade + zoom out over the new screen, then `onHidden()`
+ *   3. the content zooms out, the window fades away over the new screen, then `onHidden()`
  */
 export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bond 🎓', onDone, onHidden }) {
+  const { t: colors } = useTheme();
   const styles = useStyles(makeStyles);
+  const [open, setOpen] = useState(true);
   const fade = useRef(new Animated.Value(0)).current;
   const zoom = useRef(new Animated.Value(1)).current;
   const finished = useRef(false);
@@ -42,19 +46,22 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
     if (finished.current) return;
     finished.current = true;
     onDone?.(); // app switches underneath us
-    // Let the new screen paint, then reveal it.
+    // Let the new screen paint, zoom the content out, then the window itself fades away.
     setTimeout(() => {
       Animated.parallel([
-        Animated.timing(fade, { toValue: 0, duration: 450, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(zoom, { toValue: 1.12, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start(() => onHidden?.());
+        Animated.timing(fade, { toValue: 0, duration: 320, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(zoom, { toValue: 1.12, duration: 320, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]).start(() => {
+        setOpen(false);
+        setTimeout(() => onHidden?.(), 320); // the modal's own fade-out
+      });
     }, 250);
   }
 
   return (
-    <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent hardwareAccelerated presentationStyle="overFullScreen" onRequestClose={() => {}}>
-      {/* Solid sheet first (never see-through), then the fading content on top of it */}
-      <Animated.View style={[styles.sheet, { opacity: fade }]} />
+    <Modal visible={open} transparent={false} backdropColor={colors.bg} animationType="fade" statusBarTranslucent navigationBarTranslucent hardwareAccelerated onRequestClose={() => {}}>
+      {/* Opaque window: the sheet is the full window, never see-through */}
+      <View style={styles.sheet}>
       <Animated.View style={[styles.overlay, { opacity: fade }]} pointerEvents="none">
         <Animated.View style={{ alignItems: 'center', transform: [{ scale: zoom }] }}>
         <LottieView
@@ -69,6 +76,7 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </Animated.View>
       </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -76,7 +84,7 @@ export default function SuccessOverlay({ title, subtitle = 'Welcome to Campus Bo
 const makeStyles = (colors, isDark) => {
   const font = fontFor(colors);
   return StyleSheet.create({
-  sheet: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.bg },
+  sheet: { flex: 1, backgroundColor: colors.bg },
   overlay: {
     flex: 1,
     width: '100%',

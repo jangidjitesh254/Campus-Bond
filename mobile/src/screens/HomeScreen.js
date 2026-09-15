@@ -18,6 +18,7 @@ import Confirm from '../components/Confirm';
 import { useMenu } from '../context/MenuContext';
 import SearchOverlay from '../components/SearchOverlay';
 import { DimLayer, SpotMenu } from '../components/Spotlight';
+import LottieView from 'lottie-react-native';
 import ShareSheet from '../components/ShareSheet';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
@@ -187,11 +188,11 @@ function shortName(a) {
  */
 const BADGE_SHIFT = 58; // how far the mascot steps left while the badge is out, so the pair stays centred
 
-/** Drives the badge in and out; the mascot borrows the same value to step aside. */
-function useBadgeProgress(active) {
+/** Drives the badge in and out; the mascot borrows the same value to step aside. `manual` = a show drives it instead. */
+function useBadgeProgress(active, manual) {
   const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || manual) return undefined;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.delay(900),
@@ -206,8 +207,93 @@ function useBadgeProgress(active) {
       loop.stop();
       progress.setValue(0);
     };
-  }, [active, progress]);
+  }, [active, manual, progress]);
   return progress;
+}
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const run = (anim) => new Promise((r) => anim.start(() => r()));
+
+const TROPHY_LAST = 71; // last frame of trophy.json
+
+/**
+ * The SIH show. Every so often: the mascot squashes down into the header
+ * floor, the trophy rises in its place and plays; when that ends the trophy
+ * steps left while the ribbon rolls out (confetti and all), holds, the ribbon
+ * rolls back, the trophy plays itself in reverse, drops away, and the mascot
+ * pops back up.
+ *
+ * `phase` is which Lottie instance is mounted: null, 'in' (forward) or
+ * 'out' (reverse). Each phase mounts a fresh player so the web build (which
+ * has no reliable imperative reset) replays it too.
+ */
+function useTrophyShow(active, badgeProgress) {
+  const squash = useRef(new Animated.Value(0)).current; // mascot 0 = up, 1 = flattened
+  const trophyIn = useRef(new Animated.Value(0)).current; // trophy 0 = flattened, 1 = up
+  const [phase, setPhase] = useState(null);
+  const lottieRef = useRef(null);
+  const doneRef = useRef(null); // resolver for the Lottie's finish
+  const runRef = useRef(0); // the current show loop; an older loop stops when it sees a newer one
+  const onTrophyDone = () => doneRef.current?.();
+  // Native players don't autoplay the reverse instance; run it backwards from the last frame.
+  const onTrophyLoaded = () => {
+    if (phase === 'out' && Platform.OS !== 'web') lottieRef.current?.play?.(TROPHY_LAST, 0);
+  };
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const token = ++runRef.current;
+    const live = () => runRef.current === token;
+    const spring = (v, to) => Animated.spring(v, { toValue: to, damping: 16, stiffness: 220, mass: 0.7, overshootClamping: to === 0, useNativeDriver: true });
+    const ease = (v, to, duration) => Animated.timing(v, { toValue: to, duration, easing: Easing.in(Easing.cubic), useNativeDriver: true });
+    const playThrough = async (next) => {
+      const finished = new Promise((r) => { doneRef.current = r; });
+      setPhase(next);
+      await Promise.race([finished, wait(3500)]);
+      doneRef.current = null;
+    };
+
+    (async () => {
+      await wait(2500);
+      while (live()) {
+        // 1. mascot drops away, trophy rises and plays (or 3.5s, whichever first)
+        await run(ease(squash, 1, 220));
+        if (!live()) break;
+        const finished = new Promise((r) => { doneRef.current = r; });
+        setPhase('in');
+        await run(spring(trophyIn, 1));
+        if (!live()) break;
+        await Promise.race([finished, wait(3500)]);
+        doneRef.current = null;
+        if (!live()) break;
+        // 2. step left, ribbon out, hold, ribbon back
+        await run(Animated.spring(badgeProgress, { toValue: 1, damping: 18, stiffness: 150, mass: 0.9, useNativeDriver: true }));
+        await wait(4500);
+        if (!live()) break;
+        await run(Animated.timing(badgeProgress, { toValue: 0, duration: 380, easing: Easing.in(Easing.cubic), useNativeDriver: true }));
+        if (!live()) break;
+        // 3. back in the centre: the trophy plays itself backwards, then drops away
+        await playThrough('out');
+        if (!live()) break;
+        await run(ease(trophyIn, 0, 220));
+        setPhase(null);
+        // 4. the mascot pops back
+        await run(spring(squash, 0));
+        await wait(9000);
+      }
+    })();
+
+    return () => {
+      runRef.current++;
+      doneRef.current?.();
+      setPhase(null);
+      squash.setValue(0);
+      trophyIn.setValue(0);
+      badgeProgress.setValue(0);
+    };
+  }, [active, badgeProgress, squash, trophyIn]);
+
+  return { squash, trophyIn, phase, lottieRef, onTrophyDone, onTrophyLoaded };
 }
 
 const RIBBON_H = 30;
@@ -1059,8 +1145,13 @@ export default function HomeScreen({ navigation, route }) {
   // The header mascot dresses for the campus moment (from the headline announcement).
   const MOOD = { Hackathon: ['trophy', 'happy'], Fest: ['party', 'kiss'], Exams: ['study', 'glasses'], Placements: ['work', 'cool'] };
   const [mood, mascotFace] = MOOD[news[0]?.tag] || [null, undefined];
-  const badgeProgress = useBadgeProgress(!!(news[0] && mood));
+  const showTrophy = !!(news[0] && mood === 'trophy'); // hackathon week: the trophy show runs in the header
+  const decorMood = showTrophy ? null : mood; // the Lottie trophy replaces the held-trophy outfit
+  const badgeProgress = useBadgeProgress(!!(news[0] && mood), showTrophy);
   const mascotX = badgeProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -BADGE_SHIFT] });
+  const show = useTrophyShow(showTrophy, badgeProgress);
+  const trophyScaleY = show.trophyIn.interpolate({ inputRange: [0, 1], outputRange: [0.02, 1] });
+  const trophyRise = show.trophyIn.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
 
   // The mascot's idle bob. The ribbon is tied to it, so it rides and waves with him.
   const bob = useRef(new Animated.Value(0)).current;
@@ -1113,6 +1204,21 @@ export default function HomeScreen({ navigation, route }) {
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
       {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} bob={bob} /> : null}
+      {showTrophy && show.phase ? (
+        <Animated.View pointerEvents="none" style={[styles.trophy, { transform: [{ translateX: mascotX }, { translateY: trophyRise }, { scaleY: trophyScaleY }] }]}>
+          <LottieView
+            key={show.phase}
+            ref={show.lottieRef}
+            source={require('../../assets/animations/trophy.json')}
+            autoPlay={show.phase === 'in' || Platform.OS === 'web'}
+            direction={show.phase === 'out' ? -1 : 1}
+            loop={false}
+            style={{ width: 64, height: 64 }}
+            onAnimationLoaded={show.onTrophyLoaded}
+            onAnimationFinish={show.onTrophyDone}
+          />
+        </Animated.View>
+      ) : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
           {/* Soft rounded bubble — thin stroke, round corners, a small tail; nothing inside */}
@@ -1161,7 +1267,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView ref={rootRef} style={styles.safe} edges={['top']}>
-      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={mood} variant={mascotFace} ghostShiftX={mascotX} ghostBobY={bobY}>
+      <PullToRefresh header={Header} top={Tabs} atTop={atTop} onRefresh={load} ghostSize={34} ghostTop={8} ghostScale={iconScale} topHidden={hidden} topHeight={TABS_H} mood={decorMood} variant={mascotFace} ghostShiftX={mascotX} ghostBobY={bobY} ghostSquash={showTrophy ? show.squash : undefined}>
       {loading ? (
         <Skeleton />
       ) : (
@@ -1272,6 +1378,8 @@ const makeStyles = (colors, isDark) => {
   badgeText: { fontSize: 12.5, fontWeight: '800', color: '#3A1D05', letterSpacing: 0.2 },
   badgeSub: { fontSize: 11.5, fontWeight: '700', color: 'rgba(58,29,5,0.7)' },
   popper: { position: 'absolute', left: '50%', top: '50%', marginLeft: 22 },
+  // Sits exactly where the mascot stands (centre of the header); z above the badge clip, below the popper.
+  trophy: { position: 'absolute', left: '50%', top: -6, marginLeft: -32, width: 64, height: 64, zIndex: 3 },
   // Two rounded bars, the lower one shorter — the Threads-style menu glyph.
   burger: { paddingVertical: 8, gap: 6, alignItems: 'flex-start' },
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.text },

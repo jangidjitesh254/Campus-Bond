@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
-import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -8,6 +7,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import OtpScreen from '../screens/auth/OtpScreen';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import SuccessOverlay from '../components/SuccessOverlay';
+import LaunchSplash from '../components/LaunchSplash';
 import AppTabs from './AppTabs';
 import ComposeScreen from '../screens/ComposeScreen';
 import { useAuth } from '../context/AuthContext';
@@ -64,21 +64,17 @@ function MainStack() {
 export default function RootNavigator() {
   const { isLoggedIn, booting, onboarded, celebration, endCelebration } = useAuth();
   const navTheme = useNavTheme();
-
-  // Session restored → fade the native splash out over the first screen.
-  useEffect(() => {
-    if (!booting) SplashScreen.hideAsync().catch(() => {});
-  }, [booting]);
-
-  // Native splash is still covering the screen while we boot.
-  if (booting) return null;
+  // The animated launch splash covers the boot (session restore) and then reveals the first screen.
+  const [launching, setLaunching] = useState(true);
 
   return (
     <View style={{ flex: 1 }}>
-      <NavigationContainer theme={navTheme}>
-        {/* First launch: the intro screen sits in front of the login flow. */}
-        {isLoggedIn ? <MainStack /> : <AuthStack showIntro={!onboarded} />}
-      </NavigationContainer>
+      {!booting ? (
+        <NavigationContainer theme={navTheme}>
+          {/* First launch: the intro screen sits in front of the login flow. */}
+          {isLoggedIn ? <MainStack /> : <AuthStack showIntro={!onboarded} />}
+        </NavigationContainer>
+      ) : null}
 
       {/* Login / signup success: plays above the auth→app switch, then fades out over Home. */}
       {celebration ? (
@@ -89,6 +85,10 @@ export default function RootNavigator() {
           onHidden={endCelebration}
         />
       ) : null}
+
+      {/* Every cold start: green splash, the mascot winks, then a circle wipe into the app.
+          On first launch the onboarding screen is the same green stage, so just fade onto it. */}
+      {launching ? <LaunchSplash ready={!booting} reveal={isLoggedIn || onboarded} onDone={() => setLaunching(false)} /> : null}
     </View>
   );
 }
