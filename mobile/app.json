@@ -36,7 +36,12 @@
         }
       ],
       "expo-video",
-      ["expo-status-bar", { "style": "dark" }],
+      [
+        "expo-status-bar",
+        {
+          "style": "dark"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -47,11 +52,14 @@
         }
       ]
     ],
+    "owner": "zitesh",
     "extra": {
+      "expo-status-bar": {
+        "style": "dark"
+      },
       "eas": {
-        "projectId": "bc4576ae-b19d-43a3-8375-0973f66df96c"
+        "projectId": "dc0c85a7-e502-4dd1-99b4-16b03bd931c9"
       }
-    },
-    "owner": "heynmn"
+    }
   }
 }
