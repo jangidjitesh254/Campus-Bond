@@ -153,6 +153,58 @@ const SHIFT_UP = {
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 120 },
 };
 
+/** "3w left" style countdown for the header badge. */
+function shortLeft(a) {
+  if (!a?.expiresAt) return '';
+  const d = Math.ceil((new Date(a.expiresAt) - Date.now()) / 86400000);
+  if (d <= 0) return '';
+  if (d === 1) return 'last day';
+  if (d < 14) return `${d}d`;
+  return `${Math.round(d / 7)}w`;
+}
+
+/** Short name for the badge: "SIH 2026" for Smart India Hackathon, else the tag. */
+function shortName(a) {
+  if (!a) return '';
+  const m = /smart india hackathon\s*(\d{4})?/i.exec(a.title || '');
+  if (m) return `SIH${m[1] ? ` ${m[1]}` : ''}`;
+  return a.tag || 'Notice';
+}
+
+/**
+ * Campaign badge in the header: slides out from behind the mascot (clipped
+ * at the mascot's centre, so it really looks like it emerges), stays a
+ * while, tucks back in, and peeks out again. Tap opens the announcement.
+ */
+function HeaderBadge({ item, tint, onPress, styles }) {
+  const x = useRef(new Animated.Value(-220)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(900),
+        Animated.spring(x, { toValue: 24, damping: 18, stiffness: 150, mass: 0.9, useNativeDriver: true }),
+        Animated.delay(5000),
+        Animated.timing(x, { toValue: -220, duration: 380, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.delay(6000),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [x]);
+  const left = shortLeft(item);
+  return (
+    <View style={styles.badgeClip} pointerEvents="box-none">
+      <Animated.View style={{ alignSelf: 'flex-start', transform: [{ translateX: x }] }}>
+        <Pressable style={[styles.badge, { backgroundColor: tint }]} onPress={onPress}>
+          <Ionicons name="trophy" size={13} color="#F2B84B" />
+          <Text style={styles.badgeText} numberOfLines={1}>{shortName(item)}</Text>
+          {left ? <Text style={styles.badgeSub} numberOfLines={1}>· {left}</Text> : null}
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
 /** One category tab: squashes a little while pressed, reports its frame for the underline. */
 function TabChip({ active, tint, icon, label, onPress, onLayout, styles, colors }) {
   const press = useRef(new Animated.Value(0)).current;
@@ -829,6 +881,7 @@ export default function HomeScreen({ navigation, route }) {
         </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
+      {news[0] && mood ? <HeaderBadge item={news[0]} tint={colors.primary} onPress={() => openAnnouncement(news[0])} styles={styles} /> : null}
       <TouchableOpacity style={styles.headerSide} onPress={() => goTab('Post', { screen: 'ChatList' })} hitSlop={8}>
         <Animated.View style={{ transform: [{ scale: iconScale }] }}>
           <Ionicons name="chatbubble-ellipses-outline" size={26} color={colors.text} />
@@ -953,6 +1006,11 @@ const makeStyles = (colors, isDark) => {
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
+  // Clipped at the mascot's centre so the pill appears from behind it.
+  badgeClip: { position: 'absolute', left: '50%', right: 44, top: 0, bottom: 0, overflow: 'hidden', justifyContent: 'center' },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0, paddingLeft: 10, paddingRight: 11, height: 28, borderRadius: 999 },
+  badgeText: { fontSize: 12.5, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
+  badgeSub: { fontSize: 11.5, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
   // Two rounded bars, the lower one shorter — the Threads-style menu glyph.
   burger: { paddingVertical: 8, gap: 6, alignItems: 'flex-start' },
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.text },
