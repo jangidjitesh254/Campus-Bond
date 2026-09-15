@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -134,8 +134,14 @@ function Enter({ index, fade, children }) {
   useEffect(() => {
     Animated.spring(enter, { toValue: 1, delay: Math.min(index, 6) * 40, damping: 22, stiffness: 240, mass: 0.8, useNativeDriver: true }).start();
   }, [enter, index]);
-  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
-  return <Animated.View style={{ opacity: Animated.multiply(fade, enter), transform: [{ translateY }] }}>{children}</Animated.View>;
+  // In: rise from below. Out: sink 28px while fading (driven by the shared `fade`).
+  const rise = enter.interpolate({ inputRange: [0, 1], outputRange: [36, 0] });
+  const sink = fade.interpolate({ inputRange: [0, 1], outputRange: [28, 0] });
+  return (
+    <Animated.View style={{ opacity: Animated.multiply(fade, enter), transform: [{ translateY: Animated.add(rise, sink) }] }}>
+      {children}
+    </Animated.View>
+  );
 }
 
 /** One category tab: squashes a little while pressed, reports its frame for the underline. */
@@ -442,6 +448,7 @@ export default function HomeScreen({ navigation, route }) {
   const listRef = useRef(null);
   const feedSig = useRef('');
 
+  const loadedAt = useRef(0);
   const load = useCallback(async () => {
     const [ev, lost, market, clubs, ann] = await Promise.allSettled([
       EventsApi.list({ limit: 30 }),
@@ -468,11 +475,14 @@ export default function HomeScreen({ navigation, route }) {
       setFeed(items);
     }
     setLoading(false);
+    loadedAt.current = Date.now();
   }, []);
 
+  // Coming back to Home reuses the feed if it is under 30s old, so the
+  // screen is ready instantly; pull-to-refresh always reloads.
   useFocusEffect(
     useCallback(() => {
-      load();
+      if (Date.now() - loadedAt.current > 30000) load();
     }, [load])
   );
 
@@ -669,7 +679,7 @@ export default function HomeScreen({ navigation, route }) {
     if (key === tab) return;
     buzz(() => Haptics.selectionAsync());
     moveUnderline(key); // instant feedback on the native side…
-    Animated.timing(rowsFade, { toValue: 0, duration: 110, useNativeDriver: true }).start(() => {
+    Animated.timing(rowsFade, { toValue: 0, duration: 200, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
       const node = listRef.current?.scrollToOffset ? listRef.current : listRef.current?.getNode?.();
       node?.scrollToOffset({ offset: 0, animated: false });
       setTab(key); // …then the feed swaps (the fade already gave instant feedback)

@@ -186,7 +186,7 @@ export default function AppTabs({ navigation }) {
     <Tab.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }} tabBar={(props) => <TabBar {...props} />}>
       {/* The four bar tabs mount up front so switching between them is instant;
           screens that are not on screen are frozen so they cost nothing. */}
-      <Tab.Screen name="Home" component={HomeStack} options={{ lazy: false }} />
+      <Tab.Screen name="Home" component={HomeStack} options={{ lazy: false, freezeOnBlur: false }} />
       <Tab.Screen name="Search" component={SearchStack} options={{ lazy: false }} />
       <Tab.Screen name="Activity" component={ActivityStack} options={{ lazy: false }} />
       <Tab.Screen name="More" component={ProfileStack} options={{ lazy: false }} />
