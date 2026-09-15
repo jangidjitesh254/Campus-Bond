@@ -711,8 +711,9 @@ export default function HomeScreen({ navigation, route }) {
   const Header = (
     <View style={styles.header}>
       <TouchableOpacity style={[styles.headerSide, { alignItems: 'flex-start' }]} onPress={menu.open} hitSlop={8}>
-        <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-          <Ionicons name="menu-outline" size={30} color={colors.text} />
+        <Animated.View style={[styles.burger, { transform: [{ scale: iconScale }] }]}>
+          <View style={[styles.burgerLine, { width: 24 }]} />
+          <View style={[styles.burgerLine, { width: 15 }]} />
         </Animated.View>
       </TouchableOpacity>
       <View style={{ width: 30, height: 36 }} />
@@ -836,6 +837,9 @@ const makeStyles = (colors, isDark) => {
   safe: { flex: 1, backgroundColor: colors.surface },
   header: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerSide: { width: 32, alignItems: 'flex-end' },
+  // Two rounded bars, the lower one shorter — the Threads-style menu glyph.
+  burger: { paddingVertical: 8, gap: 6, alignItems: 'flex-start' },
+  burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.text },
 
   tabsWrap: { flexGrow: 0, height: TABS_H, borderBottomWidth: HAIRLINE, borderBottomColor: colors.border },
   tabs: { paddingHorizontal: 8 },
