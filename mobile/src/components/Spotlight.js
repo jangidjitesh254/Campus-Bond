@@ -66,7 +66,6 @@ export default function Spotlight({ frame, inset = 12, items, onClose, children 
   const menuLeft = Math.max(12, Math.min(frame.x + frame.width - MENU_W, W - MENU_W - 12));
   const lift = t.interpolate({ inputRange: [0, 1], outputRange: [frame.y - cardTop, 0] });
   const grow = t.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
-  const shadowOpacity = t.interpolate({ inputRange: [0, 1], outputRange: [0, 0.28] });
   const menuScale = t.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
   const menuShift = t.interpolate({ inputRange: [0, 1], outputRange: [(above ? 1 : -1) * 16, 0] });
 
@@ -81,7 +80,7 @@ export default function Spotlight({ frame, inset = 12, items, onClose, children 
         pointerEvents="none"
         style={[
           styles.card,
-          { left: frame.x - inset, top: cardTop, width: frame.width + inset * 2, opacity: show, shadowOpacity, transform: [{ translateY: lift }, { scale: grow }] },
+          { left: frame.x - inset, top: cardTop, width: frame.width + inset * 2, opacity: show, transform: [{ translateY: lift }, { scale: grow }] },
         ]}
       >
         {children}
@@ -108,7 +107,8 @@ export default function Spotlight({ frame, inset = 12, items, onClose, children 
 const makeStyles = (colors) =>
   StyleSheet.create({
     dim: { backgroundColor: 'rgba(0,0,0,0.55)' },
-    card: { position: 'absolute', shadowColor: '#000', shadowOffset: { width: 0, height: 14 }, shadowRadius: 24, elevation: 14 },
+    // shadowOpacity can't be driven natively, so the shadow is static (only ever seen while lit)
+    card: { position: 'absolute', shadowColor: '#000', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.28, shadowRadius: 24, elevation: 14 },
     menu: { position: 'absolute', width: MENU_W, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card, shadowOpacity: 0.2, shadowRadius: 18, elevation: 10 },
     item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: ROW_H },
     itemBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
