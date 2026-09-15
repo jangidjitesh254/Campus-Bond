@@ -1152,6 +1152,7 @@ export default function HomeScreen({ navigation, route }) {
   const show = useTrophyShow(showTrophy, badgeProgress);
   const trophyScaleY = show.trophyIn.interpolate({ inputRange: [0, 1], outputRange: [0.02, 1] });
   const trophyRise = show.trophyIn.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
+  const trophyFade = show.trophyIn.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 1] });
 
   // The mascot's idle bob. The ribbon is tied to it, so it rides and waves with him.
   const bob = useRef(new Animated.Value(0)).current;
@@ -1205,7 +1206,7 @@ export default function HomeScreen({ navigation, route }) {
       <View style={{ width: 30, height: 36 }} />
       {news[0] && mood ? <HeaderBadge item={news[0]} onPress={() => openAnnouncement(news[0])} styles={styles} progress={badgeProgress} bob={bob} /> : null}
       {showTrophy && show.phase ? (
-        <Animated.View pointerEvents="none" style={[styles.trophy, { transform: [{ translateX: mascotX }, { translateY: trophyRise }, { scaleY: trophyScaleY }] }]}>
+        <Animated.View pointerEvents="none" style={[styles.trophy, { opacity: trophyFade, transform: [{ translateX: mascotX }, { translateY: trophyRise }, { scaleY: trophyScaleY }] }]}>
           <LottieView
             key={show.phase}
             ref={show.lottieRef}
