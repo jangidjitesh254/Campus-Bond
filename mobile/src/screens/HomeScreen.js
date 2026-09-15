@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Share, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, LayoutAnimation, FlatList as RNFlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Alert, Image, Animated, Easing, Dimensions, Platform, Linking, LayoutAnimation, FlatList as RNFlatList } from 'react-native';
 import { Text } from '../components/Text';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 
@@ -18,6 +18,7 @@ import Confirm from '../components/Confirm';
 import { useMenu } from '../context/MenuContext';
 import SearchOverlay from '../components/SearchOverlay';
 import { DimLayer, SpotMenu } from '../components/Spotlight';
+import ShareSheet from '../components/ShareSheet';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import { Ghost, GhostMark } from '../components/Mascot';
 import { handleOf, timeAgo } from '../components/ThreadPost';
@@ -757,10 +758,11 @@ export default function HomeScreen({ navigation, route }) {
     }
   }
 
-  async function share(post) {
-    try {
-      await Share.share({ message: `${post.text}${post.body ? `\n\n${post.body}` : ''}\n\n— shared from Campus Bond` });
-    } catch {}
+  // Share opens our own bottom sheet first; "More…" in it hands off to the system sheet.
+  const [sharing, setSharing] = useState(null);
+  function share(post) {
+    buzz(() => Haptics.selectionAsync());
+    setSharing(post);
   }
 
   // Joining is an application the club president reviews; leaving is immediate.
@@ -1199,6 +1201,8 @@ export default function HomeScreen({ navigation, route }) {
       </PullToRefresh>
 
       {spot ? <SpotMenu frame={spot.frame} items={menuFor(spot.item)} progress={dimOthers} onClose={unspotlight} /> : null}
+
+      <ShareSheet post={sharing} onClose={() => setSharing(null)} onMessage={() => sharing && open(sharing)} />
 
       <SearchOverlay open={searchOpen} from={searchFrom} onClose={() => setSearchOpen(false)} goTab={goTab} />
 
