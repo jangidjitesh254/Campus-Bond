@@ -311,14 +311,6 @@ export default function LostFoundPage() {
             <span>Campus AI</span>
           </Link>
 
-          <Link
-            to="/skill-match"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white dark:bg-slate-800 text-[#E95E38] text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all cursor-pointer border border-[#E95E38]/30"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#E95E38]" />
-            <span>AI Skill Match</span>
-          </Link>
-
           {user && (
             <Link
               to="/profile"

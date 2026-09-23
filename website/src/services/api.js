@@ -70,6 +70,7 @@ export const eventService = {
   deleteEvent: (id) => api.delete(`/events/${id}`),
   applyToEvent: (id, message) => api.post(`/events/${id}/apply`, { message }),
   expressInterest: (id) => api.post(`/events/${id}/interest`),
+  toggleLike: (id) => api.post(`/events/${id}/like`),
   addComment: (id, text) => api.post(`/events/${id}/comments`, { text }),
   updateEventStatus: (id, status) => api.patch(`/events/${id}/status`, { status }),
   deleteEvent: (id) => api.delete(`/events/${id}`),
@@ -136,6 +137,15 @@ export const skillMatchService = {
   getMatchedTeammates: (params) => api.get('/skill-match/teammates', { params }),
   searchSkillMatches: (query) => api.post('/skill-match/query', { query }),
   extractSkills: (text) => api.post('/skill-match/extract', { text }),
+};
+
+// --- Notifications APIs ---
+export const notificationService = {
+  getNotifications: () => api.get('/notifications'),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
+  deleteNotification: (id) => api.delete(`/notifications/${id}`),
+  clearAll: () => api.delete('/notifications'),
 };
 
 export default api;

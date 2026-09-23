@@ -59,21 +59,23 @@ html.dark body,
 html.dark #root,
 html.dark .bg-\[\#F6F8FA\],
 html.dark .bg-\[\#FBFBFA\],
+html.dark .bg-\[\#F8F6F3\],
 html.dark [class*="bg-[#F6F8FA]"],
-html.dark [class*="bg-[#FBFBFA]"] {
-  background-color: #070B14 !important;
+html.dark [class*="bg-[#FBFBFA]"],
+html.dark [class*="bg-[#F8F6F3]"] {
+  background-color: #0C0A09 !important;
   color: #F1F5F9;
+}
+
+/* Sidebar in Dark Mode preserves rich warm espresso */
+html.dark .campus-sidebar {
+  background-color: #221614 !important;
+  color: #E5DACB !important;
 }
 
 /* Cards & Canvas Surfaces */
 html.dark .bg-white {
-  background-color: #0E1626 !important;
-}
-
-html.dark .campus-sidebar .bg-white,
-html.dark .campus-sidebar [style*="background-color: #ffffff"],
-html.dark .campus-sidebar [style*="backgroundColor: #ffffff"] {
-  background-color: #ffffff !important;
+  background-color: #1C1614 !important;
 }
 
 html.dark .bg-white\/95 {

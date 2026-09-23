@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SearchProvider } from './context/SearchContext';
 import Sidebar from './components/Sidebar';
 import LoadingSpinner from './components/LoadingSpinner';
+import NotificationBell from './components/NotificationBell';
 import { Menu, Sun, Moon } from 'lucide-react';
 
 // Pages
@@ -93,7 +94,7 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#F6F8FA] dark:bg-[#070B14] text-[#0A0B0D] dark:text-[#F1F5F9] transition-colors duration-200">
+    <div className="min-h-screen flex bg-[#F8F6F3] dark:bg-[#0C0A09] text-[#1E1917] dark:text-[#F1F5F9] transition-colors duration-200">
       {/* ─── Persistent Desktop Left Sidebar + Mobile Drawer ─── */}
       <Sidebar isOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
 
@@ -110,6 +111,8 @@ function AppLayout() {
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
               </button>
+
+              <NotificationBell buttonClassName="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 transition-colors cursor-pointer relative" />
 
               <Link
                 to="/assistant"
@@ -147,12 +150,15 @@ function AppLayout() {
             <Link to="/" className="font-display font-black text-lg text-gray-950 dark:text-white">
               Campus Bond
             </Link>
-            <Link
-              to="/profile"
-              className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 flex items-center justify-center text-gray-950 dark:text-white font-bold text-xs shadow-2xs"
-            >
-              {user?.name?.charAt(0) || 'U'}
-            </Link>
+            <div className="flex items-center gap-2">
+              <NotificationBell buttonClassName="p-1.5 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/10 text-gray-700 dark:text-slate-200 transition-colors relative cursor-pointer" />
+              <Link
+                to="/profile"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 flex items-center justify-center text-gray-950 dark:text-white font-bold text-xs shadow-2xs"
+              >
+                {user?.name?.charAt(0) || 'U'}
+              </Link>
+            </div>
           </div>
         </header>
 

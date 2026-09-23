@@ -6,10 +6,10 @@ import {
   Plus,
   X,
   HelpCircle,
-  Sparkles,
+  GraduationCap,
 } from 'lucide-react';
 
-export default function Sidebar({ isOpen, onClose }){
+export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
 
   const navItems = [
@@ -20,13 +20,6 @@ export default function Sidebar({ isOpen, onClose }){
       isActive: () => location.pathname === '/' || location.pathname.startsWith('/events'),
     },
     {
-      name: 'Skill Match',
-      path: '/skill-match',
-      icon: Sparkles,
-      badge: 'AI',
-      isActive: () => location.pathname.startsWith('/skill-match'),
-    },
-    {
       name: 'Clubs',
       path: '/clubs',
       icon: Users,
@@ -35,20 +28,19 @@ export default function Sidebar({ isOpen, onClose }){
     {
       name: 'Market',
       path: '/market',
-      // Custom shopping tote/bag icon matching the mockup
       icon: (props) => (
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
           {...props}
         >
           <path d="M4 8h16l-1.5 12H5.5L4 8z" />
           <path d="M8 8V6a4 4 0 0 1 8 0v2" />
-          <rect x="10" y="11" width="4" height="4" rx="1" strokeWidth="1.8" />
+          <rect x="10" y="11" width="4" height="4" rx="1" strokeWidth="1.6" />
         </svg>
       ),
       isActive: () => location.pathname.startsWith('/market'),
@@ -62,19 +54,18 @@ export default function Sidebar({ isOpen, onClose }){
     {
       name: 'Messages',
       path: '/chat',
-      // Custom speech bubble icon with center dash matching the mockup
       icon: (props) => (
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
           {...props}
         >
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          <line x1="9" y1="10" x2="13" y2="10" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="9" y1="10" x2="13" y2="10" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
       ),
       isActive: () => location.pathname.startsWith('/chat'),
@@ -90,38 +81,23 @@ export default function Sidebar({ isOpen, onClose }){
     return (
       <div className="flex flex-col h-full justify-between relative overflow-hidden select-none">
         {/* ─── Top Section: Logo & Nav Links ─── */}
-        <div>
+        <div className="space-y-6">
           {/* Brand Header */}
-          <div className="flex items-center justify-between pt-1 pb-5 px-1">
+          <div className="flex items-center justify-between pt-1 pb-2 px-1">
             <Link
               to="/"
               onClick={onClose}
               className="flex items-center gap-3.5 group"
             >
-              {/* White circular badge with compass icon */}
-              <div
-                className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
-                style={{ backgroundColor: '#ffffff' }}
-              >
-                <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none">
-                  <circle cx="16" cy="16" r="11" stroke="#2B2321" strokeWidth="2.2" />
-                  {/* Needle tilted ~45 degrees top-left to bottom-right */}
-                  <path
-                    d="M 11.5 11.5 L 14.8 18.2 L 20.5 20.5 L 17.2 13.8 Z"
-                    fill="#2B2321"
-                    stroke="#2B2321"
-                    strokeWidth="1.2"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="16" cy="16" r="1.8" fill="white" />
-                </svg>
+              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-9 h-9 text-white stroke-[1.8]" />
               </div>
 
               <div>
                 <span className="font-bold text-white text-[20px] tracking-tight block leading-tight">
                   Campus Bond
                 </span>
-                <span className="text-[10px] text-[#B8AEA7] font-semibold tracking-wider uppercase block mt-1">
+                <span className="text-[10px] text-[#A3968F] font-bold tracking-[0.2em] uppercase block mt-0.5">
                   STUDENT NETWORK
                 </span>
               </div>
@@ -131,7 +107,7 @@ export default function Sidebar({ isOpen, onClose }){
             {onClose && (
               <button
                 onClick={onClose}
-                className="md:hidden p-1.5 rounded-xl text-[#B8AEA7] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="md:hidden p-1.5 rounded-xl text-[#A3968F] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Close sidebar"
               >
                 <X className="w-5 h-5" />
@@ -139,134 +115,117 @@ export default function Sidebar({ isOpen, onClose }){
             )}
           </div>
 
-
           {/* Navigation Items */}
-          <nav className="space-y-1.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = item.isActive();
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = item.isActive();
 
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={onClose}
-                className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-full text-[15px] transition-all duration-150 ${
-                  active
-                    ? 'bg-[#BCB5A3] text-[#1D1819] font-semibold shadow-xs'
-                    : 'text-[#F5F4F3] hover:text-white hover:bg-white/[0.08] font-medium'
-                }`}
-              >
-                <Icon
-                  className={`w-5 h-5 flex-shrink-0 ${
-                    active ? 'text-[#1D1819] stroke-[2.2]' : 'text-[#F5F4F3] stroke-[2]'
-                  }`}
-                />
-                <span className="flex-1 text-left">{item.name}</span>
-                {item.badge && (
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  onClick={onClose}
+                  className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl text-[15px] transition-all duration-150 ${
                     active
-                      ? 'bg-[#1D1819] text-white'
-                      : 'bg-[#E95E38] text-white shadow-2xs'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+                      ? 'bg-[#E5DACB] text-[#221614] font-semibold shadow-xs'
+                      : 'text-[#A3968F] hover:text-white hover:bg-white/[0.04] font-medium'
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 flex-shrink-0 ${
+                      active ? 'text-[#221614] stroke-[2.2]' : 'text-[#A3968F] stroke-[1.8]'
+                    }`}
+                  />
+                  <span className="flex-1 text-left">{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-        {/* Divider */}
-        <div className="h-px bg-[#615451] my-4 mx-1" />
+          {/* Create Post Button */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleCreatePost}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#EE5933] hover:bg-[#E04B26] active:scale-[0.98] text-white font-bold text-[15px] shadow-sm transition-all cursor-pointer"
+            >
+              <Plus className="w-5 h-5 stroke-[2.8]" />
+              <span>Create Post</span>
+            </button>
+          </div>
 
-        {/* Quick Actions */}
-        <div className="space-y-2.5 px-0.5">
-          <p className="text-[13px] font-medium text-[#B8AEA7] px-1 tracking-tight">
-            Quick Actions
-          </p>
-          <button
-            type="button"
-            onClick={handleCreatePost}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#E95E38] hover:bg-[#D7522D] active:scale-[0.98] text-white font-bold text-[15px] shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-5 h-5 stroke-[2.8]" />
-            <span>Create Post</span>
-          </button>
+          {/* Quote Card */}
+          <div className="bg-[#2A1D1A]/70 border border-[#3A2A26] rounded-2xl p-4.5 relative overflow-hidden">
+            <div className="text-[#8E7E77] text-2xl font-serif leading-none select-none mb-1.5">
+              “
+            </div>
+            <div className="space-y-1 text-[#E5DACB] text-[14px] font-medium leading-snug pl-1">
+              <p>Connect</p>
+              <p>Collaborate</p>
+              <p>Grow Together</p>
+            </div>
+            <div className="text-[#8E7E77] text-2xl font-serif leading-none select-none mt-1 text-right">
+              ”
+            </div>
+          </div>
         </div>
 
-        {/* Quote Card */}
-        <div className="bg-[#554745] rounded-3xl p-5 relative my-4 overflow-hidden shadow-xs">
-          <div className="text-[#8E7E7A] text-3xl font-serif leading-none select-none mb-3">
-            “
+        {/* ─── Bottom Section: Mountain Silhouette & Slogan ─── */}
+        <div className="relative pt-6 pb-2 mt-auto">
+          {/* Subtle Mountain Outline */}
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none overflow-hidden opacity-40">
+            <svg
+              className="w-full h-24"
+              viewBox="0 0 240 100"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M-20 100 L40 40 L90 75 L150 25 L210 70 L260 30 L280 100 Z"
+                fill="#2E201C"
+                opacity="0.5"
+              />
+              <path
+                d="M-20 100 L30 55 L80 80 L130 45 L180 85 L230 50 L260 100 Z"
+                fill="#382823"
+                opacity="0.7"
+              />
+              <path
+                d="M-10 65 L40 40 L90 75 L150 25 L210 70 L260 30"
+                stroke="#523B34"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
-          <div className="space-y-0.5 text-[#F5F4F3] text-[15px] font-medium leading-snug">
-            <p>Connect</p>
-            <p>Collaborate</p>
-            <p>Grow Together</p>
-          </div>
-          {/* Paper airplane */}
-          <div className="absolute bottom-5 right-5 text-white/90">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 transform rotate-12">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+
+          {/* Slogan */}
+          <div className="relative z-10 px-1 pt-4">
+            <div className="font-handwriting text-[#DDD1C6] text-[22px] leading-[1.15] select-none tracking-wide">
+              <p>Better</p>
+              <p>Students</p>
+              <p>Brighter Tomorrow</p>
+            </div>
+            <svg className="w-20 h-2.5 mt-1 text-[#EE5933]" viewBox="0 0 90 10" fill="none">
+              <path
+                d="M 2 7 C 28 2, 60 2.5, 88 5"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
         </div>
       </div>
-
-      {/* ─── Bottom Section: Waves & Slogan ─── */}
-      <div className="relative pt-4 pb-2 mt-auto">
-        {/* Organic wave background curves */}
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none overflow-hidden h-44 -mx-5">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 280 180"
-            fill="none"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M 0 50 Q 80 40 140 100 T 280 110 L 280 180 L 0 180 Z"
-              fill="#433735"
-              opacity="0.6"
-            />
-            <path
-              d="M 0 85 C 50 85 90 120 150 135 C 200 150 240 130 280 140 L 280 180 L 0 180 Z"
-              fill="#3D3230"
-              opacity="0.8"
-            />
-            <path
-              d="M 0 115 C 60 115 100 140 160 150 C 210 160 250 150 280 155 L 280 180 L 0 180 Z"
-              fill="#352B29"
-            />
-          </svg>
-        </div>
-
-        {/* Slogan */}
-        <div className="relative z-10 px-1">
-          <div className="font-handwriting text-[#F0ECE9] text-[26px] leading-[1.12] select-none tracking-wide">
-            <p>Better</p>
-            <p>Students</p>
-            <p>Brighter Tomorrow</p>
-          </div>
-          <svg className="w-28 h-3 mt-1.5 text-[#E95E38]" viewBox="0 0 110 10" fill="none">
-            <path
-              d="M 2 7 C 35 2.5, 75 3, 108 5"
-              stroke="currentColor"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-
+    );
   };
 
   return (
     <>
       {/* ─── Desktop Fixed Left Sidebar ─── */}
-      <aside className="campus-sidebar hidden md:flex flex-col w-[279px] shrink-0 bg-[#4C403D] text-[#F5F4F3] border-r border-[#3E3432] h-screen sticky top-0 px-5 py-6 z-30 overflow-y-auto">
+      <aside className="campus-sidebar hidden md:flex flex-col w-[260px] shrink-0 bg-[#221614] text-[#E5DACB] border-r border-[#2E1F1B] h-screen sticky top-0 px-5 py-6 z-30 overflow-y-auto">
         <NavContent />
       </aside>
 
@@ -277,7 +236,7 @@ export default function Sidebar({ isOpen, onClose }){
             onClick={onClose}
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
           />
-          <div className="campus-sidebar fixed inset-y-0 left-0 w-[279px] max-w-[85vw] bg-[#4C403D] text-[#F5F4F3] p-5 shadow-2xl z-10 flex flex-col justify-between animate-in slide-in-from-left duration-200 overflow-y-auto">
+          <div className="campus-sidebar fixed inset-y-0 left-0 w-[260px] max-w-[85vw] bg-[#221614] text-[#E5DACB] p-5 shadow-2xl z-10 flex flex-col justify-between animate-in slide-in-from-left duration-200 overflow-y-auto">
             <NavContent />
           </div>
         </div>
